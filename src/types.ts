@@ -6,5 +6,18 @@ export interface Seed {
   numSeeds: number; // Number of seeds available
   feminized: boolean; // Whether the seeds are feminized
   open: boolean; // Whether the seed packet is open
+  available: boolean;
   dateAcquired: string; // Date the seed was acquired
+}
+
+export interface Clone {
+  id: string; // Unique identifier
+  breeder: string; // Breeder of the clone
+  strain: string; // Strain type
+  cutName: string;
+  generation: string; // Generation of the clone
+  sex: "Male" | "Female"; // Dropdown selection for Male/Female
+  breederCut: boolean; // True/False
+  available: boolean; // True/False
+  dateAcquired: string; // Date the clone was acquired
 }

@@ -16,13 +16,14 @@ import { useSeedContext } from "../context/SeedContext";
 import { v4 as uuidv4 } from "uuid";
 
 const SeedsPage: React.FC = () => {
-  const { seeds, addSeed, updateSeed, deleteSeed } = useSeedContext();
+  const { seeds, addSeed, deleteSeed } = useSeedContext();
   const [newSeedBreeder, setNewSeedBreeder] = React.useState("");
   const [newSeedStrain, setNewSeedStrain] = React.useState("");
   const [newSeedGeneration, setNewSeedGeneration] = React.useState("");
   const [newNumSeeds, setNewNumSeeds] = React.useState(0);
   const [newFeminized, setNewFeminized] = React.useState(false);
   const [newOpen, setNewOpen] = React.useState(false);
+  const [isAvailable, setIsAvailable] = React.useState(false);
 
   const handleAddSeed = () => {
     if (newSeedBreeder && newSeedStrain) {
@@ -35,6 +36,7 @@ const SeedsPage: React.FC = () => {
         feminized: newFeminized,
         open: newOpen,
         dateAcquired: new Date().toISOString(),
+        available: isAvailable,
       });
       setNewSeedBreeder("");
       setNewSeedStrain("");
@@ -91,7 +93,16 @@ const SeedsPage: React.FC = () => {
           }
           label="Open"
         />
-        <Button variant="contained" onClick={handleAddSeed}>
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={isAvailable}
+              onChange={(e) => setIsAvailable(e.target.checked)}
+            />
+          }
+          label="Available?"
+        />
+        <Button size="small" variant="contained" onClick={handleAddSeed}>
           Add Seed
         </Button>
       </Box>
@@ -103,8 +114,9 @@ const SeedsPage: React.FC = () => {
             <TableCell>Strain</TableCell>
             <TableCell>Generation</TableCell>
             <TableCell># of Seeds</TableCell>
-            <TableCell>Feminized</TableCell>
-            <TableCell>Open</TableCell>
+            <TableCell>Feminized?</TableCell>
+            <TableCell>Open?</TableCell>
+            <TableCell>Available?</TableCell>
             <TableCell>Actions</TableCell>
           </TableRow>
         </TableHead>
@@ -117,6 +129,7 @@ const SeedsPage: React.FC = () => {
               <TableCell>{seed.numSeeds}</TableCell>
               <TableCell>{seed.feminized ? "Yes" : "No"}</TableCell>
               <TableCell>{seed.open ? "Yes" : "No"}</TableCell>
+              <TableCell>{seed.available ? "Yes" : "No"}</TableCell>
               <TableCell>
                 <Button
                   variant="outlined"
