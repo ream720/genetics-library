@@ -16,7 +16,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 20 # You can adjust the node version if needed
+          node-version: 20
           cache: npm
 
       - name: Install dependencies
@@ -24,6 +24,14 @@ jobs:
 
       - name: Build project
         run: npm run build
+        env: # Pass secrets as environment variables
+          VITE_APP_FIREBASE_API_KEY: ${{ secrets.VITE_APP_FIREBASE_API_KEY }}
+          VITE_APP_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_APP_FIREBASE_AUTH_DOMAIN }}
+          VITE_APP_FIREBASE_PROJECT_ID: ${{ secrets.VITE_APP_FIREBASE_PROJECT_ID }}
+          VITE_APP_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_APP_FIREBASE_STORAGE_BUCKET }}
+          VITE_APP_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_APP_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_APP_FIREBASE_APP_ID: ${{ secrets.VITE_APP_FIREBASE_APP_ID }}
+          VITE_APP_FIREBASE_MEASUREMENT_ID: ${{ secrets.VITE_APP_FIREBASE_MEASUREMENT_ID }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
