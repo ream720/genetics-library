@@ -17,37 +17,43 @@ import {
   FormControlLabel,
 } from "@mui/material";
 import { useCloneContext } from "../context/CloneContext";
-import { v4 as uuidv4 } from "uuid";
 
 const ClonesPage: React.FC = () => {
-  const { clones, addClone, deleteClone } = useCloneContext();
+  const { clones, addClone, deleteClone, refetchClones } = useCloneContext();
   const [newBreeder, setNewBreeder] = React.useState("");
   const [newStrain, setNewStrain] = React.useState("");
   const [newCutName, setNewCutName] = React.useState("");
   const [newGeneration, setNewGeneration] = React.useState("");
-  const [newSex, setNewSex] = React.useState("Male");
+  const [newSex, setNewSex] = React.useState<"Male" | "Female">("Male");
   const [newBreederCut, setNewBreederCut] = React.useState(false);
   const [newAvailable, setNewAvailable] = React.useState(false);
 
-  const handleAddClone = () => {
+  const handleAddClone = async () => {
     if (newBreeder && newStrain) {
-      addClone({
-        id: uuidv4(),
-        breeder: newBreeder,
-        strain: newStrain,
-        cutName: newCutName,
-        generation: newGeneration,
-        sex: newSex as "Male" | "Female",
-        breederCut: newBreederCut,
-        available: newAvailable,
-        dateAcquired: new Date().toISOString(),
-      });
-      setNewBreeder("");
-      setNewStrain("");
-      setNewGeneration("");
-      setNewSex("Male");
-      setNewBreederCut(false);
-      setNewAvailable(false);
+      try {
+        await addClone({
+          // id field should not be included here since firestore will be creating it for us
+          breeder: newBreeder,
+          strain: newStrain,
+          cutName: newCutName,
+          generation: newGeneration,
+          sex: newSex,
+          breederCut: newBreederCut,
+          available: newAvailable,
+          dateAcquired: new Date().toISOString(),
+        });
+        // Reset form fields
+        setNewBreeder("");
+        setNewStrain("");
+        setNewCutName("");
+        setNewGeneration("");
+        setNewSex("Male");
+        setNewBreederCut(false);
+        setNewAvailable(false);
+      } catch (error) {
+        console.error("Error adding clone: ", error);
+        // Optionally display an error message to the user
+      }
     }
   };
 
@@ -85,7 +91,7 @@ const ClonesPage: React.FC = () => {
           <InputLabel>Sex</InputLabel>
           <Select
             value={newSex}
-            onChange={(e) => setNewSex(e.target.value)}
+            onChange={(e) => setNewSex(e.target.value as "Male" | "Female")}
             label="Sex"
           >
             <MenuItem value="Male">Male</MenuItem>
@@ -142,7 +148,7 @@ const ClonesPage: React.FC = () => {
                 <Button
                   variant="outlined"
                   color="error"
-                  onClick={() => deleteClone(clone.id)}
+                  onClick={() => deleteClone(clone.id!)}
                 >
                   Delete
                 </Button>
@@ -151,6 +157,14 @@ const ClonesPage: React.FC = () => {
           ))}
         </TableBody>
       </Table>
+      <Button
+        sx={{ mt: 2 }}
+        size="small"
+        variant="contained"
+        onClick={refetchClones}
+      >
+        Refetch Clones
+      </Button>
     </Box>
   );
 };

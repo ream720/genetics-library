@@ -1,39 +1,141 @@
-import { createContext, useState, useContext } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import { Clone } from "../types";
+import { app } from "../../firebaseConfig";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs,
+  doc,
+  deleteDoc,
+  updateDoc,
+  query,
+  where,
+} from "firebase/firestore";
+import { useAuth } from "./AuthContext";
 
 interface CloneContextProps {
   clones: Clone[];
-  addClone: (clone: Clone) => void;
-  updateClone: (id: string, updatedClone: Partial<Clone>) => void;
-  deleteClone: (id: string) => void;
+  addClone: (clone: Clone) => Promise<void>;
+  updateClone: (id: string, updatedClone: Partial<Clone>) => Promise<void>;
+  deleteClone: (id: string) => Promise<void>;
+  refetchClones: () => Promise<void>;
 }
 
 const CloneContext = createContext<CloneContextProps | undefined>(undefined);
+
+const db = getFirestore(app);
+const clonesCollectionRef = collection(db, "clones");
 
 export const CloneProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [clones, setClones] = useState<Clone[]>([]);
+  const { currentUser } = useAuth();
 
-  const addClone = (clone: Clone) => {
-    setClones((prev) => [...prev, clone]);
+  const fetchClones = useCallback(async () => {
+    try {
+      if (!currentUser) {
+        setClones([]);
+        return;
+      }
+      const q = query(
+        clonesCollectionRef,
+        where("userId", "==", currentUser.uid)
+      );
+      const querySnapshot = await getDocs(q);
+      const clonesData = querySnapshot.docs.map(
+        (doc) =>
+          ({
+            id: doc.id,
+            ...doc.data(),
+          } as Clone)
+      );
+      setClones(clonesData);
+    } catch (error) {
+      console.error("Error fetching documents: ", error);
+    }
+  }, [currentUser?.uid]);
+
+  const addClone = async (clone: Clone) => {
+    try {
+      if (!currentUser) {
+        console.error("Cannot add clone: User not logged in.");
+        return;
+      }
+
+      const cloneData = {
+        ...clone,
+        userId: currentUser.uid,
+      };
+
+      // Optimistic Update
+      setClones((prevClones) => [...prevClones, cloneData as Clone]);
+
+      await addDoc(clonesCollectionRef, cloneData);
+    } catch (error) {
+      console.error("Error adding document: ", error);
+
+      // Rollback
+      setClones((prevClones) => prevClones.filter((c) => c.id !== clone.id));
+
+      throw error;
+    }
   };
 
-  const updateClone = (id: string, updatedClone: Partial<Clone>) => {
-    setClones((prev) =>
-      prev.map((clone) =>
-        clone.id === id ? { ...clone, ...updatedClone } : clone
-      )
-    );
+  const updateClone = async (id: string, updatedClone: Partial<Clone>) => {
+    try {
+      const cloneDocRef = doc(db, "clones", id);
+
+      // Optimistic Update
+      setClones((prevClones) =>
+        prevClones.map((c) => (c.id === id ? { ...c, ...updatedClone } : c))
+      );
+
+      await updateDoc(cloneDocRef, updatedClone);
+    } catch (error) {
+      console.error("Error updating document: ", error);
+
+      // Rollback
+      await fetchClones();
+
+      throw error;
+    }
   };
 
-  const deleteClone = (id: string) => {
-    setClones((prev) => prev.filter((clone) => clone.id !== id));
+  const deleteClone = async (id: string) => {
+    try {
+      // Optimistic Update
+      setClones((prevClones) => prevClones.filter((c) => c.id !== id));
+
+      await deleteDoc(doc(db, "clones", id));
+    } catch (error) {
+      console.error("Error deleting document: ", error);
+
+      // Rollback
+      await fetchClones();
+
+      throw error;
+    }
   };
+
+  const refetchClones = useCallback(async () => {
+    await fetchClones();
+  }, [fetchClones]);
+
+  useEffect(() => {
+    fetchClones();
+  }, [fetchClones]);
 
   return (
     <CloneContext.Provider
-      value={{ clones, addClone, updateClone, deleteClone }}
+      value={{ clones, addClone, updateClone, deleteClone, refetchClones }}
     >
       {children}
     </CloneContext.Provider>

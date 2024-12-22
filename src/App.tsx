@@ -6,6 +6,7 @@ import {
   Route,
   useLocation,
   useNavigate,
+  Navigate,
 } from "react-router-dom";
 import {
   AppBar,
@@ -17,6 +18,7 @@ import {
   Switch,
   Tabs,
   Tab,
+  IconButton,
 } from "@mui/material";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
@@ -24,68 +26,130 @@ import SeedsPage from "./pages/SeedsPage";
 import { SeedProvider } from "./context/SeedContext";
 import ClonesPage from "./pages/ClonesPage";
 import { CloneProvider } from "./context/CloneContext";
+import { AuthProvider, useAuth } from "./context/AuthContext";
+import Login from "./components/Login";
+import Signup from "./components/Signup";
+import LogoutIcon from "@mui/icons-material/Logout";
 
-// Wrap the entire application with Router
+interface PrivateRouteProps {
+  children: React.ReactNode;
+}
+
+// PrivateRoute component to protect routes that require authentication
+const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
+  const { currentUser } = useAuth();
+  return currentUser ? <>{children}</> : <Navigate to="/login" />;
+};
+
+// AppWithRouter component with routing and theme
 const AppWithRouter: React.FC = () => {
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const { logout } = useAuth();
+  const navigate = useNavigate();
 
   const handleThemeChange = () => {
     setIsDarkMode(!isDarkMode);
   };
 
   const location = useLocation();
-  const navigate = useNavigate();
+
   const handleTabChange = (_event: React.SyntheticEvent, newValue: string) => {
     navigate(newValue);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate("/login"); // Redirect to login after logout
+    } catch (error) {
+      console.error("Failed to log out", error);
+    }
   };
 
   return (
     <ThemeProvider theme={isDarkMode ? darkTheme : lightTheme}>
       <CssBaseline />
-      <SeedProvider>
-        <CloneProvider>
-          <AppBar position="static">
-            <Toolbar>
-              <Typography variant="h6" sx={{ flexGrow: 1 }}>
-                Genetics Library
-              </Typography>
-              <Tabs
-                value={location.pathname}
-                onChange={handleTabChange}
-                textColor="inherit"
-                indicatorColor="secondary"
-              >
-                <Tab label="Dashboard" value="/" />
-                <Tab label="Profile" value="/profile" />
-                <Tab label="Seeds" value="/seeds" />
-                <Tab label="Clones" value="/clones" />
-              </Tabs>
-              <Switch
-                checked={isDarkMode}
-                onChange={handleThemeChange}
-                color="default"
-              />
-            </Toolbar>
-          </AppBar>
-          <Box sx={{ mt: 2 }}>
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/seeds" element={<SeedsPage />} />
-              <Route path="/clones" element={<ClonesPage />} />
-            </Routes>
-          </Box>
-        </CloneProvider>
-      </SeedProvider>
+      <AppBar position="static">
+        <Toolbar>
+          <Typography variant="h6" sx={{ flexGrow: 1 }}>
+            Genetics Library
+          </Typography>
+          <Tabs
+            value={location.pathname}
+            onChange={handleTabChange}
+            textColor="inherit"
+            indicatorColor="secondary"
+          >
+            <Tab label="Dashboard" value="/" />
+            <Tab label="Profile" value="/profile" />
+            <Tab label="Seeds" value="/seeds" />
+            <Tab label="Clones" value="/clones" />
+            <Tab label="Login" value="/login" />
+            <Tab label="Signup" value="/signup" />
+          </Tabs>
+          <Switch
+            checked={isDarkMode}
+            onChange={handleThemeChange}
+            color="default"
+          />
+          <IconButton color="inherit" onClick={handleLogout}>
+            <LogoutIcon />
+          </IconButton>
+        </Toolbar>
+      </AppBar>
+      <Box sx={{ mt: 2 }}>
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <PrivateRoute>
+                <Dashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <PrivateRoute>
+                <Profile />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/seeds"
+            element={
+              <PrivateRoute>
+                <SeedsPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/clones"
+            element={
+              <PrivateRoute>
+                <ClonesPage />
+              </PrivateRoute>
+            }
+          />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+        </Routes>
+      </Box>
     </ThemeProvider>
   );
 };
 
-// Wrap the AppWithRouter component with Router
+// Main App component wrapped with Router and AuthProvider
 const App: React.FC = () => {
   return (
     <Router>
-      <AppWithRouter />
+      <AuthProvider>
+        <SeedProvider>
+          <CloneProvider>
+            <AppWithRouter />
+          </CloneProvider>
+        </SeedProvider>
+      </AuthProvider>
     </Router>
   );
 };

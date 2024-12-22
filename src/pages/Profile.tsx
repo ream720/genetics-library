@@ -1,74 +1,69 @@
-import React from "react";
-import {
-  Box,
-  Typography,
-  Avatar,
-  Divider,
-  List,
-  ListItem,
-  ListItemText,
-} from "@mui/material";
-import { useSeedContext } from "../context/SeedContext";
-import { useCloneContext } from "../context/CloneContext";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import CancelIcon from "@mui/icons-material/Cancel";
+import React, { useState, useEffect } from "react";
+import { useAuth } from "../context/AuthContext";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../../firebaseConfig";
+import { Avatar, Typography, Box } from "@mui/material";
 
-const Profile: React.FC = () => {
-  const { seeds } = useSeedContext();
-  const { clones } = useCloneContext();
+interface UserProfile {
+  email: string;
+  username: string;
+}
 
-  // Mock user data
-  const username = "John Doe";
-  const avatarUrl = "https://i.pravatar.cc/150";
+function Profile() {
+  const { currentUser } = useAuth();
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Featured Seeds and Clones (example: top 3)
-  const featuredSeeds = seeds.slice(0, 3);
-  const featuredClones = clones.slice(0, 3);
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!currentUser) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const userDocRef = doc(db, "users", currentUser.uid);
+        const userDocSnap = await getDoc(userDocRef);
+
+        if (userDocSnap.exists()) {
+          setUserProfile(userDocSnap.data() as UserProfile);
+        } else {
+          setError("User profile not found.");
+        }
+      } catch (error) {
+        console.error("Error fetching user profile:", error);
+        setError("Failed to load user profile.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserProfile();
+  }, [currentUser]);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
 
   return (
     <Box sx={{ p: 3 }}>
-      <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-        <Avatar alt={username} src={avatarUrl} sx={{ width: 80, height: 80 }} />
-        <Typography variant="h5" sx={{ ml: 2 }}>
-          {username}
-        </Typography>
-      </Box>
-
-      <Divider sx={{ mb: 3 }} />
-
-      <Typography variant="h6" gutterBottom>
-        Featured Seeds
+      <Avatar
+        src={`https://source.unsplash.com/random`}
+        alt={userProfile?.username}
+        sx={{ width: 80, height: 80, mb: 2 }}
+      />
+      <Typography variant="h4" gutterBottom>
+        {userProfile?.username}
       </Typography>
-      <List>
-        {featuredSeeds.map((seed) => (
-          <ListItem key={seed.id}>
-            <ListItemText
-              primary={seed.strain}
-              secondary={`${seed.breeder} // Available? ${seed.available}`}
-            />
-            //change true/false to icon
-          </ListItem>
-        ))}
-      </List>
-
-      <Divider sx={{ my: 3 }} />
-
-      <Typography variant="h6" gutterBottom>
-        Featured Clones
-      </Typography>
-      <List>
-        {featuredClones.map((clone) => (
-          <ListItem key={clone.id}>
-            <ListItemText
-              primary={`${clone.strain} // ${clone.cutName}`}
-              secondary={`${clone.breeder}`}
-            />
-            {clone.available ? <CheckCircleIcon /> : <CancelIcon />}
-          </ListItem>
-        ))}
-      </List>
+      <Typography variant="body1">Email: {userProfile?.email}</Typography>
+      {/* Add more profile information here */}
     </Box>
   );
-};
+}
 
 export default Profile;

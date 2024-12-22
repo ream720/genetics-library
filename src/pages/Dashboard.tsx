@@ -1,5 +1,6 @@
 import React from "react";
-import { Box, Typography, Button } from "@mui/material";
+import { Box, Typography, Button, Card } from "@mui/material";
+import { MonetizationOnOutlined } from "@mui/icons-material";
 
 const Dashboard: React.FC = () => {
   return (
@@ -15,12 +16,42 @@ const Dashboard: React.FC = () => {
       <Typography variant="h4" gutterBottom>
         Genetics Library Dashboard
       </Typography>
-      <Typography variant="body1" gutterBottom>
-        Manage and track your seeds, clones, and mother plants.
-      </Typography>
-      <Button variant="contained" color="primary">
-        Add New Entry
-      </Button>
+      <Card sx={{ p: 2, mb: 2 }}>
+        <Typography variant="body1" gutterBottom>
+          Welcome to the Genetics Library Dashboard! Set your top 3 seeds,
+          clones, and mother plants so that other users can easily see them on
+          your Profile! Manage your contact options and 3rd party app ($)
+          guidelines.
+        </Typography>
+      </Card>
+
+      <Card sx={{ p: 2, mb: 2 }}>
+        <div>list of seeds</div>
+        <Button variant="contained" color="primary">
+          Set Top Seeds
+        </Button>
+      </Card>
+      <Card sx={{ p: 2, mb: 2 }}>
+        <div>list of clones</div>
+        <Button variant="contained" color="primary">
+          Set Top Clones
+        </Button>
+      </Card>
+      <Card sx={{ p: 2, mb: 2 }}>
+        <div>list of mothers</div>
+        <Button variant="contained" color="primary">
+          Set Top Mother Plants
+        </Button>
+      </Card>
+      <Card sx={{ p: 2, mb: 2 }}>
+        <Box sx={{ display: "flex" }}>
+          <MonetizationOnOutlined />
+          <div>list of accepted payment options/apps</div>
+        </Box>
+        <Button variant="contained" color="primary">
+          Set Top Payment Options
+        </Button>
+      </Card>
     </Box>
   );
 };
