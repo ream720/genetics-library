@@ -15,10 +15,10 @@ import {
   Box,
   CssBaseline,
   ThemeProvider,
-  Switch,
   Tabs,
   Tab,
   IconButton,
+  Tooltip,
 } from "@mui/material";
 import LogoutIcon from "@mui/icons-material/Logout";
 import Dashboard from "./pages/Dashboard";
@@ -31,6 +31,8 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import Login from "./components/Login";
 import Signup from "./components/Signup";
 import useIdleTimer from "./hooks/useIdleTimer";
+import WbSunnyOutlinedIcon from "@mui/icons-material/WbSunnyOutlined"; // Sun icon for light mode
+import ModeNightOutlinedIcon from "@mui/icons-material/ModeNightOutlined";
 
 interface PrivateRouteProps {
   children: React.ReactNode;
@@ -98,20 +100,22 @@ const AppWithRouter: React.FC = () => {
             {!currentUser && (
               <>
                 <Tab label="Login" value="/login" />
-                <Tab label="Signup" value="/signup" />
               </>
             )}
           </Tabs>
-          <Switch
-            checked={isDarkMode}
-            onChange={handleThemeChange}
-            color="default"
-          />
-          {/* Add logout button */}
+          <IconButton onClick={handleThemeChange}>
+            {isDarkMode ? <ModeNightOutlinedIcon /> : <WbSunnyOutlinedIcon />}
+          </IconButton>
           {currentUser && (
-            <IconButton color="inherit" onClick={handleLogout}>
-              <LogoutIcon />
-            </IconButton>
+            <Tooltip title="Logout">
+              <IconButton
+                aria-description="Logout"
+                color="inherit"
+                onClick={handleLogout}
+              >
+                <LogoutIcon />
+              </IconButton>
+            </Tooltip>
           )}
         </Toolbar>
       </AppBar>

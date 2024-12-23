@@ -1,6 +1,6 @@
 import React from "react";
-import { Box, Typography, Button, Card } from "@mui/material";
-import { MonetizationOnOutlined } from "@mui/icons-material";
+import { Box, Typography, Button, Card, Stack } from "@mui/material";
+import { CrisisAlert, MonetizationOnOutlined } from "@mui/icons-material";
 
 const Dashboard: React.FC = () => {
   return (
@@ -16,7 +16,14 @@ const Dashboard: React.FC = () => {
       <Typography variant="h4" gutterBottom>
         Genetics Library Dashboard
       </Typography>
-      <Card sx={{ p: 2, mb: 2 }}>
+      <Card sx={{ p: 2, mb: 2, maxWidth: 800 }}>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <CrisisAlert color="error"></CrisisAlert>
+          <Typography variant="h6" gutterBottom color="yellow">
+            this page basically doesn't work yet
+          </Typography>
+        </Stack>
+
         <Typography variant="body1" gutterBottom>
           Welcome to the Genetics Library Dashboard! Set your top 3 seeds,
           clones, and mother plants so that other users can easily see them on

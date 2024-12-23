@@ -26,7 +26,7 @@ interface SeedOrder {
 }
 
 const SeedsPage: React.FC = () => {
-  const { seeds, addSeed, deleteSeed, refetchSeeds } = useSeedContext();
+  const { seeds, addSeed, deleteSeed } = useSeedContext();
   const [newSeedBreeder, setNewSeedBreeder] = React.useState("");
   const [newSeedStrain, setNewSeedStrain] = React.useState("");
   const [newSeedGeneration, setNewSeedGeneration] = React.useState("");
@@ -344,14 +344,6 @@ const SeedsPage: React.FC = () => {
           </TableBody>
         </Table>
       </Box>
-      <Button
-        sx={{ mt: 2 }}
-        size="small"
-        variant="contained"
-        onClick={refetchSeeds}
-      >
-        Refetch Seeds
-      </Button>
     </Box>
   );
 };

@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
-import { Avatar, Typography, Box } from "@mui/material";
+import { Avatar, Typography, Box, Stack } from "@mui/material";
+import { CrisisAlert } from "@mui/icons-material";
 
 interface UserProfile {
   email: string;
@@ -62,6 +63,12 @@ function Profile() {
       </Typography>
       <Typography variant="body1">Email: {userProfile?.email}</Typography>
       {/* Add more profile information here */}
+      <Stack direction="row" spacing={1} alignItems="center">
+        <CrisisAlert color="error"></CrisisAlert>
+        <Typography variant="h6" gutterBottom color="yellow">
+          this page basically doesn't work yet
+        </Typography>
+      </Stack>
     </Box>
   );
 }

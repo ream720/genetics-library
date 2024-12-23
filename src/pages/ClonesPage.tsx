@@ -30,7 +30,7 @@ interface CloneOrder {
 }
 
 const ClonesPage: React.FC = () => {
-  const { clones, addClone, deleteClone, refetchClones } = useCloneContext();
+  const { clones, addClone, deleteClone } = useCloneContext();
   const [newBreeder, setNewBreeder] = React.useState("");
   const [newStrain, setNewStrain] = React.useState("");
   const [newCutName, setNewCutName] = React.useState("");
@@ -362,14 +362,6 @@ const ClonesPage: React.FC = () => {
           </TableBody>
         </Table>
       </Box>
-      <Button
-        sx={{ mt: 2 }}
-        size="small"
-        variant="contained"
-        onClick={refetchClones}
-      >
-        Refetch Clones
-      </Button>
     </Box>
   );
 };
