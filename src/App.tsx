@@ -20,6 +20,7 @@ import {
   Tab,
   IconButton,
 } from "@mui/material";
+import LogoutIcon from "@mui/icons-material/Logout";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import SeedsPage from "./pages/SeedsPage";
@@ -29,7 +30,6 @@ import { CloneProvider } from "./context/CloneContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import Login from "./components/Login";
 import Signup from "./components/Signup";
-import LogoutIcon from "@mui/icons-material/Logout";
 
 interface PrivateRouteProps {
   children: React.ReactNode;
@@ -44,7 +44,7 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
 // AppWithRouter component with routing and theme
 const AppWithRouter: React.FC = () => {
   const [isDarkMode, setIsDarkMode] = useState(true);
-  const { logout } = useAuth();
+  const { currentUser, logout } = useAuth(); // Get currentUser and logout from context
   const navigate = useNavigate();
 
   const handleThemeChange = () => {
@@ -84,17 +84,25 @@ const AppWithRouter: React.FC = () => {
             <Tab label="Profile" value="/profile" />
             <Tab label="Seeds" value="/seeds" />
             <Tab label="Clones" value="/clones" />
-            <Tab label="Login" value="/login" />
-            <Tab label="Signup" value="/signup" />
+            {/* Conditionally render Login and Signup tabs */}
+            {!currentUser && (
+              <>
+                <Tab label="Login" value="/login" />
+                <Tab label="Signup" value="/signup" />
+              </>
+            )}
           </Tabs>
           <Switch
             checked={isDarkMode}
             onChange={handleThemeChange}
             color="default"
           />
-          <IconButton color="inherit" onClick={handleLogout}>
-            <LogoutIcon />
-          </IconButton>
+          {/* Add logout button */}
+          {currentUser && (
+            <IconButton color="inherit" onClick={handleLogout}>
+              <LogoutIcon />
+            </IconButton>
+          )}
         </Toolbar>
       </AppBar>
       <Box sx={{ mt: 2 }}>
