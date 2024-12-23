@@ -30,6 +30,7 @@ import { CloneProvider } from "./context/CloneContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import Login from "./components/Login";
 import Signup from "./components/Signup";
+import useIdleTimer from "./hooks/useIdleTimer";
 
 interface PrivateRouteProps {
   children: React.ReactNode;
@@ -65,6 +66,15 @@ const AppWithRouter: React.FC = () => {
       console.error("Failed to log out", error);
     }
   };
+
+  // Set timeout to 15 minutes (900000 milliseconds)
+  const IDLE_TIMEOUT = 900000;
+
+  // Call useIdleTimer hook
+  useIdleTimer({
+    timeout: IDLE_TIMEOUT,
+    onIdle: handleLogout, // Pass handleLogout as the onIdle callback
+  });
 
   return (
     <ThemeProvider theme={isDarkMode ? darkTheme : lightTheme}>
