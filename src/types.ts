@@ -8,6 +8,7 @@ export interface Seed {
   open: boolean; // Whether the seed packet is open
   available: boolean;
   dateAcquired: string; // Date the seed was acquired
+  userId?: string;
 }
 
 export interface Clone {
@@ -20,4 +21,5 @@ export interface Clone {
   breederCut: boolean; // True/False
   available: boolean; // True/False
   dateAcquired: string; // Date the clone was acquired
+  userId?: string;
 }

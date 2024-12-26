@@ -4,6 +4,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
 import { Avatar, Typography, Box, Stack } from "@mui/material";
 import { CrisisAlert } from "@mui/icons-material";
+import { useParams } from "react-router-dom";
 
 interface UserProfile {
   email: string;
@@ -15,16 +16,20 @@ function Profile() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { userId } = useParams<{ userId: string }>(); // Get the userId from URL params
 
   useEffect(() => {
     const fetchUserProfile = async () => {
-      if (!currentUser) {
+      // Determine whether to fetch the logged-in user's profile or another user's profile
+      const userToFetch = userId ? userId : currentUser?.uid;
+
+      if (!userToFetch) {
         setLoading(false);
         return;
       }
 
       try {
-        const userDocRef = doc(db, "users", currentUser.uid);
+        const userDocRef = doc(db, "users", userToFetch);
         const userDocSnap = await getDoc(userDocRef);
 
         if (userDocSnap.exists()) {
@@ -41,7 +46,7 @@ function Profile() {
     };
 
     fetchUserProfile();
-  }, [currentUser]);
+  }, [currentUser, userId]);
 
   if (loading) {
     return <div>Loading...</div>;

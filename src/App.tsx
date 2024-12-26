@@ -31,8 +31,9 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import Login from "./components/Login";
 import Signup from "./components/Signup";
 import useIdleTimer from "./hooks/useIdleTimer";
-import WbSunnyOutlinedIcon from "@mui/icons-material/WbSunnyOutlined"; // Sun icon for light mode
+import WbSunnyOutlinedIcon from "@mui/icons-material/WbSunnyOutlined";
 import ModeNightOutlinedIcon from "@mui/icons-material/ModeNightOutlined";
+import SearchPage from "./pages/SearchPage";
 
 interface PrivateRouteProps {
   children: React.ReactNode;
@@ -41,7 +42,13 @@ interface PrivateRouteProps {
 // PrivateRoute component to protect routes that require authentication
 const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
   const { currentUser } = useAuth();
-  return currentUser ? <>{children}</> : <Navigate to="/login" />;
+  const location = useLocation();
+  // If the user is not logged in, redirect to the login page with the current location's pathname as state
+  return currentUser ? (
+    <>{children}</>
+  ) : (
+    <Navigate to="/login" state={{ from: location.pathname }} />
+  );
 };
 
 // AppWithRouter component with routing and theme
@@ -55,6 +62,17 @@ const AppWithRouter: React.FC = () => {
   };
 
   const location = useLocation();
+
+  // Function to determine the active tab value based on the current path
+  const getActiveTabValue = () => {
+    if (location.pathname === "/") return "/";
+    if (location.pathname.startsWith("/profile")) return "/profile";
+    if (location.pathname.startsWith("/seeds")) return "/seeds";
+    if (location.pathname.startsWith("/clones")) return "/clones";
+    if (location.pathname.startsWith("/search")) return "/search";
+    if (location.pathname.startsWith("/login")) return "/login";
+    return false; // Return false if no match (to indicate no active tab)
+  };
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: string) => {
     navigate(newValue);
@@ -87,7 +105,7 @@ const AppWithRouter: React.FC = () => {
             Genetics Library
           </Typography>
           <Tabs
-            value={location.pathname}
+            value={getActiveTabValue()} // Use the function to get active tab value
             onChange={handleTabChange}
             textColor="inherit"
             indicatorColor="secondary"
@@ -96,12 +114,9 @@ const AppWithRouter: React.FC = () => {
             <Tab label="Profile" value="/profile" />
             <Tab label="Seeds" value="/seeds" />
             <Tab label="Clones" value="/clones" />
-            {/* Conditionally render Login and Signup tabs */}
-            {!currentUser && (
-              <>
-                <Tab label="Login" value="/login" />
-              </>
-            )}
+            <Tab label="Search" value="/search" />
+            {/* Conditionally render Login tab */}
+            {!currentUser && <Tab label="Login" value="/login" />}
           </Tabs>
           <IconButton onClick={handleThemeChange}>
             {isDarkMode ? <ModeNightOutlinedIcon /> : <WbSunnyOutlinedIcon />}
@@ -138,6 +153,14 @@ const AppWithRouter: React.FC = () => {
             }
           />
           <Route
+            path="/profile/:userId"
+            element={
+              <PrivateRoute>
+                <Profile />
+              </PrivateRoute>
+            }
+          />
+          <Route
             path="/seeds"
             element={
               <PrivateRoute>
@@ -150,6 +173,14 @@ const AppWithRouter: React.FC = () => {
             element={
               <PrivateRoute>
                 <ClonesPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/search"
+            element={
+              <PrivateRoute>
+                <SearchPage />
               </PrivateRoute>
             }
           />

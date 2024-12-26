@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   TextField,
   Button,
@@ -13,13 +13,23 @@ import {
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 
+// Define a type for the state that we pass to Navigate
+interface LocationState {
+  from?: {
+    pathname: string;
+  };
+}
+
 function Login() {
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
   const { login } = useAuth();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false); // For password visibility toggle
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Use useLocation with the defined type
+  const location = useLocation() as { state?: LocationState };
   const navigate = useNavigate();
 
   async function handleSubmit(e: React.FormEvent) {
@@ -30,7 +40,8 @@ function Login() {
       setLoading(true);
       if (emailRef.current && passwordRef.current) {
         await login(emailRef.current.value, passwordRef.current.value);
-        navigate("/");
+        // Use optional chaining and nullish coalescing
+        navigate(location.state?.from?.pathname ?? "/");
       }
     } catch {
       setError("Failed to log in");
@@ -46,7 +57,6 @@ function Login() {
   return (
     <Stack spacing={3} sx={{ p: 3, maxWidth: 400 }}>
       <Paper elevation={3} sx={{ p: 3 }}>
-        {/* Use Alert for error display */}
         {error && <Alert severity="error">{error}</Alert>}
 
         <form onSubmit={handleSubmit}>
@@ -62,7 +72,7 @@ function Login() {
           <TextField
             sx={{ mb: 2 }}
             label="Password"
-            type={showPassword ? "text" : "password"} // Toggle password visibility
+            type={showPassword ? "text" : "password"}
             placeholder="Password"
             inputRef={passwordRef}
             required
@@ -89,7 +99,6 @@ function Login() {
         <div>
           Don't have an account? <Link to="/signup">Sign up</Link>
         </div>
-        {/* Add a "Forgot Password" link */}
         <div>
           <Link to="/forgot-password">Forgot Password?</Link>
         </div>
