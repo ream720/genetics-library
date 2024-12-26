@@ -1,27 +1,49 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
-import { doc, getDoc } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore";
 import { db } from "../../firebaseConfig";
-import { Avatar, Typography, Box, Stack } from "@mui/material";
-import { CrisisAlert } from "@mui/icons-material";
 import { useParams } from "react-router-dom";
+import {
+  Avatar,
+  Typography,
+  Box,
+  Card,
+  CardContent,
+  Grid,
+  Chip,
+  CircularProgress,
+  Stack,
+} from "@mui/material";
+import { Seed, Clone } from "../types";
 
 interface UserProfile {
   email: string;
   username: string;
+  photoURL?: string;
 }
 
 function Profile() {
   const { currentUser } = useAuth();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [profileSeeds, setProfileSeeds] = useState<Seed[]>([]);
+  const [clones, setClones] = useState<Clone[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { userId } = useParams<{ userId: string }>(); // Get the userId from URL params
+  const { userId } = useParams<{ userId: string }>();
 
   useEffect(() => {
-    const fetchUserProfile = async () => {
-      // Determine whether to fetch the logged-in user's profile or another user's profile
-      const userToFetch = userId ? userId : currentUser?.uid;
+    const fetchUserData = async () => {
+      setLoading(true); // Reset loading state on new fetch
+      setError(null); // Reset error state on new fetch
+
+      const userToFetch = userId || currentUser?.uid;
 
       if (!userToFetch) {
         setLoading(false);
@@ -29,51 +51,232 @@ function Profile() {
       }
 
       try {
+        // Fetch user profile
         const userDocRef = doc(db, "users", userToFetch);
         const userDocSnap = await getDoc(userDocRef);
 
         if (userDocSnap.exists()) {
           setUserProfile(userDocSnap.data() as UserProfile);
+
+          // Fetch user's seeds
+          const seedsQuery = query(
+            collection(db, "seeds"),
+            where("userId", "==", userToFetch)
+          );
+          const seedsSnapshot = await getDocs(seedsQuery);
+          const seedsData = seedsSnapshot.docs.map(
+            (doc) =>
+              ({
+                id: doc.id,
+                ...doc.data(),
+              } as Seed)
+          );
+          setProfileSeeds(seedsData);
+
+          // Fetch user's clones
+          const clonesQuery = query(
+            collection(db, "clones"),
+            where("userId", "==", userToFetch)
+          );
+          const clonesSnapshot = await getDocs(clonesQuery);
+          const clonesData = clonesSnapshot.docs.map(
+            (doc) =>
+              ({
+                id: doc.id,
+                ...doc.data(),
+              } as Clone)
+          );
+          setClones(clonesData);
         } else {
           setError("User profile not found.");
         }
       } catch (error) {
-        console.error("Error fetching user profile:", error);
-        setError("Failed to load user profile.");
+        console.error("Error fetching user data:", error);
+        setError("Failed to load user data.");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchUserProfile();
-  }, [currentUser, userId]);
+    fetchUserData();
+  }, [currentUser, userId]); // Dependencies include userId to refetch when it changes
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="100vh"
+      >
+        <CircularProgress />
+      </Box>
+    );
   }
 
   if (error) {
-    return <div>Error: {error}</div>;
+    return (
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="100vh"
+      >
+        <Typography color="error">{error}</Typography>
+      </Box>
+    );
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Avatar
-        src={`https://source.unsplash.com/random`}
-        alt={userProfile?.username}
-        sx={{ width: 80, height: 80, mb: 2 }}
-      />
-      <Typography variant="h4" gutterBottom>
-        {userProfile?.username}
-      </Typography>
-      <Typography variant="body1">Email: {userProfile?.email}</Typography>
-      {/* Add more profile information here */}
-      <Stack direction="row" spacing={1} alignItems="center">
-        <CrisisAlert color="error"></CrisisAlert>
-        <Typography variant="h6" gutterBottom color="yellow">
-          this page basically doesn't work yet
-        </Typography>
-      </Stack>
+    <Box sx={{ maxWidth: 1200, margin: "0 auto", p: 3 }}>
+      {/* Profile Header */}
+      <Box sx={{ display: "flex", alignItems: "center", mb: 4, gap: 2 }}>
+        <Avatar src={userProfile?.photoURL} sx={{ width: 80, height: 80 }} />
+        <Box>
+          <Typography variant="h4">{userProfile?.username}</Typography>
+          <Typography color="text.secondary">
+            User ID: {userId || currentUser?.uid}
+          </Typography>
+          <Typography color="text.secondary">{userProfile?.email}</Typography>
+        </Box>
+      </Box>
+
+      {/* Seeds Section */}
+      <Card sx={{ mb: 4 }}>
+        <CardContent>
+          <Typography variant="h5" gutterBottom>
+            Seeds Collection
+          </Typography>
+          {profileSeeds.length === 0 ? (
+            <Typography color="text.secondary">No seeds added yet.</Typography>
+          ) : (
+            <Grid container spacing={3}>
+              {profileSeeds.map((seed) => (
+                <Grid item xs={12} sm={6} md={4} key={seed.id}>
+                  <Card variant="outlined">
+                    <CardContent>
+                      {/* Rest of the seed card content remains the same */}
+                      <Stack spacing={1}>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "flex-start",
+                          }}
+                        >
+                          <Typography variant="h6">{seed.strain}</Typography>
+                          <Chip
+                            label={seed.available ? "Available" : "Unavailable"}
+                            color={seed.available ? "success" : "default"}
+                            size="small"
+                          />
+                        </Box>
+                        <Typography>
+                          <strong>Breeder:</strong> {seed.breeder}
+                        </Typography>
+                        <Typography>
+                          <strong>Seeds:</strong> {seed.numSeeds}
+                        </Typography>
+                        <Typography>
+                          <strong>Generation:</strong> {seed.generation}
+                        </Typography>
+                        <Stack direction="row" spacing={1}>
+                          {seed.feminized && (
+                            <Chip
+                              label="Feminized"
+                              size="small"
+                              variant="outlined"
+                            />
+                          )}
+                          {seed.open && (
+                            <Chip
+                              label="Open Pack"
+                              size="small"
+                              variant="outlined"
+                            />
+                          )}
+                        </Stack>
+                        <Typography color="text.secondary" variant="body2">
+                          Added:{" "}
+                          {new Date(seed.dateAcquired).toLocaleDateString()}
+                        </Typography>
+                      </Stack>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Clones Section */}
+      <Card>
+        <CardContent>
+          <Typography variant="h5" gutterBottom>
+            Clones Collection
+          </Typography>
+          {clones.length === 0 ? (
+            <Typography color="text.secondary">No clones added yet.</Typography>
+          ) : (
+            <Grid container spacing={3}>
+              {clones.map((clone) => (
+                <Grid item xs={12} sm={6} md={4} key={clone.id}>
+                  <Card variant="outlined">
+                    <CardContent>
+                      <Stack spacing={1}>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "flex-start",
+                          }}
+                        >
+                          <Typography variant="h6">{clone.strain}</Typography>
+                          <Chip
+                            label={
+                              clone.available ? "Available" : "Unavailable"
+                            }
+                            color={clone.available ? "success" : "default"}
+                            size="small"
+                          />
+                        </Box>
+                        <Typography>
+                          <strong>Breeder:</strong> {clone.breeder}
+                        </Typography>
+                        <Typography>
+                          <strong>Cut Name:</strong> {clone.cutName}
+                        </Typography>
+                        <Typography>
+                          <strong>Generation:</strong> {clone.generation}
+                        </Typography>
+                        <Stack direction="row" spacing={1}>
+                          <Chip
+                            label={clone.sex}
+                            size="small"
+                            variant="outlined"
+                          />
+                          {clone.breederCut && (
+                            <Chip
+                              label="Breeder Cut"
+                              size="small"
+                              variant="outlined"
+                            />
+                          )}
+                        </Stack>
+                        <Typography color="text.secondary" variant="body2">
+                          Added:{" "}
+                          {new Date(clone.dateAcquired).toLocaleDateString()}
+                        </Typography>
+                      </Stack>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          )}
+        </CardContent>
+      </Card>
     </Box>
   );
 }
