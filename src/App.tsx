@@ -20,7 +20,7 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
-import LogoutIcon from "@mui/icons-material/Logout";
+
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import SeedsPage from "./pages/SeedsPage";
@@ -32,12 +32,18 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import Login from "./components/Login";
 import Signup from "./components/Signup";
 import useIdleTimer from "./hooks/useIdleTimer";
-import WbSunnyOutlinedIcon from "@mui/icons-material/WbSunnyOutlined";
-import ModeNightOutlinedIcon from "@mui/icons-material/ModeNightOutlined";
-import SearchIcon from "@mui/icons-material/Search";
 import SearchPage from "./pages/SearchPage";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
+
+// Icons
+import LogoutIcon from "@mui/icons-material/Logout";
+import WbSunnyOutlinedIcon from "@mui/icons-material/WbSunnyOutlined";
+import ModeNightOutlinedIcon from "@mui/icons-material/ModeNightOutlined";
+import SearchIcon from "@mui/icons-material/Search";
+import AccountCircleIcon from "@mui/icons-material/AccountCircleOutlined";
+import DashboardIcon from "@mui/icons-material/Dashboard";
+// or HomeIcon from "@mui/icons-material/Home" if you prefer
 
 interface PrivateRouteProps {
   children: React.ReactNode;
@@ -47,7 +53,6 @@ interface PrivateRouteProps {
 const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
   const { currentUser } = useAuth();
   const location = useLocation();
-  // If the user is not logged in, redirect to the login page with the current location's pathname as state
   return currentUser ? (
     <>{children}</>
   ) : (
@@ -55,24 +60,26 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
   );
 };
 
-// AppWithRouter component with routing and theme
 const AppWithRouter: React.FC = () => {
   const [isDarkMode, setIsDarkMode] = useState(true);
-  const { currentUser, logout } = useAuth(); // Get currentUser and logout from context
+  const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleThemeChange = () => {
     setIsDarkMode(!isDarkMode);
   };
 
-  const location = useLocation();
-
-  // Function to determine the active tab value based on the current path
+  // Decide which tab is active based on path
   const getActiveTabValue = () => {
     if (location.pathname === "/") return "/";
     if (location.pathname.startsWith("/search")) return "/search";
     if (location.pathname.startsWith("/login")) return "/login";
-    return false; // Return false if no match (to indicate no active tab)
+    if (location.pathname === "/profile") return "/profile";
+    // Don’t return "/profile" for /profile/:userId
+    // so the tab won't be highlighted.
+    if (location.pathname.startsWith("/profile/")) return false;
+    return false;
   };
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: string) => {
@@ -82,20 +89,15 @@ const AppWithRouter: React.FC = () => {
   const handleLogout = async () => {
     try {
       await logout();
-      navigate("/login"); // Redirect to login after logout
+      navigate("/login");
     } catch (error) {
       console.error("Failed to log out", error);
     }
   };
 
-  // Set timeout to 15 minutes (900000 milliseconds)
-  const IDLE_TIMEOUT = 900000;
-
-  // Call useIdleTimer hook
-  useIdleTimer({
-    timeout: IDLE_TIMEOUT,
-    onIdle: handleLogout, // Pass handleLogout as the onIdle callback
-  });
+  // Idle timer
+  const IDLE_TIMEOUT = 900000; // 15 minutes
+  useIdleTimer({ timeout: IDLE_TIMEOUT, onIdle: handleLogout });
 
   const savePaymentOptions = async (methods: string[]) => {
     if (currentUser) {
@@ -111,25 +113,21 @@ const AppWithRouter: React.FC = () => {
   return (
     <ThemeProvider theme={isDarkMode ? darkTheme : lightTheme}>
       <CssBaseline />
+
+      {/* -- LOGO / TOOLBAR (TOP BAR) -- */}
       <AppBar position="static">
         <Toolbar>
+          {/* App Title / Logo */}
           <Typography variant="h6" sx={{ flexGrow: 1 }}>
             Genetics Library
           </Typography>
-          <Tabs
-            value={getActiveTabValue()} // Use the function to get active tab value
-            onChange={handleTabChange}
-            textColor="inherit"
-            indicatorColor="secondary"
-          >
-            <Tab label="Dashboard" value="/" />
-            <Tab icon={<SearchIcon />} value="/search" aria-label="Search" />
-            {/* Conditionally render Login tab */}
-            {!currentUser && <Tab label="Login" value="/login" />}
-          </Tabs>
-          <IconButton onClick={handleThemeChange}>
+
+          {/* Theme Toggle */}
+          <IconButton onClick={handleThemeChange} color="inherit">
             {isDarkMode ? <ModeNightOutlinedIcon /> : <WbSunnyOutlinedIcon />}
           </IconButton>
+
+          {/* Logout, only if logged in */}
           {currentUser && (
             <Tooltip title="Logout">
               <IconButton
@@ -143,6 +141,84 @@ const AppWithRouter: React.FC = () => {
           )}
         </Toolbar>
       </AppBar>
+
+      {/* -- TABS BAR (SECOND BAR) -- */}
+      <AppBar position="static" color="default" sx={{ mt: 0.5 }}>
+        <Tabs
+          value={getActiveTabValue()}
+          onChange={handleTabChange}
+          textColor="inherit"
+          indicatorColor="secondary"
+          variant="fullWidth"
+        >
+          {/* Dashboard Tab: icon + text */}
+          <Tab
+            icon={
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                }}
+              >
+                <DashboardIcon />
+                <Typography variant="caption" sx={{ fontSize: "0.7rem" }}>
+                  Dashboard
+                </Typography>
+              </Box>
+            }
+            value="/"
+            aria-label="Dashboard"
+          />
+
+          {/* Search Tab: icon + text */}
+          <Tab
+            icon={
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                }}
+              >
+                <SearchIcon />
+                <Typography variant="caption" sx={{ fontSize: "0.7rem" }}>
+                  Search
+                </Typography>
+              </Box>
+            }
+            value="/search"
+            aria-label="Search"
+          />
+
+          {/* Profile Tab: only if logged in */}
+          {currentUser && (
+            <Tab
+              icon={
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                  }}
+                >
+                  <AccountCircleIcon />
+                  <Typography variant="caption" sx={{ fontSize: "0.7rem" }}>
+                    Profile
+                  </Typography>
+                </Box>
+              }
+              value="/profile"
+              aria-label="Profile"
+            />
+          )}
+
+          {/* Login Tab: only if not logged in */}
+          {!currentUser && <Tab label="Login" value="/login" />}
+        </Tabs>
+      </AppBar>
+
+      {/* -- MAIN CONTENT -- */}
       <Box sx={{ mt: 2 }}>
         <Routes>
           <Route
@@ -209,7 +285,7 @@ const AppWithRouter: React.FC = () => {
   );
 };
 
-// Main App component wrapped with Router and AuthProvider
+// Main App component
 const App: React.FC = () => {
   return (
     <Router>
