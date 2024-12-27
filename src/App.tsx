@@ -69,9 +69,6 @@ const AppWithRouter: React.FC = () => {
   // Function to determine the active tab value based on the current path
   const getActiveTabValue = () => {
     if (location.pathname === "/") return "/";
-    if (location.pathname.startsWith("/profile")) return "/profile";
-    if (location.pathname.startsWith("/seeds")) return "/seeds";
-    if (location.pathname.startsWith("/clones")) return "/clones";
     if (location.pathname.startsWith("/search")) return "/search";
     if (location.pathname.startsWith("/login")) return "/login";
     return false; // Return false if no match (to indicate no active tab)

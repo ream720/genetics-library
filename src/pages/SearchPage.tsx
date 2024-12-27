@@ -13,6 +13,7 @@ import {
   Tabs,
   Tab,
   Paper,
+  Container,
 } from "@mui/material";
 import {
   getFirestore,
@@ -234,102 +235,102 @@ function SearchPage() {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        Search
-      </Typography>
-      <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-        <TextField
-          label="Search Users, Seeds, or Clones"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-          fullWidth
-          sx={{ mr: 2 }}
-        />
-        <Button
-          variant="contained"
-          onClick={handleSearch}
-          disabled={loading || !searchQuery.trim()}
-        >
+    <Container maxWidth="md">
+      <Box sx={{ p: 1 }}>
+        {/* Smaller Heading */}
+        <Typography variant="h6" gutterBottom>
           Search
-        </Button>
-      </Box>
+        </Typography>
 
-      {loading && (
-        <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-          <CircularProgress />
+        <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+          {/* Use size="small" for a more compact TextField */}
+          <TextField
+            size="small"
+            label="Search Users, Seeds, or Clones"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+            fullWidth
+            sx={{ mr: 1 }}
+          />
+          {/* Smaller Button variant (or remove variant to default) */}
+          <Button
+            size="small"
+            variant="contained"
+            onClick={handleSearch}
+            disabled={loading || !searchQuery.trim()}
+          >
+            Search
+          </Button>
         </Box>
-      )}
 
-      {error && (
-        <Typography color="error" sx={{ mt: 2 }}>
-          {error}
-        </Typography>
-      )}
+        {/* Centered loading indicator with smaller top margin */}
+        {loading && (
+          <Box sx={{ display: "flex", justifyContent: "center", mt: 1 }}>
+            <CircularProgress size={24} />
+          </Box>
+        )}
 
-      {searchResults.length > 0 && (
-        <Paper sx={{ mt: 2 }}>
-          <Tabs
-            value={activeTab}
-            onChange={handleTabChange}
-            variant="fullWidth"
-          >
-            <Tab label={`All (${searchResults.length})`} />
-            <Tab
-              label={`Users (${
-                searchResults.filter((r) => r.type === "user").length
-              })`}
-            />
-            <Tab
-              label={`Seeds (${
-                searchResults.filter((r) => r.type === "seed").length
-              })`}
-            />
-            <Tab
-              label={`Clones (${
-                searchResults.filter((r) => r.type === "clone").length
-              })`}
-            />
-          </Tabs>
-        </Paper>
-      )}
+        {/* Error message, smaller margin */}
+        {error && (
+          <Typography color="error" sx={{ mt: 1 }}>
+            {error}
+          </Typography>
+        )}
 
-      <List>
-        {filteredResults.map((result) => (
-          <ListItem
-            key={`${result.type}-${result.id}`}
-            component={Link}
-            to={`/profile/${result.userId}`}
-            sx={{
-              bgcolor: "background.paper",
-              mb: 1,
-              borderRadius: 1,
-              "&:hover": {
-                bgcolor: "action.hover",
-              },
-            }}
-          >
-            <ListItemAvatar>
-              <Avatar>
-                {result.type === "user"
-                  ? result.username?.charAt(0)
-                  : result.strain?.charAt(0)}
-              </Avatar>
-            </ListItemAvatar>
-            <ListItemText {...getResultContent(result)} />
-          </ListItem>
-        ))}
-      </List>
+        {/* Make the tabs more compact */}
+        {searchResults.length > 0 && (
+          <Paper sx={{ mt: 1, p: 1 }}>
+            {/* Remove variant="fullWidth" or use smaller styling if you like */}
+            <Tabs value={activeTab} onChange={handleTabChange}>
+              <Tab label={`All (${searchResults.length})`} />
+              <Tab
+                label={`Users (${
+                  searchResults.filter((r) => r.type === "user").length
+                })`}
+              />
+              <Tab
+                label={`Seeds (${
+                  searchResults.filter((r) => r.type === "seed").length
+                })`}
+              />
+              <Tab
+                label={`Clones (${
+                  searchResults.filter((r) => r.type === "clone").length
+                })`}
+              />
+            </Tabs>
+          </Paper>
+        )}
 
-      {!loading && searchResults.length === 0 && searchQuery && (
-        <Typography
-          sx={{ mt: 2, textAlign: "center", color: "text.secondary" }}
-        >
-          No results found for "{searchQuery}"
-        </Typography>
-      )}
-    </Box>
+        <List sx={{ mt: 1 }}>
+          {filteredResults.map((result) => (
+            <ListItem
+              key={`${result.type}-${result.id}`}
+              component={Link}
+              to={`/profile/${result.userId}`}
+              sx={{
+                bgcolor: "background.paper",
+                mb: 0.5,
+                borderRadius: 1,
+                "&:hover": {
+                  bgcolor: "action.hover",
+                },
+              }}
+            >
+              <ListItemAvatar>
+                <Avatar>
+                  {result.type === "user"
+                    ? result.username?.charAt(0)
+                    : result.strain?.charAt(0)}
+                </Avatar>
+              </ListItemAvatar>
+              <ListItemText {...getResultContent(result)} />
+            </ListItem>
+          ))}
+        </List>
+      </Box>
+    </Container>
   );
 }
 
