@@ -134,10 +134,13 @@ function Profile() {
         <Avatar src={userProfile?.photoURL} sx={{ width: 80, height: 80 }} />
         <Box>
           <Typography variant="h4">{userProfile?.username}</Typography>
-          <Typography color="text.secondary">
+          {/* TODO: unhide or remove at some point */}
+          <Typography hidden color="text.secondary">
             User ID: {userId || currentUser?.uid}
           </Typography>
-          <Typography color="text.secondary">{userProfile?.email}</Typography>
+          <Typography hidden color="text.secondary">
+            {userProfile?.email}
+          </Typography>
         </Box>
       </Box>
 
@@ -156,7 +159,7 @@ function Profile() {
                   <Card variant="outlined">
                     <CardContent>
                       {/* Rest of the seed card content remains the same */}
-                      <Stack spacing={1}>
+                      <Stack spacing={0.5}>
                         <Box
                           sx={{
                             display: "flex",
@@ -171,16 +174,18 @@ function Profile() {
                             size="small"
                           />
                         </Box>
-                        <Typography>
+                        <Typography variant="body2">
                           <strong>Breeder:</strong> {seed.breeder}
                         </Typography>
-                        <Typography>
+                        <Typography variant="body2">
                           <strong>Seeds:</strong> {seed.numSeeds}
                         </Typography>
-                        <Typography>
-                          <strong>Generation:</strong> {seed.generation}
-                        </Typography>
-                        <Stack direction="row" spacing={1}>
+                        {seed.generation && (
+                          <Typography variant="body2">
+                            <strong>Generation:</strong> {seed.generation}
+                          </Typography>
+                        )}
+                        <Stack paddingTop={1} direction="row" spacing={1}>
                           {seed.feminized && (
                             <Chip
                               label="Feminized"
@@ -241,15 +246,20 @@ function Profile() {
                             size="small"
                           />
                         </Box>
-                        <Typography>
+                        <Typography variant="body2">
                           <strong>Breeder:</strong> {clone.breeder}
                         </Typography>
-                        <Typography>
-                          <strong>Cut Name:</strong> {clone.cutName}
-                        </Typography>
-                        <Typography>
-                          <strong>Generation:</strong> {clone.generation}
-                        </Typography>
+                        {clone.cutName && (
+                          <Typography variant="body2">
+                            <strong>Cut Name:</strong> {clone.cutName}
+                          </Typography>
+                        )}
+                        {clone.generation && (
+                          <Typography variant="body2">
+                            <strong>Generation:</strong> {clone.generation}
+                          </Typography>
+                        )}
+
                         <Stack direction="row" spacing={1}>
                           <Chip
                             label={clone.sex}
