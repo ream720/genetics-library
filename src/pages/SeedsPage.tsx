@@ -14,9 +14,11 @@ import {
   Stack,
   TableSortLabel,
   tableCellClasses,
+  Paper,
+  TableContainer,
 } from "@mui/material";
-import { useSeedContext } from "../context/SeedContext";
 import { visuallyHidden } from "@mui/utils";
+import { useSeedContext } from "../context/SeedContext";
 import { Seed } from "../types";
 
 // Interface for table sorting
@@ -27,6 +29,8 @@ interface SeedOrder {
 
 const SeedsPage: React.FC = () => {
   const { seeds, addSeed, deleteSeed } = useSeedContext();
+
+  // Form states
   const [newSeedBreeder, setNewSeedBreeder] = React.useState("");
   const [newSeedStrain, setNewSeedStrain] = React.useState("");
   const [newSeedGeneration, setNewSeedGeneration] = React.useState("");
@@ -34,9 +38,12 @@ const SeedsPage: React.FC = () => {
   const [newFeminized, setNewFeminized] = React.useState(false);
   const [newOpen, setNewOpen] = React.useState(false);
   const [isAvailable, setIsAvailable] = React.useState(false);
+
+  // Sorting states
   const [order, setOrder] = React.useState<SeedOrder["order"]>("asc");
   const [orderBy, setOrderBy] = React.useState<SeedOrder["orderBy"]>("breeder");
 
+  // Handle adding a new seed
   const handleAddSeed = () => {
     if (newSeedBreeder && newSeedStrain) {
       addSeed({
@@ -50,6 +57,7 @@ const SeedsPage: React.FC = () => {
         dateAcquired: new Date().toISOString(),
         available: isAvailable,
       });
+      // Reset form fields
       setNewSeedBreeder("");
       setNewSeedStrain("");
       setNewSeedGeneration("");
@@ -60,14 +68,13 @@ const SeedsPage: React.FC = () => {
     }
   };
 
-  // Function to handle requesting a new sort order
+  // Sorting logic
   const handleRequestSort = (property: keyof Seed) => {
     const isAsc = orderBy === property && order === "asc";
     setOrder(isAsc ? "desc" : "asc");
     setOrderBy(property);
   };
 
-  // Function to compare values for sorting
   function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
     if (b[orderBy] < a[orderBy]) {
       return -1;
@@ -78,18 +85,15 @@ const SeedsPage: React.FC = () => {
     return 0;
   }
 
-  // Function to get the comparator based on the order
   function getComparator(
-    order: SeedOrder["order"],
-    orderBy: SeedOrder["orderBy"]
+    sortOrder: SeedOrder["order"],
+    sortField: SeedOrder["orderBy"]
   ): (a: Seed, b: Seed) => number {
-    // Use Seed instead of any
-    return order === "desc"
-      ? (a, b) => descendingComparator(a, b, orderBy)
-      : (a, b) => -descendingComparator(a, b, orderBy);
+    return sortOrder === "desc"
+      ? (a, b) => descendingComparator(a, b, sortField)
+      : (a, b) => -descendingComparator(a, b, sortField);
   }
 
-  // Function to sort the seeds array
   function sortSeeds(array: Seed[], comparator: (a: Seed, b: Seed) => number) {
     const stabilizedThis = array.map(
       (el, index) => [el, index] as [Seed, number]
@@ -104,6 +108,7 @@ const SeedsPage: React.FC = () => {
 
   return (
     <Box sx={{ p: 3 }}>
+      {/* Page Title */}
       <Typography
         variant="h4"
         gutterBottom
@@ -116,38 +121,50 @@ const SeedsPage: React.FC = () => {
       >
         Manage Seeds
       </Typography>
+
+      {/* -- FORM SECTION -- */}
+      {/*
+          Use a responsive Stack:
+          - column on xs
+          - row on md+
+      */}
       <Box sx={{ display: "flex", justifyContent: "center", mb: 2, p: 2 }}>
-        <Stack direction="row" spacing={2}>
+        <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+          {/* Column 1 */}
           <Stack spacing={2}>
             <TextField
               label="Breeder"
               value={newSeedBreeder}
               onChange={(e) => setNewSeedBreeder(e.target.value)}
-              sx={{ width: "250px" }}
+              fullWidth
             />
             <TextField
               label="Strain"
               value={newSeedStrain}
               onChange={(e) => setNewSeedStrain(e.target.value)}
-              sx={{ width: "250px" }}
+              fullWidth
             />
           </Stack>
+
+          {/* Column 2 */}
           <Stack spacing={2}>
             <TextField
               label="Generation"
               value={newSeedGeneration}
               onChange={(e) => setNewSeedGeneration(e.target.value)}
-              sx={{ width: "250px" }}
+              fullWidth
             />
             <TextField
               label="# of Seeds"
               type="number"
               value={newNumSeeds}
               onChange={(e) => setNewNumSeeds(Number(e.target.value))}
-              sx={{ width: "250px" }}
+              fullWidth
             />
           </Stack>
-          <Stack>
+
+          {/* Column 3 */}
+          <Stack spacing={1}>
             <FormControlLabel
               control={
                 <Checkbox
@@ -176,9 +193,11 @@ const SeedsPage: React.FC = () => {
               label="Available?"
             />
           </Stack>
+
+          {/* Column 4 */}
           <Stack>
             <Button
-              sx={{ mt: 5 }}
+              sx={{ mt: { xs: 2, md: 5 } }}
               size="small"
               variant="contained"
               onClick={handleAddSeed}
@@ -188,161 +207,173 @@ const SeedsPage: React.FC = () => {
           </Stack>
         </Stack>
       </Box>
+
+      {/* -- TABLE SECTION -- */}
+      {/*
+        Wrap in TableContainer + Paper for horizontal scroll on mobile
+      */}
       <Box sx={{ display: "flex", justifyContent: "center", mb: 2, p: 2 }}>
-        <Table
+        <TableContainer
+          component={Paper}
           sx={{
-            maxWidth: "80%",
-            [`& .${tableCellClasses.head}`]: {
-              backgroundColor: "#518548",
-              color: "white",
-            },
-            [`& .${tableCellClasses.body}`]: {
-              color: "white",
-            },
+            maxWidth: { xs: "100%", md: "80%" },
+            margin: "0 auto",
+            overflowX: "auto",
           }}
         >
-          <TableHead>
-            <TableRow>
-              {/* Table header cells with sorting */}
-              {/* Sortable headers */}
-              <TableCell>
-                <TableSortLabel
-                  active={orderBy === "breeder"}
-                  direction={orderBy === "breeder" ? order : "asc"}
-                  onClick={() => handleRequestSort("breeder")}
-                >
-                  Breeder
-                  {orderBy === "breeder" ? (
-                    <Box component="span" sx={visuallyHidden}>
-                      {order === "desc"
-                        ? "sorted descending"
-                        : "sorted ascending"}
-                    </Box>
-                  ) : null}
-                </TableSortLabel>
-              </TableCell>
-              <TableCell>
-                <TableSortLabel
-                  active={orderBy === "strain"}
-                  direction={orderBy === "strain" ? order : "asc"}
-                  onClick={() => handleRequestSort("strain")}
-                >
-                  Strain
-                  {orderBy === "strain" ? (
-                    <Box component="span" sx={visuallyHidden}>
-                      {order === "desc"
-                        ? "sorted descending"
-                        : "sorted ascending"}
-                    </Box>
-                  ) : null}
-                </TableSortLabel>
-              </TableCell>
-              <TableCell>
-                <TableSortLabel
-                  active={orderBy === "generation"}
-                  direction={orderBy === "generation" ? order : "asc"}
-                  onClick={() => handleRequestSort("generation")}
-                >
-                  Generation
-                  {orderBy === "generation" ? (
-                    <Box component="span" sx={visuallyHidden}>
-                      {order === "desc"
-                        ? "sorted descending"
-                        : "sorted ascending"}
-                    </Box>
-                  ) : null}
-                </TableSortLabel>
-              </TableCell>
-              <TableCell>
-                <TableSortLabel
-                  active={orderBy === "numSeeds"}
-                  direction={orderBy === "numSeeds" ? order : "asc"}
-                  onClick={() => handleRequestSort("numSeeds")}
-                >
-                  # of Seeds
-                  {orderBy === "numSeeds" ? (
-                    <Box component="span" sx={visuallyHidden}>
-                      {order === "desc"
-                        ? "sorted descending"
-                        : "sorted ascending"}
-                    </Box>
-                  ) : null}
-                </TableSortLabel>
-              </TableCell>
-              <TableCell>
-                <TableSortLabel
-                  active={orderBy === "feminized"}
-                  direction={orderBy === "feminized" ? order : "asc"}
-                  onClick={() => handleRequestSort("feminized")}
-                >
-                  Feminized?
-                  {orderBy === "feminized" ? (
-                    <Box component="span" sx={visuallyHidden}>
-                      {order === "desc"
-                        ? "sorted descending"
-                        : "sorted ascending"}
-                    </Box>
-                  ) : null}
-                </TableSortLabel>
-              </TableCell>
-              <TableCell>
-                <TableSortLabel
-                  active={orderBy === "open"}
-                  direction={orderBy === "open" ? order : "asc"}
-                  onClick={() => handleRequestSort("open")}
-                >
-                  Open?
-                  {orderBy === "open" ? (
-                    <Box component="span" sx={visuallyHidden}>
-                      {order === "desc"
-                        ? "sorted descending"
-                        : "sorted ascending"}
-                    </Box>
-                  ) : null}
-                </TableSortLabel>
-              </TableCell>
-              <TableCell>
-                <TableSortLabel
-                  active={orderBy === "available"}
-                  direction={orderBy === "available" ? order : "asc"}
-                  onClick={() => handleRequestSort("available")}
-                >
-                  Available?
-                  {orderBy === "available" ? (
-                    <Box component="span" sx={visuallyHidden}>
-                      {order === "desc"
-                        ? "sorted descending"
-                        : "sorted ascending"}
-                    </Box>
-                  ) : null}
-                </TableSortLabel>
-              </TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {sortSeeds(seeds, getComparator(order, orderBy)).map((seed) => (
-              <TableRow key={seed.id}>
-                <TableCell>{seed.breeder}</TableCell>
-                <TableCell>{seed.strain}</TableCell>
-                <TableCell>{seed.generation}</TableCell>
-                <TableCell>{seed.numSeeds}</TableCell>
-                <TableCell>{seed.feminized ? "Yes" : "No"}</TableCell>
-                <TableCell>{seed.open ? "Yes" : "No"}</TableCell>
-                <TableCell>{seed.available ? "Yes" : "No"}</TableCell>
+          <Table
+            sx={{
+              [`& .${tableCellClasses.head}`]: {
+                backgroundColor: "#518548",
+                color: "white",
+              },
+              [`& .${tableCellClasses.body}`]: {
+                color: "white",
+              },
+            }}
+          >
+            <TableHead>
+              <TableRow>
                 <TableCell>
-                  <Button
-                    variant="outlined"
-                    color="error"
-                    onClick={() => deleteSeed(seed.id!)}
+                  <TableSortLabel
+                    active={orderBy === "breeder"}
+                    direction={orderBy === "breeder" ? order : "asc"}
+                    onClick={() => handleRequestSort("breeder")}
                   >
-                    Delete
-                  </Button>
+                    Breeder
+                    {orderBy === "breeder" && (
+                      <Box component="span" sx={visuallyHidden}>
+                        {order === "desc"
+                          ? "sorted descending"
+                          : "sorted ascending"}
+                      </Box>
+                    )}
+                  </TableSortLabel>
                 </TableCell>
+                <TableCell>
+                  <TableSortLabel
+                    active={orderBy === "strain"}
+                    direction={orderBy === "strain" ? order : "asc"}
+                    onClick={() => handleRequestSort("strain")}
+                  >
+                    Strain
+                    {orderBy === "strain" && (
+                      <Box component="span" sx={visuallyHidden}>
+                        {order === "desc"
+                          ? "sorted descending"
+                          : "sorted ascending"}
+                      </Box>
+                    )}
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell>
+                  <TableSortLabel
+                    active={orderBy === "generation"}
+                    direction={orderBy === "generation" ? order : "asc"}
+                    onClick={() => handleRequestSort("generation")}
+                  >
+                    Generation
+                    {orderBy === "generation" && (
+                      <Box component="span" sx={visuallyHidden}>
+                        {order === "desc"
+                          ? "sorted descending"
+                          : "sorted ascending"}
+                      </Box>
+                    )}
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell>
+                  <TableSortLabel
+                    active={orderBy === "numSeeds"}
+                    direction={orderBy === "numSeeds" ? order : "asc"}
+                    onClick={() => handleRequestSort("numSeeds")}
+                  >
+                    # of Seeds
+                    {orderBy === "numSeeds" && (
+                      <Box component="span" sx={visuallyHidden}>
+                        {order === "desc"
+                          ? "sorted descending"
+                          : "sorted ascending"}
+                      </Box>
+                    )}
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell>
+                  <TableSortLabel
+                    active={orderBy === "feminized"}
+                    direction={orderBy === "feminized" ? order : "asc"}
+                    onClick={() => handleRequestSort("feminized")}
+                  >
+                    Feminized?
+                    {orderBy === "feminized" && (
+                      <Box component="span" sx={visuallyHidden}>
+                        {order === "desc"
+                          ? "sorted descending"
+                          : "sorted ascending"}
+                      </Box>
+                    )}
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell>
+                  <TableSortLabel
+                    active={orderBy === "open"}
+                    direction={orderBy === "open" ? order : "asc"}
+                    onClick={() => handleRequestSort("open")}
+                  >
+                    Open?
+                    {orderBy === "open" && (
+                      <Box component="span" sx={visuallyHidden}>
+                        {order === "desc"
+                          ? "sorted descending"
+                          : "sorted ascending"}
+                      </Box>
+                    )}
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell>
+                  <TableSortLabel
+                    active={orderBy === "available"}
+                    direction={orderBy === "available" ? order : "asc"}
+                    onClick={() => handleRequestSort("available")}
+                  >
+                    Available?
+                    {orderBy === "available" && (
+                      <Box component="span" sx={visuallyHidden}>
+                        {order === "desc"
+                          ? "sorted descending"
+                          : "sorted ascending"}
+                      </Box>
+                    )}
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell>Actions</TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHead>
+
+            <TableBody>
+              {sortSeeds(seeds, getComparator(order, orderBy)).map((seed) => (
+                <TableRow key={seed.id}>
+                  <TableCell>{seed.breeder}</TableCell>
+                  <TableCell>{seed.strain}</TableCell>
+                  <TableCell>{seed.generation}</TableCell>
+                  <TableCell>{seed.numSeeds}</TableCell>
+                  <TableCell>{seed.feminized ? "Yes" : "No"}</TableCell>
+                  <TableCell>{seed.open ? "Yes" : "No"}</TableCell>
+                  <TableCell>{seed.available ? "Yes" : "No"}</TableCell>
+                  <TableCell>
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      onClick={() => deleteSeed(seed.id!)}
+                    >
+                      Delete
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
       </Box>
     </Box>
   );

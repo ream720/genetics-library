@@ -34,6 +34,7 @@ import Signup from "./components/Signup";
 import useIdleTimer from "./hooks/useIdleTimer";
 import WbSunnyOutlinedIcon from "@mui/icons-material/WbSunnyOutlined";
 import ModeNightOutlinedIcon from "@mui/icons-material/ModeNightOutlined";
+import SearchIcon from "@mui/icons-material/Search";
 import SearchPage from "./pages/SearchPage";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
@@ -122,7 +123,7 @@ const AppWithRouter: React.FC = () => {
             indicatorColor="secondary"
           >
             <Tab label="Dashboard" value="/" />
-            <Tab label="Search" value="/search" />
+            <Tab icon={<SearchIcon />} value="/search" aria-label="Search" />
             {/* Conditionally render Login tab */}
             {!currentUser && <Tab label="Login" value="/login" />}
           </Tabs>

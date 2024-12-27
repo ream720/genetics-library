@@ -18,9 +18,11 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  TableContainer,
+  Paper, // Paper to wrap TableContainer if you like
 } from "@mui/material";
-import { useCloneContext } from "../context/CloneContext";
 import { visuallyHidden } from "@mui/utils";
+import { useCloneContext } from "../context/CloneContext";
 import { Clone } from "../types";
 
 // Interface for table sorting
@@ -38,6 +40,7 @@ const ClonesPage: React.FC = () => {
   const [newSex, setNewSex] = React.useState<"Male" | "Female">("Male");
   const [newBreederCut, setNewBreederCut] = React.useState(false);
   const [newAvailable, setNewAvailable] = React.useState(false);
+
   const [order, setOrder] = React.useState<CloneOrder["order"]>("asc");
   const [orderBy, setOrderBy] =
     React.useState<CloneOrder["orderBy"]>("breeder");
@@ -46,7 +49,6 @@ const ClonesPage: React.FC = () => {
     if (newBreeder && newStrain) {
       try {
         await addClone({
-          // Firestore will generate the ID
           breeder: newBreeder,
           strain: newStrain,
           cutName: newCutName,
@@ -66,19 +68,17 @@ const ClonesPage: React.FC = () => {
         setNewAvailable(false);
       } catch (error) {
         console.error("Error adding clone: ", error);
-        // Optionally display an error message to the user
       }
     }
   };
 
-  // Function to handle requesting a new sort order
+  // Sort logic (unchanged)
   const handleRequestSort = (property: keyof Clone) => {
     const isAsc = orderBy === property && order === "asc";
     setOrder(isAsc ? "desc" : "asc");
     setOrderBy(property);
   };
 
-  // Function to compare values for sorting
   function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
     if (b[orderBy] < a[orderBy]) {
       return -1;
@@ -89,7 +89,6 @@ const ClonesPage: React.FC = () => {
     return 0;
   }
 
-  // Function to get the comparator based on the order
   function getComparator(
     order: CloneOrder["order"],
     orderBy: CloneOrder["orderBy"]
@@ -99,7 +98,6 @@ const ClonesPage: React.FC = () => {
       : (a, b) => -descendingComparator(a, b, orderBy);
   }
 
-  // Function to sort the clones array
   function sortClones(
     array: Clone[],
     comparator: (a: Clone, b: Clone) => number
@@ -117,6 +115,7 @@ const ClonesPage: React.FC = () => {
 
   return (
     <Box sx={{ p: 3 }}>
+      {/* Page Header */}
       <Typography
         variant="h4"
         gutterBottom
@@ -130,41 +129,52 @@ const ClonesPage: React.FC = () => {
         Manage Clones
       </Typography>
 
+      {/* -- FORM SECTION -- */}
+      {/*
+        Change Stack direction to responsive:
+        - column on xs/sm to avoid horizontal overflow
+        - row on md+
+      */}
       <Box sx={{ display: "flex", justifyContent: "center", mb: 2, p: 2 }}>
-        <Stack direction="row" spacing={2}>
+        <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+          {/* Column 1 */}
           <Stack spacing={2}>
             <TextField
               required
               label="Breeder"
               value={newBreeder}
               onChange={(e) => setNewBreeder(e.target.value)}
-              sx={{ width: "250px" }}
+              fullWidth
             />
             <TextField
               required
               label="Strain"
               value={newStrain}
               onChange={(e) => setNewStrain(e.target.value)}
-              sx={{ width: "250px" }}
+              fullWidth
             />
           </Stack>
+
+          {/* Column 2 */}
           <Stack spacing={2}>
             <TextField
               label="Cut Name"
               value={newCutName}
               onChange={(e) => setNewCutName(e.target.value)}
-              sx={{ width: "250px" }}
+              fullWidth
             />
             <TextField
               label="Generation"
               placeholder="F1, S1, etc."
               value={newGeneration}
               onChange={(e) => setNewGeneration(e.target.value)}
-              sx={{ width: "250px" }}
+              fullWidth
             />
           </Stack>
-          <Stack>
-            <FormControl sx={{ minWidth: 120 }}>
+
+          {/* Column 3 */}
+          <Stack spacing={1}>
+            <FormControl fullWidth>
               <InputLabel>Sex</InputLabel>
               <Select
                 value={newSex}
@@ -194,9 +204,11 @@ const ClonesPage: React.FC = () => {
               label="Available?"
             />
           </Stack>
+
+          {/* Column 4 */}
           <Stack>
             <Button
-              sx={{ mt: 5 }}
+              sx={{ mt: { xs: 2, md: 5 } }}
               size="small"
               variant="contained"
               onClick={handleAddClone}
@@ -207,160 +219,180 @@ const ClonesPage: React.FC = () => {
         </Stack>
       </Box>
 
+      {/* -- TABLE SECTION -- */}
       <Box sx={{ display: "flex", justifyContent: "center", mb: 2, p: 2 }}>
-        <Table
+        <TableContainer
+          component={Paper} // or just a Box if you prefer
           sx={{
-            maxWidth: "80%",
-            [`& .${tableCellClasses.head}`]: {
-              backgroundColor: "#518548",
-              color: "white",
-            },
-            [`& .${tableCellClasses.body}`]: {
-              color: "white",
-            },
+            maxWidth: { xs: "100%", md: "80%" },
+            overflowX: "auto",
+            margin: "0 auto",
           }}
         >
-          <TableHead>
-            <TableRow>
-              {/* Sortable headers */}
-              <TableCell>
-                <TableSortLabel
-                  active={orderBy === "breeder"}
-                  direction={orderBy === "breeder" ? order : "asc"}
-                  onClick={() => handleRequestSort("breeder")}
-                >
-                  Breeder
-                  {orderBy === "breeder" ? (
-                    <Box component="span" sx={visuallyHidden}>
-                      {order === "desc"
-                        ? "sorted descending"
-                        : "sorted ascending"}
-                    </Box>
-                  ) : null}
-                </TableSortLabel>
-              </TableCell>
-              <TableCell>
-                <TableSortLabel
-                  active={orderBy === "strain"}
-                  direction={orderBy === "strain" ? order : "asc"}
-                  onClick={() => handleRequestSort("strain")}
-                >
-                  Strain
-                  {orderBy === "strain" ? (
-                    <Box component="span" sx={visuallyHidden}>
-                      {order === "desc"
-                        ? "sorted descending"
-                        : "sorted ascending"}
-                    </Box>
-                  ) : null}
-                </TableSortLabel>
-              </TableCell>
-              <TableCell>
-                <TableSortLabel
-                  active={orderBy === "cutName"}
-                  direction={orderBy === "cutName" ? order : "asc"}
-                  onClick={() => handleRequestSort("cutName")}
-                >
-                  Cut Name
-                  {orderBy === "cutName" ? (
-                    <Box component="span" sx={visuallyHidden}>
-                      {order === "desc"
-                        ? "sorted descending"
-                        : "sorted ascending"}
-                    </Box>
-                  ) : null}
-                </TableSortLabel>
-              </TableCell>
-              <TableCell>
-                <TableSortLabel
-                  active={orderBy === "generation"}
-                  direction={orderBy === "generation" ? order : "asc"}
-                  onClick={() => handleRequestSort("generation")}
-                >
-                  Generation
-                  {orderBy === "generation" ? (
-                    <Box component="span" sx={visuallyHidden}>
-                      {order === "desc"
-                        ? "sorted descending"
-                        : "sorted ascending"}
-                    </Box>
-                  ) : null}
-                </TableSortLabel>
-              </TableCell>
-              <TableCell>
-                <TableSortLabel
-                  active={orderBy === "sex"}
-                  direction={orderBy === "sex" ? order : "asc"}
-                  onClick={() => handleRequestSort("sex")}
-                >
-                  Sex
-                  {orderBy === "sex" ? (
-                    <Box component="span" sx={visuallyHidden}>
-                      {order === "desc"
-                        ? "sorted descending"
-                        : "sorted ascending"}
-                    </Box>
-                  ) : null}
-                </TableSortLabel>
-              </TableCell>
-              <TableCell>
-                <TableSortLabel
-                  active={orderBy === "breederCut"}
-                  direction={orderBy === "breederCut" ? order : "asc"}
-                  onClick={() => handleRequestSort("breederCut")}
-                >
-                  Breeder Cut
-                  {orderBy === "breederCut" ? (
-                    <Box component="span" sx={visuallyHidden}>
-                      {order === "desc"
-                        ? "sorted descending"
-                        : "sorted ascending"}
-                    </Box>
-                  ) : null}
-                </TableSortLabel>
-              </TableCell>
-              <TableCell>
-                <TableSortLabel
-                  active={orderBy === "available"}
-                  direction={orderBy === "available" ? order : "asc"}
-                  onClick={() => handleRequestSort("available")}
-                >
-                  Available?
-                  {orderBy === "available" ? (
-                    <Box component="span" sx={visuallyHidden}>
-                      {order === "desc"
-                        ? "sorted descending"
-                        : "sorted ascending"}
-                    </Box>
-                  ) : null}
-                </TableSortLabel>
-              </TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {sortClones(clones, getComparator(order, orderBy)).map((clone) => (
-              <TableRow key={clone.id}>
-                <TableCell>{clone.breeder}</TableCell>
-                <TableCell>{clone.strain}</TableCell>
-                <TableCell>{clone.cutName}</TableCell>
-                <TableCell>{clone.generation}</TableCell>
-                <TableCell>{clone.sex}</TableCell>
-                <TableCell>{clone.breederCut ? "Yes" : "No"}</TableCell>
-                <TableCell>{clone.available ? "Yes" : "No"}</TableCell>
+          <Table
+            sx={{
+              // On smaller screens, letting the table go 100%
+              // plus horizontal scroll is standard practice.
+              [`& .${tableCellClasses.head}`]: {
+                backgroundColor: "#518548",
+                color: "white",
+              },
+              [`& .${tableCellClasses.body}`]: {
+                color: "white",
+              },
+            }}
+          >
+            <TableHead>
+              <TableRow>
                 <TableCell>
-                  <Button
-                    variant="outlined"
-                    color="error"
-                    onClick={() => deleteClone(clone.id!)}
+                  <TableSortLabel
+                    active={orderBy === "breeder"}
+                    direction={orderBy === "breeder" ? order : "asc"}
+                    onClick={() => handleRequestSort("breeder")}
                   >
-                    Delete
-                  </Button>
+                    Breeder
+                    {orderBy === "breeder" && (
+                      <Box component="span" sx={visuallyHidden}>
+                        {order === "desc"
+                          ? "sorted descending"
+                          : "sorted ascending"}
+                      </Box>
+                    )}
+                  </TableSortLabel>
                 </TableCell>
+
+                <TableCell>
+                  <TableSortLabel
+                    active={orderBy === "strain"}
+                    direction={orderBy === "strain" ? order : "asc"}
+                    onClick={() => handleRequestSort("strain")}
+                  >
+                    Strain
+                    {orderBy === "strain" && (
+                      <Box component="span" sx={visuallyHidden}>
+                        {order === "desc"
+                          ? "sorted descending"
+                          : "sorted ascending"}
+                      </Box>
+                    )}
+                  </TableSortLabel>
+                </TableCell>
+
+                <TableCell>
+                  <TableSortLabel
+                    active={orderBy === "cutName"}
+                    direction={orderBy === "cutName" ? order : "asc"}
+                    onClick={() => handleRequestSort("cutName")}
+                  >
+                    Cut Name
+                    {orderBy === "cutName" && (
+                      <Box component="span" sx={visuallyHidden}>
+                        {order === "desc"
+                          ? "sorted descending"
+                          : "sorted ascending"}
+                      </Box>
+                    )}
+                  </TableSortLabel>
+                </TableCell>
+
+                <TableCell>
+                  <TableSortLabel
+                    active={orderBy === "generation"}
+                    direction={orderBy === "generation" ? order : "asc"}
+                    onClick={() => handleRequestSort("generation")}
+                  >
+                    Generation
+                    {orderBy === "generation" && (
+                      <Box component="span" sx={visuallyHidden}>
+                        {order === "desc"
+                          ? "sorted descending"
+                          : "sorted ascending"}
+                      </Box>
+                    )}
+                  </TableSortLabel>
+                </TableCell>
+
+                <TableCell>
+                  <TableSortLabel
+                    active={orderBy === "sex"}
+                    direction={orderBy === "sex" ? order : "asc"}
+                    onClick={() => handleRequestSort("sex")}
+                  >
+                    Sex
+                    {orderBy === "sex" && (
+                      <Box component="span" sx={visuallyHidden}>
+                        {order === "desc"
+                          ? "sorted descending"
+                          : "sorted ascending"}
+                      </Box>
+                    )}
+                  </TableSortLabel>
+                </TableCell>
+
+                <TableCell>
+                  <TableSortLabel
+                    active={orderBy === "breederCut"}
+                    direction={orderBy === "breederCut" ? order : "asc"}
+                    onClick={() => handleRequestSort("breederCut")}
+                  >
+                    Breeder Cut
+                    {orderBy === "breederCut" && (
+                      <Box component="span" sx={visuallyHidden}>
+                        {order === "desc"
+                          ? "sorted descending"
+                          : "sorted ascending"}
+                      </Box>
+                    )}
+                  </TableSortLabel>
+                </TableCell>
+
+                <TableCell>
+                  <TableSortLabel
+                    active={orderBy === "available"}
+                    direction={orderBy === "available" ? order : "asc"}
+                    onClick={() => handleRequestSort("available")}
+                  >
+                    Available?
+                    {orderBy === "available" && (
+                      <Box component="span" sx={visuallyHidden}>
+                        {order === "desc"
+                          ? "sorted descending"
+                          : "sorted ascending"}
+                      </Box>
+                    )}
+                  </TableSortLabel>
+                </TableCell>
+
+                <TableCell>Actions</TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHead>
+
+            <TableBody>
+              {sortClones(clones, getComparator(order, orderBy)).map(
+                (clone) => (
+                  <TableRow key={clone.id}>
+                    <TableCell>{clone.breeder}</TableCell>
+                    <TableCell>{clone.strain}</TableCell>
+                    <TableCell>{clone.cutName}</TableCell>
+                    <TableCell>{clone.generation}</TableCell>
+                    <TableCell>{clone.sex}</TableCell>
+                    <TableCell>{clone.breederCut ? "Yes" : "No"}</TableCell>
+                    <TableCell>{clone.available ? "Yes" : "No"}</TableCell>
+                    <TableCell>
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        onClick={() => deleteClone(clone.id!)}
+                      >
+                        Delete
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                )
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
       </Box>
     </Box>
   );
