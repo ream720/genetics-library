@@ -116,29 +116,48 @@ const AppWithRouter: React.FC = () => {
 
       {/* -- LOGO / TOOLBAR (TOP BAR) -- */}
       <AppBar position="static">
-        <Toolbar>
-          {/* App Title / Logo */}
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            Genetics Library
-          </Typography>
+        <Toolbar sx={{ width: "100%", display: "flex" }}>
+          {/* Left Box (same width as the right box) */}
+          <Box sx={{ width: 100 /* or some fixed width */ }}></Box>
 
-          {/* Theme Toggle */}
-          <IconButton onClick={handleThemeChange} color="inherit">
-            {isDarkMode ? <ModeNightOutlinedIcon /> : <WbSunnyOutlinedIcon />}
-          </IconButton>
+          {/* Center Box: grow and center its content */}
+          <Box sx={{ flexGrow: 1, display: "flex", justifyContent: "center" }}>
+            <Typography
+              variant="h4"
+              sx={{
+                fontFamily: "'Great Vibes', cursive",
+                textAlign: "center",
+              }}
+            >
+              Genetics Library
+            </Typography>
+          </Box>
 
-          {/* Logout, only if logged in */}
-          {currentUser && (
-            <Tooltip title="Logout">
-              <IconButton
-                aria-description="Logout"
-                color="inherit"
-                onClick={handleLogout}
-              >
-                <LogoutIcon />
-              </IconButton>
-            </Tooltip>
-          )}
+          {/* Right Box: icon buttons */}
+          <Box
+            sx={{
+              width: 100 /* match left box width for perfect center */,
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: 1,
+            }}
+          >
+            <IconButton onClick={handleThemeChange} color="inherit">
+              {isDarkMode ? <ModeNightOutlinedIcon /> : <WbSunnyOutlinedIcon />}
+            </IconButton>
+
+            {currentUser && (
+              <Tooltip title="Logout">
+                <IconButton
+                  aria-description="Logout"
+                  color="inherit"
+                  onClick={handleLogout}
+                >
+                  <LogoutIcon />
+                </IconButton>
+              </Tooltip>
+            )}
+          </Box>
         </Toolbar>
       </AppBar>
 
