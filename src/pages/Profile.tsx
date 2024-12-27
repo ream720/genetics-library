@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import {
   doc,
@@ -27,6 +27,7 @@ interface UserProfile {
   email: string;
   username: string;
   photoURL?: string;
+  paymentMethods?: string[];
 }
 
 function Profile() {
@@ -130,18 +131,72 @@ function Profile() {
   return (
     <Box sx={{ maxWidth: 1200, margin: "0 auto", p: 3 }}>
       {/* Profile Header */}
-      <Box sx={{ display: "flex", alignItems: "center", mb: 4, gap: 2 }}>
-        <Avatar src={userProfile?.photoURL} sx={{ width: 80, height: 80 }} />
-        <Box>
-          <Typography variant="h4">{userProfile?.username}</Typography>
-          {/* TODO: unhide or remove at some point */}
-          <Typography hidden color="text.secondary">
-            User ID: {userId || currentUser?.uid}
+      <Box sx={{ display: "flex", alignItems: "center", mb: 3, gap: 2 }}>
+        {/* Avatar */}
+        <Avatar
+          src={userProfile?.photoURL}
+          sx={{ width: 56, height: 56 }} // Smaller avatar
+        />
+
+        {/* User Info */}
+        <Box sx={{ flexGrow: 1 }}>
+          {" "}
+          {/* Flex-grow to align other elements */}
+          <Typography variant="h6" fontWeight="bold">
+            {userProfile?.username}
           </Typography>
-          <Typography hidden color="text.secondary">
+          <Typography
+            color="text.secondary"
+            variant="body2"
+            hidden={!userProfile?.email} // Hide if no email
+          >
             {userProfile?.email}
           </Typography>
         </Box>
+
+        {/* Payment Methods */}
+        <Card
+          elevation={0}
+          sx={{
+            p: 2,
+            borderRadius: 2,
+            bgcolor: "background.paper",
+            boxShadow: "0px 1px 3px rgba(0, 0, 0, 0.2)",
+            maxWidth: 300,
+            textAlign: "center",
+          }}
+        >
+          <Typography variant="body1" fontWeight="bold" mb={1}>
+            Accepted Payment Methods
+          </Typography>
+          {!userProfile?.paymentMethods ||
+          userProfile.paymentMethods.length === 0 ? (
+            <Typography color="text.secondary" variant="body2">
+              No payment methods selected.
+            </Typography>
+          ) : (
+            <Stack
+              direction="row"
+              spacing={1}
+              justifyContent="center"
+              flexWrap="wrap"
+              sx={{ gap: 1 }}
+            >
+              {userProfile.paymentMethods.map((method) => (
+                <Chip
+                  key={method}
+                  label={method}
+                  variant="outlined"
+                  sx={{
+                    fontSize: "0.75rem",
+                    padding: "0 6px",
+                    height: "22px",
+                  }}
+                />
+              ))}
+            </Stack>
+          )}
+        </Card>
       </Box>
 
       {/* Seeds Section */}

@@ -1,42 +1,82 @@
-import { Button, Typography, Container, Box, Card } from "@mui/material";
+import {
+  Button,
+  Typography,
+  Container,
+  Card,
+  CardContent,
+  Grid,
+} from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
 function Dashboard() {
   const navigate = useNavigate();
 
   return (
-    <Container>
-      <Box>
-        <Typography variant="h4">Genetics Library Dashboard</Typography>
-        <Typography variant="body1">
-          Manage your seeds, clones, and payment options here.
-        </Typography>
-        <Card sx={{ marginTop: "20px" }}>
-          <Button
-            variant="contained"
-            onClick={() => navigate("/seeds")}
-            sx={{ margin: "10px" }}
-          >
-            Manage Seeds
-          </Button>
-          <Button
-            variant="contained"
-            onClick={() => navigate("/clones")}
-            sx={{ margin: "10px" }}
-          >
-            Manage Clones
-          </Button>
-        </Card>
-        <Card sx={{ marginTop: "20px" }}>
-          <Button
-            variant="contained"
-            onClick={() => navigate("/profile")}
-            sx={{ margin: "10px" }}
-          >
-            View Profile
-          </Button>
-        </Card>
-      </Box>
+    <Container maxWidth="md" sx={{ padding: "20px" }}>
+      <Typography variant="h4" gutterBottom>
+        Genetics Library Dashboard
+      </Typography>
+      <Typography variant="body1" sx={{ marginBottom: "20px" }}>
+        Manage your seeds, clones, and payment options here.
+      </Typography>
+
+      {/* Seeds and Clones Section */}
+      <Card sx={{ marginBottom: "20px" }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>
+            Manage Your Library
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6}>
+              <Button
+                variant="contained"
+                fullWidth
+                onClick={() => navigate("/seeds")}
+              >
+                Manage Seeds
+              </Button>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Button
+                variant="contained"
+                fullWidth
+                onClick={() => navigate("/clones")}
+              >
+                Manage Clones
+              </Button>
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
+
+      {/* Profile Section */}
+      <Card>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>
+            User Settings
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6}>
+              <Button
+                variant="contained"
+                fullWidth
+                onClick={() => navigate("/profile")}
+              >
+                View Profile
+              </Button>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Button
+                variant="outlined"
+                fullWidth
+                onClick={() => navigate("/payments")}
+              >
+                Manage Payment Options
+              </Button>
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
     </Container>
   );
 }

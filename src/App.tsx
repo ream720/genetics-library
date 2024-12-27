@@ -24,6 +24,7 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import SeedsPage from "./pages/SeedsPage";
+import PaymentsPage from "./pages/PaymentsPage";
 import { SeedProvider } from "./context/SeedContext";
 import ClonesPage from "./pages/ClonesPage";
 import { CloneProvider } from "./context/CloneContext";
@@ -34,6 +35,8 @@ import useIdleTimer from "./hooks/useIdleTimer";
 import WbSunnyOutlinedIcon from "@mui/icons-material/WbSunnyOutlined";
 import ModeNightOutlinedIcon from "@mui/icons-material/ModeNightOutlined";
 import SearchPage from "./pages/SearchPage";
+import { doc, setDoc } from "firebase/firestore";
+import { db } from "../firebaseConfig";
 
 interface PrivateRouteProps {
   children: React.ReactNode;
@@ -95,6 +98,17 @@ const AppWithRouter: React.FC = () => {
     timeout: IDLE_TIMEOUT,
     onIdle: handleLogout, // Pass handleLogout as the onIdle callback
   });
+
+  const savePaymentOptions = async (methods: string[]) => {
+    if (currentUser) {
+      try {
+        const userDocRef = doc(db, "users", currentUser.uid);
+        await setDoc(userDocRef, { paymentMethods: methods }, { merge: true });
+      } catch (error) {
+        console.error("Error saving payment methods:", error);
+      }
+    }
+  };
 
   return (
     <ThemeProvider theme={isDarkMode ? darkTheme : lightTheme}>
@@ -178,6 +192,14 @@ const AppWithRouter: React.FC = () => {
             element={
               <PrivateRoute>
                 <SearchPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/payments"
+            element={
+              <PrivateRoute>
+                <PaymentsPage onSave={savePaymentOptions} />
               </PrivateRoute>
             }
           />
