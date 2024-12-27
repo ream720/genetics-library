@@ -111,9 +111,6 @@ const AppWithRouter: React.FC = () => {
             indicatorColor="secondary"
           >
             <Tab label="Dashboard" value="/" />
-            <Tab label="Profile" value="/profile" />
-            <Tab label="Seeds" value="/seeds" />
-            <Tab label="Clones" value="/clones" />
             <Tab label="Search" value="/search" />
             {/* Conditionally render Login tab */}
             {!currentUser && <Tab label="Login" value="/login" />}
