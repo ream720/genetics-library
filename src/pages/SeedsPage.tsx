@@ -16,7 +16,11 @@ import {
   tableCellClasses,
   Paper,
   TableContainer,
+  IconButton,
+  Menu,
+  MenuItem,
 } from "@mui/material";
+import { MoreVert } from "@mui/icons-material";
 import { visuallyHidden } from "@mui/utils";
 import { useSeedContext } from "../context/SeedContext";
 import { Seed } from "../types";
@@ -28,7 +32,7 @@ interface SeedOrder {
 }
 
 const SeedsPage: React.FC = () => {
-  const { seeds, addSeed, deleteSeed } = useSeedContext();
+  const { seeds, addSeed, deleteSeed, updateSeed } = useSeedContext();
 
   // Form states
   const [newSeedBreeder, setNewSeedBreeder] = React.useState("");
@@ -39,6 +43,33 @@ const SeedsPage: React.FC = () => {
   const [newOpen, setNewOpen] = React.useState(false);
   const [isAvailable, setIsAvailable] = React.useState(false);
 
+  // Edit states
+  const [editingSeed, setEditingSeed] = React.useState<Seed | null>(null);
+  const [editForm, setEditForm] = React.useState({
+    breeder: "",
+    strain: "",
+    generation: "",
+    numSeeds: 0,
+    feminized: false,
+    open: false,
+    available: false,
+  });
+
+  // Actions dropdown state
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [menuSeedId, setMenuSeedId] = React.useState<string | null>(null);
+  const handleMenuOpen = (
+    event: React.MouseEvent<HTMLButtonElement>,
+    seedId: string
+  ) => {
+    setAnchorEl(event.currentTarget);
+    setMenuSeedId(seedId);
+  };
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+    setMenuSeedId(null);
+  };
+
   // Sorting states
   const [order, setOrder] = React.useState<SeedOrder["order"]>("asc");
   const [orderBy, setOrderBy] = React.useState<SeedOrder["orderBy"]>("breeder");
@@ -47,7 +78,6 @@ const SeedsPage: React.FC = () => {
   const handleAddSeed = () => {
     if (newSeedBreeder && newSeedStrain) {
       addSeed({
-        // Let Firestore generate the ID
         breeder: newSeedBreeder,
         strain: newSeedStrain,
         generation: newSeedGeneration,
@@ -57,7 +87,6 @@ const SeedsPage: React.FC = () => {
         dateAcquired: new Date().toISOString(),
         available: isAvailable,
       });
-      // Reset form fields
       setNewSeedBreeder("");
       setNewSeedStrain("");
       setNewSeedGeneration("");
@@ -68,7 +97,7 @@ const SeedsPage: React.FC = () => {
     }
   };
 
-  // Sorting logic
+  // Handle sorting
   const handleRequestSort = (property: keyof Seed) => {
     const isAsc = orderBy === property && order === "asc";
     setOrder(isAsc ? "desc" : "asc");
@@ -106,9 +135,46 @@ const SeedsPage: React.FC = () => {
     return stabilizedThis.map((el) => el[0]);
   }
 
+  // Handle edit click
+  const handleEditClick = (seed: Seed) => {
+    setEditingSeed(seed);
+    setEditForm({
+      breeder: seed.breeder,
+      strain: seed.strain,
+      generation: seed.generation,
+      numSeeds: seed.numSeeds,
+      feminized: seed.feminized,
+      open: seed.open,
+      available: seed.available,
+    });
+    handleMenuClose();
+  };
+
+  // Handle form changes
+  const handleEditFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target;
+    setEditForm((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  // Save changes
+  const handleSaveChanges = () => {
+    if (editingSeed) {
+      updateSeed(editingSeed.id!, editForm).then(() => {
+        setEditingSeed(null);
+      });
+    }
+  };
+
+  // Cancel editing
+  const handleCancelEditing = () => {
+    setEditingSeed(null);
+  };
+
   return (
     <Box sx={{ p: 3 }}>
-      {/* Page Title */}
       <Typography
         variant="h4"
         gutterBottom
@@ -122,15 +188,9 @@ const SeedsPage: React.FC = () => {
         Manage Seeds
       </Typography>
 
-      {/* -- FORM SECTION -- */}
-      {/*
-          Use a responsive Stack:
-          - column on xs
-          - row on md+
-      */}
+      {/* Form Section */}
       <Box sx={{ display: "flex", justifyContent: "center", mb: 2, p: 2 }}>
         <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-          {/* Column 1 */}
           <Stack spacing={2}>
             <TextField
               label="Breeder"
@@ -145,8 +205,6 @@ const SeedsPage: React.FC = () => {
               fullWidth
             />
           </Stack>
-
-          {/* Column 2 */}
           <Stack spacing={2}>
             <TextField
               label="Generation"
@@ -162,8 +220,6 @@ const SeedsPage: React.FC = () => {
               fullWidth
             />
           </Stack>
-
-          {/* Column 3 */}
           <Stack spacing={1}>
             <FormControlLabel
               control={
@@ -193,8 +249,6 @@ const SeedsPage: React.FC = () => {
               label="Available?"
             />
           </Stack>
-
-          {/* Column 4 */}
           <Stack>
             <Button
               sx={{ mt: { xs: 2, md: 5 } }}
@@ -208,10 +262,7 @@ const SeedsPage: React.FC = () => {
         </Stack>
       </Box>
 
-      {/* -- TABLE SECTION -- */}
-      {/*
-        Wrap in TableContainer + Paper for horizontal scroll on mobile
-      */}
+      {/* Table Section */}
       <Box sx={{ display: "flex", justifyContent: "center", mb: 2, p: 2 }}>
         <TableContainer
           component={Paper}
@@ -349,26 +400,101 @@ const SeedsPage: React.FC = () => {
                 <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
-
             <TableBody>
               {sortSeeds(seeds, getComparator(order, orderBy)).map((seed) => (
                 <TableRow key={seed.id}>
-                  <TableCell>{seed.breeder}</TableCell>
-                  <TableCell>{seed.strain}</TableCell>
-                  <TableCell>{seed.generation}</TableCell>
-                  <TableCell>{seed.numSeeds}</TableCell>
-                  <TableCell>{seed.feminized ? "Yes" : "No"}</TableCell>
-                  <TableCell>{seed.open ? "Yes" : "No"}</TableCell>
-                  <TableCell>{seed.available ? "Yes" : "No"}</TableCell>
-                  <TableCell>
-                    <Button
-                      variant="outlined"
-                      color="error"
-                      onClick={() => deleteSeed(seed.id!)}
-                    >
-                      Delete
-                    </Button>
-                  </TableCell>
+                  {editingSeed?.id === seed.id ? (
+                    <>
+                      <TableCell>
+                        <TextField
+                          name="breeder"
+                          value={editForm.breeder}
+                          onChange={handleEditFormChange}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <TextField
+                          name="strain"
+                          value={editForm.strain}
+                          onChange={handleEditFormChange}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <TextField
+                          name="generation"
+                          value={editForm.generation}
+                          onChange={handleEditFormChange}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <TextField
+                          name="numSeeds"
+                          type="number"
+                          value={editForm.numSeeds}
+                          onChange={handleEditFormChange}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Checkbox
+                          name="feminized"
+                          checked={editForm.feminized}
+                          onChange={handleEditFormChange}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Checkbox
+                          name="open"
+                          checked={editForm.open}
+                          onChange={handleEditFormChange}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Checkbox
+                          name="available"
+                          checked={editForm.available}
+                          onChange={handleEditFormChange}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Button onClick={handleSaveChanges}>Save</Button>
+                        <Button onClick={handleCancelEditing}>Cancel</Button>
+                      </TableCell>
+                    </>
+                  ) : (
+                    <>
+                      <TableCell>{seed.breeder}</TableCell>
+                      <TableCell>{seed.strain}</TableCell>
+                      <TableCell>{seed.generation}</TableCell>
+                      <TableCell>{seed.numSeeds}</TableCell>
+                      <TableCell>{seed.feminized ? "Yes" : "No"}</TableCell>
+                      <TableCell>{seed.open ? "Yes" : "No"}</TableCell>
+                      <TableCell>{seed.available ? "Yes" : "No"}</TableCell>
+                      <TableCell>
+                        <IconButton
+                          onClick={(e) => handleMenuOpen(e, seed.id!)}
+                        >
+                          <MoreVert />
+                        </IconButton>
+                        <Menu
+                          anchorEl={anchorEl}
+                          open={menuSeedId === seed.id}
+                          onClose={handleMenuClose}
+                        >
+                          <MenuItem onClick={() => handleEditClick(seed)}>
+                            Edit
+                          </MenuItem>
+                          <MenuItem
+                            onClick={() => {
+                              deleteSeed(seed.id!);
+                              handleMenuClose();
+                            }}
+                          >
+                            Delete
+                          </MenuItem>
+                        </Menu>
+                      </TableCell>
+                    </>
+                  )}
                 </TableRow>
               ))}
             </TableBody>

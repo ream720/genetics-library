@@ -19,11 +19,14 @@ import {
   FormControl,
   InputLabel,
   TableContainer,
-  Paper, // Paper to wrap TableContainer if you like
+  Paper,
+  IconButton,
+  Menu, // Paper to wrap TableContainer if you like
 } from "@mui/material";
 import { visuallyHidden } from "@mui/utils";
 import { useCloneContext } from "../context/CloneContext";
 import { Clone } from "../types";
+import { MoreVert } from "@mui/icons-material";
 
 // Interface for table sorting
 interface CloneOrder {
@@ -32,7 +35,7 @@ interface CloneOrder {
 }
 
 const ClonesPage: React.FC = () => {
-  const { clones, addClone, deleteClone } = useCloneContext();
+  const { clones, addClone, deleteClone, updateClone } = useCloneContext();
   const [newBreeder, setNewBreeder] = React.useState("");
   const [newStrain, setNewStrain] = React.useState("");
   const [newCutName, setNewCutName] = React.useState("");
@@ -40,6 +43,33 @@ const ClonesPage: React.FC = () => {
   const [newSex, setNewSex] = React.useState<"Male" | "Female">("Male");
   const [newBreederCut, setNewBreederCut] = React.useState(false);
   const [newAvailable, setNewAvailable] = React.useState(false);
+
+  const [editingClone, setEditingClone] = React.useState<Clone | null>(null);
+
+  const [editForm, setEditForm] = React.useState<Partial<Clone>>({
+    breeder: "",
+    strain: "",
+    cutName: "",
+    generation: "",
+    sex: "Male",
+    breederCut: false,
+    available: false,
+  });
+
+  // Actions dropdown state
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [menuCloneId, setMenuCloneId] = React.useState<string | null>(null);
+  const handleMenuOpen = (
+    event: React.MouseEvent<HTMLButtonElement>,
+    seedId: string
+  ) => {
+    setAnchorEl(event.currentTarget);
+    setMenuCloneId(seedId);
+  };
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+    setMenuCloneId(null);
+  };
 
   const [order, setOrder] = React.useState<CloneOrder["order"]>("asc");
   const [orderBy, setOrderBy] =
@@ -112,6 +142,45 @@ const ClonesPage: React.FC = () => {
     });
     return stabilizedThis.map((el) => el[0]);
   }
+
+  const handleEditClick = (clone: Clone) => {
+    setEditingClone(clone);
+    setEditForm({
+      breeder: clone.breeder,
+      strain: clone.strain,
+      cutName: clone.cutName,
+      generation: clone.generation,
+      sex: clone.sex,
+      breederCut: clone.breederCut,
+      available: clone.available,
+    });
+    handleMenuClose();
+  };
+
+  const handleEditFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target;
+    setEditForm((prev) => ({
+      ...prev,
+      [name]:
+        type === "checkbox"
+          ? checked
+          : name === "sex"
+          ? (value as "Male" | "Female")
+          : value,
+    }));
+  };
+
+  const handleSaveChanges = () => {
+    if (editingClone) {
+      updateClone(editingClone.id!, editForm).then(() => {
+        setEditingClone(null);
+      });
+    }
+  };
+
+  const handleCancelEditing = () => {
+    setEditingClone(null);
+  };
 
   return (
     <Box sx={{ p: 3 }}>
@@ -371,22 +440,110 @@ const ClonesPage: React.FC = () => {
               {sortClones(clones, getComparator(order, orderBy)).map(
                 (clone) => (
                   <TableRow key={clone.id}>
-                    <TableCell>{clone.breeder}</TableCell>
-                    <TableCell>{clone.strain}</TableCell>
-                    <TableCell>{clone.cutName}</TableCell>
-                    <TableCell>{clone.generation}</TableCell>
-                    <TableCell>{clone.sex}</TableCell>
-                    <TableCell>{clone.breederCut ? "Yes" : "No"}</TableCell>
-                    <TableCell>{clone.available ? "Yes" : "No"}</TableCell>
-                    <TableCell>
-                      <Button
-                        variant="outlined"
-                        color="error"
-                        onClick={() => deleteClone(clone.id!)}
-                      >
-                        Delete
-                      </Button>
-                    </TableCell>
+                    {editingClone?.id === clone.id ? (
+                      <>
+                        <TableCell>
+                          <TextField
+                            name="breeder"
+                            value={editForm.breeder}
+                            onChange={handleEditFormChange}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <TextField
+                            name="strain"
+                            value={editForm.strain}
+                            onChange={handleEditFormChange}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <TextField
+                            name="cutName"
+                            value={editForm.cutName}
+                            onChange={handleEditFormChange}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <TextField
+                            name="generation"
+                            value={editForm.generation}
+                            onChange={handleEditFormChange}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <FormControl fullWidth>
+                            <InputLabel>Sex</InputLabel>
+                            <Select
+                              name="sex"
+                              value={editForm.sex || ""} // Ensure a default value is handled
+                              onChange={(e) =>
+                                setEditForm((prev) => ({
+                                  ...prev,
+                                  sex: e.target.value as "Male" | "Female", // Cast to the appropriate type
+                                }))
+                              }
+                              label="Sex"
+                            >
+                              <MenuItem value="Male">Male</MenuItem>
+                              <MenuItem value="Female">Female</MenuItem>
+                            </Select>
+                          </FormControl>
+                        </TableCell>
+
+                        <TableCell>
+                          <Checkbox
+                            name="breederCut"
+                            value={editForm.breederCut}
+                            onChange={handleEditFormChange}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Checkbox
+                            name="available"
+                            value={editForm.available}
+                            onChange={handleEditFormChange}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Button onClick={handleSaveChanges}>Save</Button>
+                          <Button onClick={handleCancelEditing}>Cancel</Button>
+                        </TableCell>
+                      </>
+                    ) : (
+                      <>
+                        <TableCell>{clone.breeder}</TableCell>
+                        <TableCell>{clone.strain}</TableCell>
+                        <TableCell>{clone.cutName}</TableCell>
+                        <TableCell>{clone.generation}</TableCell>
+                        <TableCell>{clone.sex}</TableCell>
+                        <TableCell>{clone.breederCut ? "Yes" : "No"}</TableCell>
+                        <TableCell>{clone.available ? "Yes" : "No"}</TableCell>
+                        <TableCell>
+                          <IconButton
+                            onClick={(e) => handleMenuOpen(e, clone.id!)}
+                          >
+                            <MoreVert />
+                          </IconButton>
+                          <Menu
+                            anchorEl={anchorEl}
+                            open={menuCloneId === clone.id}
+                            onClose={handleMenuClose}
+                          >
+                            <MenuItem onClick={() => handleEditClick(clone)}>
+                              Edit
+                            </MenuItem>
+                            <MenuItem
+                              onClick={() => {
+                                deleteClone(clone.id!);
+                                handleMenuClose();
+                              }}
+                            >
+                              Delete
+                            </MenuItem>
+                          </Menu>
+                        </TableCell>
+                      </>
+                    )}
                   </TableRow>
                 )
               )}
