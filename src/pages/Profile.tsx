@@ -131,26 +131,25 @@ function Profile() {
   return (
     <Box sx={{ maxWidth: 1200, margin: "0 auto", p: 3 }}>
       {/* Profile Header */}
-      <Box sx={{ display: "flex", alignItems: "center", mb: 3, gap: 2 }}>
-        {/* Avatar */}
-        <Avatar
-          src={userProfile?.photoURL}
-          sx={{ width: 56, height: 56 }} // Smaller avatar
-        />
-
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          mb: 3,
+          gap: 2,
+        }}
+      >
         {/* User Info */}
-        <Box sx={{ flexGrow: 1 }}>
-          {" "}
+        <Box display="flex" gap={1} sx={{ flexGrow: 1 }}>
+          <Avatar
+            src={userProfile?.photoURL || ""}
+            alt={userProfile?.username || "User"}
+            sx={{ width: 32, height: 32 }}
+          />
           {/* Flex-grow to align other elements */}
           <Typography variant="h6" fontWeight="bold">
             {userProfile?.username}
-          </Typography>
-          <Typography
-            color="text.secondary"
-            variant="body2"
-            hidden={!userProfile?.email} // Hide if no email
-          >
-            {userProfile?.email}
           </Typography>
         </Box>
 

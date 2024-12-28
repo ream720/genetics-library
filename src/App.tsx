@@ -19,6 +19,7 @@ import {
   Tab,
   IconButton,
   Tooltip,
+  Avatar,
 } from "@mui/material";
 
 import Dashboard from "./pages/Dashboard";
@@ -117,10 +118,40 @@ const AppWithRouter: React.FC = () => {
       {/* -- LOGO / TOOLBAR (TOP BAR) -- */}
       <AppBar position="static">
         <Toolbar sx={{ width: "100%", display: "flex" }}>
-          {/* Left Box (same width as the right box) */}
-          <Box sx={{ width: 100 /* or some fixed width */ }}></Box>
+          {/* Left Box: Avatar and Username */}
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1, // Space between items
+              width: 100, // Match the right box width
+              overflow: "hidden",
+            }}
+          >
+            {currentUser && (
+              <>
+                <Avatar
+                  src={currentUser.photoURL || ""}
+                  alt={currentUser.username || "User"}
+                  sx={{ width: 24, height: 24 }}
+                />
+                <Typography
+                  variant="caption"
+                  color="inherit"
+                  sx={{
+                    whiteSpace: "nowrap", // Prevent text from wrapping to a new line
+                    overflow: "hidden", // Hide overflowed text
+                    textOverflow: "ellipsis", // Show ellipsis for overflowed text
+                    maxWidth: 60, // Restrict the maximum width of the text
+                  }}
+                >
+                  {currentUser.username || "Guest"}
+                </Typography>
+              </>
+            )}
+          </Box>
 
-          {/* Center Box: grow and center its content */}
+          {/* Center Box: Title */}
           <Box sx={{ flexGrow: 1, display: "flex", justifyContent: "center" }}>
             <Typography
               variant="h4"
@@ -133,10 +164,10 @@ const AppWithRouter: React.FC = () => {
             </Typography>
           </Box>
 
-          {/* Right Box: icon buttons */}
+          {/* Right Box: Icon Buttons */}
           <Box
             sx={{
-              width: 100 /* match left box width for perfect center */,
+              width: 100,
               display: "flex",
               justifyContent: "flex-end",
               gap: 1,

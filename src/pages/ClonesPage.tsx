@@ -21,7 +21,7 @@ import {
   TableContainer,
   Paper,
   IconButton,
-  Menu, // Paper to wrap TableContainer if you like
+  Menu,
 } from "@mui/material";
 import { visuallyHidden } from "@mui/utils";
 import { useCloneContext } from "../context/CloneContext";

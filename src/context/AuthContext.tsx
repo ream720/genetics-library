@@ -1,13 +1,4 @@
 import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  ReactNode,
-} from "react";
-import { auth, db } from "../../firebaseConfig"; // Import the auth and db instances
-import { doc, setDoc } from "firebase/firestore";
-import {
   User,
   onAuthStateChanged,
   signInWithEmailAndPassword,
@@ -15,9 +6,22 @@ import {
   signOut,
   UserCredential,
 } from "firebase/auth";
+import { getDoc, doc, setDoc } from "firebase/firestore";
+import {
+  ReactNode,
+  useState,
+  useEffect,
+  createContext,
+  useContext,
+} from "react";
+import { auth, db } from "../../firebaseConfig";
+
+interface ExtendedUser extends User {
+  username?: string; // Add username as an optional property
+}
 
 interface AuthContextProps {
-  currentUser: User | null;
+  currentUser: ExtendedUser | null;
   loading: boolean;
   signup: (email: string, password: string) => Promise<UserCredential>;
   login: (email: string, password: string) => Promise<void>;
@@ -35,50 +39,58 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<ExtendedUser | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
-  async function signup(
+  // Sign up function
+  const signup = async (
     email: string,
     password: string
-  ): Promise<UserCredential> {
-    try {
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-      const user = userCredential.user;
+  ): Promise<UserCredential> => {
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
+    const user = userCredential.user;
 
-      // Create a user profile in Firestore
-      await setDoc(doc(db, "users", user.uid), {
-        email: user.email,
-        // Add other user data you want to store
-      });
+    // Save user profile in Firestore
+    await setDoc(doc(db, "users", user.uid), {
+      email: user.email,
+      username: "", // Default username; you can customize this
+    });
 
-      return userCredential;
-    } catch (error) {
-      console.error("Error during signup:", error);
-      throw error;
-    }
-  }
+    return userCredential;
+  };
 
-  async function login(email: string, password: string) {
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-    } catch (error) {
-      console.error("Error during login:", error);
-      throw error;
-    }
-  }
+  // Login function
+  const login = async (email: string, password: string) => {
+    await signInWithEmailAndPassword(auth, email, password);
+  };
 
-  function logout() {
-    return signOut(auth);
-  }
+  // Logout function
+  const logout = async () => {
+    await signOut(auth);
+  };
 
+  // Monitor authentication state and fetch additional user data
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const userDocRef = doc(db, "users", user.uid);
+        const userDoc = await getDoc(userDocRef);
+
+        if (userDoc.exists()) {
+          setCurrentUser({
+            ...user,
+            username: userDoc.data().username, // Add Firestore username to the user object
+          } as ExtendedUser);
+        } else {
+          setCurrentUser(user as ExtendedUser);
+        }
+      } else {
+        setCurrentUser(null);
+      }
       setLoading(false);
     });
 
