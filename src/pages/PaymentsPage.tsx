@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Container,
   Typography,
@@ -9,16 +9,54 @@ import {
   Button,
   Stack,
   CardActions,
+  Box,
 } from "@mui/material";
+import CashAppBadge from "../assets/cashapp-badge.svg";
+import { CurrencyBitcoin, AttachMoney } from "@mui/icons-material";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../../firebaseConfig";
 
 interface PaymentsPageProps {
   onSave: (methods: string[]) => void;
+  currentUser?: { uid: string }; // Optional currentUser prop
 }
 
-const paymentMethods: string[] = ["PayPal", "CashApp", "Crypto", "Cash"];
+interface PaymentMethod {
+  name: string;
+  logo?: string; // URL of the logo
+  icon?: React.ReactNode; // React component for the icon
+}
 
-const PaymentsPage: React.FC<PaymentsPageProps> = ({ onSave }) => {
+const paymentMethods: PaymentMethod[] = [
+  {
+    name: "PayPal",
+    logo: "https://www.paypalobjects.com/webstatic/mktg/logo/pp_cc_mark_37x23.jpg",
+  },
+  { name: "CashApp", logo: CashAppBadge }, // Local SVG
+  { name: "Crypto", icon: <CurrencyBitcoin fontSize="large" /> }, // Material UI icon
+  { name: "Cash", icon: <AttachMoney fontSize="large" /> }, // Material UI icon
+];
+
+const PaymentsPage: React.FC<PaymentsPageProps> = ({ onSave, currentUser }) => {
   const [selectedMethods, setSelectedMethods] = useState<string[]>([]);
+
+  useEffect(() => {
+    const fetchPaymentMethods = async () => {
+      if (!currentUser) return; // Ensure currentUser exists before proceeding
+
+      const userDocRef = doc(db, "users", currentUser.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (userDoc.exists()) {
+        const data = userDoc.data();
+        if (data.paymentMethods) {
+          setSelectedMethods(data.paymentMethods); // Pre-select saved methods
+        }
+      }
+    };
+
+    fetchPaymentMethods();
+  }, [currentUser]);
 
   const handleCheckboxChange = (method: string) => {
     setSelectedMethods((prev) =>
@@ -41,15 +79,46 @@ const PaymentsPage: React.FC<PaymentsPageProps> = ({ onSave }) => {
           </Typography>
 
           {paymentMethods.map((method) => (
-            <Stack>
+            <Stack
+              key={method.name}
+              direction="row"
+              alignItems="center"
+              spacing={2}
+              sx={{ mb: 1 }}
+            >
+              <Box
+                sx={{
+                  width: 40,
+                  height: 40,
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                {method.logo ? (
+                  <img
+                    src={method.logo}
+                    alt={`${method.name} Logo`}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "contain",
+                    }}
+                  />
+                ) : (
+                  method.icon
+                )}
+              </Box>
+
               <FormControlLabel
                 control={
                   <Checkbox
-                    checked={selectedMethods.includes(method)}
-                    onChange={() => handleCheckboxChange(method)}
+                    checked={selectedMethods.includes(method.name)}
+                    onChange={() => handleCheckboxChange(method.name)}
                   />
                 }
-                label={method}
+                label={method.name}
+                sx={{ flexGrow: 1 }}
               />
             </Stack>
           ))}

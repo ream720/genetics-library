@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
@@ -13,7 +13,6 @@ import {
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 
-// Define a type for the state that we pass to Navigate
 interface LocationState {
   from?: {
     pathname: string;
@@ -23,16 +22,22 @@ interface LocationState {
 function Login() {
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
-  const { login } = useAuth();
+  const { login, currentUser } = useAuth();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Use useLocation with the defined type
   const location = useLocation() as { state?: LocationState };
   const navigate = useNavigate();
 
-  async function handleSubmit(e: React.FormEvent) {
+  // Redirect to the intended page if the user is already logged in
+  useEffect(() => {
+    if (currentUser) {
+      navigate(location.state?.from?.pathname || "/");
+    }
+  }, [currentUser, navigate, location.state?.from]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
@@ -40,15 +45,13 @@ function Login() {
       setLoading(true);
       if (emailRef.current && passwordRef.current) {
         await login(emailRef.current.value, passwordRef.current.value);
-        // Use optional chaining and nullish coalescing
-        navigate(location.state?.from?.pathname ?? "/");
       }
     } catch {
       setError("Failed to log in");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
-  }
+  };
 
   const handleClickShowPassword = () => {
     setShowPassword(!showPassword);

@@ -65,7 +65,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Login function
   const login = async (email: string, password: string) => {
+    console.log("Attempting to log in...");
     await signInWithEmailAndPassword(auth, email, password);
+    console.log("Login successful");
   };
 
   // Logout function

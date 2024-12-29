@@ -75,7 +75,7 @@ const AppWithRouter: React.FC = () => {
   const getActiveTabValue = () => {
     if (location.pathname === "/") return "/";
     if (location.pathname.startsWith("/search")) return "/search";
-    if (location.pathname.startsWith("/login")) return "/login";
+    if (!currentUser && location.pathname.startsWith("/login")) return "/login";
     if (location.pathname === "/profile") return "/profile";
     // Don’t return "/profile" for /profile/:userId
     // so the tab won't be highlighted.
@@ -323,10 +323,14 @@ const AppWithRouter: React.FC = () => {
             path="/payments"
             element={
               <PrivateRoute>
-                <PaymentsPage onSave={savePaymentOptions} />
+                <PaymentsPage
+                  onSave={savePaymentOptions}
+                  currentUser={currentUser || undefined}
+                />
               </PrivateRoute>
             }
           />
+
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
         </Routes>

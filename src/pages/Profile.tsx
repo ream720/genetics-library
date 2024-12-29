@@ -21,6 +21,8 @@ import {
   Stack,
   Tooltip,
 } from "@mui/material";
+import CashAppBadge from "../assets/cashapp-badge.svg";
+import { CurrencyBitcoin, AttachMoney } from "@mui/icons-material";
 import { Seed, Clone } from "../types";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
@@ -31,6 +33,17 @@ interface UserProfile {
   photoURL?: string;
   paymentMethods?: string[];
 }
+
+// Map payment methods to their logos/icons
+const paymentMethods = [
+  {
+    name: "PayPal",
+    logo: "https://www.paypalobjects.com/webstatic/mktg/logo/pp_cc_mark_37x23.jpg",
+  },
+  { name: "CashApp", logo: CashAppBadge }, // Local SVG
+  { name: "Crypto", icon: <CurrencyBitcoin fontSize="large" /> }, // Material UI icon
+  { name: "Cash", icon: <AttachMoney fontSize="large" /> }, // Material UI icon
+];
 
 function Profile() {
   const { currentUser } = useAuth();
@@ -43,8 +56,8 @@ function Profile() {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      setLoading(true); // Reset loading state on new fetch
-      setError(null); // Reset error state on new fetch
+      setLoading(true);
+      setError(null);
 
       const userToFetch = userId || currentUser?.uid;
 
@@ -102,7 +115,7 @@ function Profile() {
     };
 
     fetchUserData();
-  }, [currentUser, userId]); // Dependencies include userId to refetch when it changes
+  }, [currentUser, userId]);
 
   if (loading) {
     return (
@@ -149,7 +162,6 @@ function Profile() {
             alt={userProfile?.username || "User"}
             sx={{ width: 32, height: 32 }}
           />
-          {/* Flex-grow to align other elements */}
           <Typography variant="h6" fontWeight="bold">
             {userProfile?.username}
           </Typography>
@@ -183,18 +195,38 @@ function Profile() {
               flexWrap="wrap"
               sx={{ gap: 1 }}
             >
-              {userProfile.paymentMethods.map((method) => (
-                <Chip
-                  key={method}
-                  label={method}
-                  variant="outlined"
-                  sx={{
-                    fontSize: "0.75rem",
-                    padding: "0 6px",
-                    height: "22px",
-                  }}
-                />
-              ))}
+              {userProfile.paymentMethods.map((method) => {
+                const paymentMethod = paymentMethods.find(
+                  (item) => item.name === method
+                );
+
+                return (
+                  <Box
+                    key={method}
+                    sx={{
+                      width: 30,
+                      height: 30,
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                    }}
+                  >
+                    {paymentMethod?.logo ? (
+                      <img
+                        src={paymentMethod.logo}
+                        alt={`${method} Logo`}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "contain",
+                        }}
+                      />
+                    ) : (
+                      paymentMethod?.icon
+                    )}
+                  </Box>
+                );
+              })}
             </Stack>
           )}
         </Card>
@@ -224,7 +256,7 @@ function Profile() {
                         <Box
                           sx={{
                             display: "flex",
-                            flexWrap: "wrap", // Allows content to wrap to the next line if necessary
+                            // flexWrap: "wrap", // Allows content to wrap to the next line if necessary
                             gap: 1,
                             justifyContent: "space-between",
                             alignItems: "center",
@@ -232,8 +264,8 @@ function Profile() {
                         >
                           {/* Strain Name with Feminized Symbol */}
                           <Chip
-                            label={`${seed.strain} ${
-                              seed.feminized ? "♀" : ""
+                            label={`${seed.feminized ? "♀" : ""} ${
+                              seed.strain
                             }`}
                             sx={{
                               overflow: "hidden", // Hide overflowing text
@@ -315,7 +347,7 @@ function Profile() {
                 <Box
                   key={clone.id}
                   sx={{
-                    width: { xs: "100%", sm: "48%", md: "30%" }, // Responsive widths
+                    width: { xs: "100%", sm: "48%", md: "30%" },
                   }}
                 >
                   <Card variant="outlined">
@@ -331,17 +363,31 @@ function Profile() {
                             alignItems: "center",
                           }}
                         >
-                          {/* Strain Name with Sex Symbol */}
-                          <Chip
-                            label={`${clone.strain} ${
-                              clone.sex === "Female" ? "♀" : ""
-                            }`}
-                            sx={{
-                              overflow: "hidden", // Hide overflowing text
-                              textOverflow: "ellipsis", // Add ellipsis for overflow
-                              whiteSpace: "nowrap", // Prevent text wrapping
-                            }}
-                          />
+                          <Stack
+                            direction="row"
+                            spacing={1}
+                            alignItems={"center"}
+                          >
+                            {" "}
+                            {/* Strain Name with Sex Symbol */}
+                            <Chip
+                              label={`${clone.sex === "Female" ? "♀" : ""} ${
+                                clone.strain
+                              }`}
+                              sx={{
+                                overflow: "hidden", // Hide overflowing text
+                                textOverflow: "ellipsis", // Add ellipsis for overflow
+                                whiteSpace: "nowrap", // Prevent text wrapping
+                              }}
+                            />
+                            {clone.breederCut && (
+                              <Chip
+                                size="small"
+                                label="Breeder Cut"
+                                variant="outlined"
+                              />
+                            )}
+                          </Stack>
 
                           {/* Icons and Tags */}
                           <Stack
@@ -359,13 +405,6 @@ function Profile() {
                               <Tooltip title="Unavailable">
                                 <CancelIcon color="error" />
                               </Tooltip>
-                            )}
-                            {clone.breederCut && (
-                              <Chip
-                                label="Breeder Cut"
-                                size="small"
-                                variant="outlined"
-                              />
                             )}
                           </Stack>
                         </Box>

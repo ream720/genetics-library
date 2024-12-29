@@ -7,7 +7,6 @@ import {
   CardContent,
   Box,
   Stack,
-  CardActions,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
@@ -62,21 +61,29 @@ function Dashboard() {
             </Stack>
           </CardContent>
         </Card>
-        <Card raised>
+        <Card raised sx={{ marginBottom: "20px" }}>
           <CardContent>
             <Typography variant="h6" gutterBottom>
               Manage Your Premium Options
             </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ marginBottom: "16px" }}
+            >
               Update your accepted payment methods, and your preferred contact
               method.
             </Typography>
+            <Stack direction="row" spacing={2} justifyContent="center">
+              <Button
+                sx={{ maxWidth: "400px" }}
+                variant="contained"
+                onClick={() => navigate("/payments")}
+              >
+                Manage Payment Platforms
+              </Button>
+            </Stack>
           </CardContent>
-          <CardActions sx={{ justifyContent: "center" }}>
-            <Button variant="contained" onClick={() => navigate("/payments")}>
-              Manage Payment Platforms
-            </Button>
-          </CardActions>
         </Card>
       </Card>
     </Container>
