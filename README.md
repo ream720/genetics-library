@@ -1,50 +1,54 @@
 # React + TypeScript + Vite
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Profile Page with Seeds and Clones Management
 
-Currently, two official plugins are available:
+This project is a web application that allows users to manage their seed and clone collections. Users can view and search for other users based on profile, seed/clone collections, and manage detailed information about their seed/clone collections.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+# Features
 
-## Expanding the ESLint configuration
+1. User Profile
+   Displays the user’s profile information, including:
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+- Username
+- Profile picture (WIP)
+- Accepted payment methods
 
-- Configure the top-level `parserOptions` property like this:
+2. Seeds Collection
+   Users can manage their seed collections with details such as:
 
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+- Strain name
+- Breeder
+- Number of seeds
+- Feminization status (indicated by the ♀ icon)
+- Availability status (with success or error icons)
+- Additional tags like "Open Pack"
+- Date the seeds were added
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+3. Clones Collection
+   Users can manage their clone collections with details including:
 
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
+- Strain name
+- Breeder
+- Cut name and generation
+- Sex of the clone (indicated by a small label)
+- Availability status (with success or error icons)
+- Additional tags like "Breeder Cut"
+- Date the clones were added
 
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
-```
+# Technologies Used
+
+## Frontend
+
+- React with TypeScript
+- Material UI for styling
+- React Router for navigation
+
+## Backend
+
+- Firebase Firestore for database
+- Firebase Authentication for user management
+
+## Icons and Components
+
+- Material UI icons (CheckCircleIcon, CancelIcon)
+- Material UI components (Box, Stack, Chip, Tooltip, Typography, etc.)
