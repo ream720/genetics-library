@@ -1,20 +1,22 @@
-# React + TypeScript + Vite
+### React + TypeScript + Vite
 
-## Profile Page with Seeds and Clones Management
+# Seeds and Clones Management
 
 This project is a web application that allows users to manage their seed and clone collections. Users can view and search for other users based on profile, seed/clone collections, and manage detailed information about their seed/clone collections.
 
 # Features
 
-1. User Profile
-   Displays the user’s profile information, including:
+### 1. User Profile
+
+### Displays the user’s profile information, including:
 
 - Username
 - Profile picture (WIP)
 - Accepted payment methods
 
-2. Seeds Collection
-   Users can manage their seed collections with details such as:
+### 2. Seeds Collection
+
+### Users can manage their seed collections with details such as:
 
 - Strain name
 - Breeder
@@ -24,8 +26,9 @@ This project is a web application that allows users to manage their seed and clo
 - Additional tags like "Open Pack"
 - Date the seeds were added
 
-3. Clones Collection
-   Users can manage their clone collections with details including:
+### 3. Clones Collection
+
+### Users can manage their clone collections with details including:
 
 - Strain name
 - Breeder
@@ -37,18 +40,18 @@ This project is a web application that allows users to manage their seed and clo
 
 # Technologies Used
 
-## Frontend
+### Frontend
 
 - React with TypeScript
 - Material UI for styling
 - React Router for navigation
 
-## Backend
+### Backend
 
 - Firebase Firestore for database
 - Firebase Authentication for user management
 
-## Icons and Components
+### Icons and Components
 
 - Material UI icons (CheckCircleIcon, CancelIcon)
 - Material UI components (Box, Stack, Chip, Tooltip, Typography, etc.)
