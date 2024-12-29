@@ -230,18 +230,19 @@ function Profile() {
                             alignItems: "center",
                           }}
                         >
-                          {/* Strain Name */}
+                          {/* Strain Name with Feminized Symbol */}
                           <Chip
-                            label={seed.strain}
+                            label={`${seed.strain} ${
+                              seed.feminized ? "♀" : ""
+                            }`}
                             sx={{
-                              // Restrict the width of the Chip
                               overflow: "hidden", // Hide overflowing text
                               textOverflow: "ellipsis", // Add ellipsis for overflow
                               whiteSpace: "nowrap", // Prevent text wrapping
                             }}
                           />
 
-                          {/* Icons */}
+                          {/* Availability Icon */}
                           <Stack
                             direction="row"
                             spacing={1}
@@ -249,16 +250,6 @@ function Profile() {
                               flexShrink: 0, // Prevent icons from shrinking
                             }}
                           >
-                            {seed.feminized && (
-                              <Tooltip title="Feminized">
-                                <Chip
-                                  label="♀"
-                                  size="small"
-                                  variant="outlined"
-                                  sx={{ fontSize: "1rem" }}
-                                />
-                              </Tooltip>
-                            )}
                             {seed.available ? (
                               <Tooltip title="Available">
                                 <CheckCircleIcon color="success" />
@@ -340,9 +331,11 @@ function Profile() {
                             alignItems: "center",
                           }}
                         >
-                          {/* Strain Name */}
+                          {/* Strain Name with Sex Symbol */}
                           <Chip
-                            label={clone.strain}
+                            label={`${clone.strain} ${
+                              clone.sex === "Female" ? "♀" : ""
+                            }`}
                             sx={{
                               overflow: "hidden", // Hide overflowing text
                               textOverflow: "ellipsis", // Add ellipsis for overflow
@@ -350,7 +343,7 @@ function Profile() {
                             }}
                           />
 
-                          {/* Icons */}
+                          {/* Icons and Tags */}
                           <Stack
                             direction="row"
                             spacing={1}
@@ -358,14 +351,6 @@ function Profile() {
                               flexShrink: 0, // Prevent icons from shrinking
                             }}
                           >
-                            <Tooltip title="Female">
-                              <Chip
-                                label="♀"
-                                size="small"
-                                variant="outlined"
-                                sx={{ fontSize: "1rem" }}
-                              />
-                            </Tooltip>
                             {clone.available ? (
                               <Tooltip title="Available">
                                 <CheckCircleIcon color="success" />
@@ -374,6 +359,13 @@ function Profile() {
                               <Tooltip title="Unavailable">
                                 <CancelIcon color="error" />
                               </Tooltip>
+                            )}
+                            {clone.breederCut && (
+                              <Chip
+                                label="Breeder Cut"
+                                size="small"
+                                variant="outlined"
+                              />
                             )}
                           </Stack>
                         </Box>
@@ -386,14 +378,6 @@ function Profile() {
                           <Typography variant="body2">
                             <strong>Cut Name:</strong> {clone.cutName}
                           </Typography>
-                        )}
-                        {clone.breederCut && (
-                          <Chip
-                            sx={{ maxWidth: "40%" }}
-                            label="Breeder Cut"
-                            size="small"
-                            variant="outlined"
-                          />
                         )}
                         {clone.generation && (
                           <Typography variant="body2">
