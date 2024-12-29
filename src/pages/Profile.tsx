@@ -16,12 +16,14 @@ import {
   Box,
   Card,
   CardContent,
-  Grid,
   Chip,
   CircularProgress,
   Stack,
+  Tooltip,
 } from "@mui/material";
 import { Seed, Clone } from "../types";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CancelIcon from "@mui/icons-material/Cancel";
 
 interface UserProfile {
   email: string;
@@ -201,33 +203,75 @@ function Profile() {
       {/* Seeds Section */}
       <Card sx={{ mb: 4 }}>
         <CardContent>
-          <Typography variant="h5" gutterBottom>
+          <Typography variant="h6" gutterBottom>
             Seeds Collection
           </Typography>
           {profileSeeds.length === 0 ? (
             <Typography color="text.secondary">No seeds added yet.</Typography>
           ) : (
-            <Grid container spacing={3}>
+            <Box display="flex" flexWrap="wrap" gap={2}>
               {profileSeeds.map((seed) => (
-                <Grid item xs={12} sm={6} md={4} key={seed.id}>
+                <Box
+                  key={seed.id}
+                  sx={{
+                    width: { xs: "100%", sm: "48%", md: "30%" }, // Responsive widths
+                  }}
+                >
                   <Card variant="outlined">
                     <CardContent>
-                      {/* Rest of the seed card content remains the same */}
-                      <Stack spacing={0.5}>
+                      <Stack spacing={1}>
+                        {/* Seed Title and Availability */}
                         <Box
                           sx={{
                             display: "flex",
+                            flexWrap: "wrap", // Allows content to wrap to the next line if necessary
+                            gap: 1,
                             justifyContent: "space-between",
-                            alignItems: "flex-start",
+                            alignItems: "center",
                           }}
                         >
-                          <Typography variant="h6">{seed.strain}</Typography>
+                          {/* Strain Name */}
                           <Chip
-                            label={seed.available ? "Available" : "Unavailable"}
-                            color={seed.available ? "success" : "default"}
-                            size="small"
+                            label={seed.strain}
+                            sx={{
+                              // Restrict the width of the Chip
+                              overflow: "hidden", // Hide overflowing text
+                              textOverflow: "ellipsis", // Add ellipsis for overflow
+                              whiteSpace: "nowrap", // Prevent text wrapping
+                            }}
                           />
+
+                          {/* Icons */}
+                          <Stack
+                            direction="row"
+                            spacing={1}
+                            sx={{
+                              flexShrink: 0, // Prevent icons from shrinking
+                            }}
+                          >
+                            {seed.feminized && (
+                              <Tooltip title="Feminized">
+                                <Chip
+                                  label="♀"
+                                  size="small"
+                                  variant="outlined"
+                                  sx={{ fontSize: "1rem" }}
+                                />
+                              </Tooltip>
+                            )}
+                            {seed.available ? (
+                              <Tooltip title="Available">
+                                <CheckCircleIcon color="success" />
+                              </Tooltip>
+                            ) : (
+                              <Tooltip title="Unavailable">
+                                <CancelIcon color="error" />
+                              </Tooltip>
+                            )}
+                          </Stack>
                         </Box>
+
+                        {/* Seed Details */}
                         <Typography variant="body2">
                           <strong>Breeder:</strong> {seed.breeder}
                         </Typography>
@@ -239,14 +283,9 @@ function Profile() {
                             <strong>Generation:</strong> {seed.generation}
                           </Typography>
                         )}
+
+                        {/* Seed Tags */}
                         <Stack paddingTop={1} direction="row" spacing={1}>
-                          {seed.feminized && (
-                            <Chip
-                              label="Feminized"
-                              size="small"
-                              variant="outlined"
-                            />
-                          )}
                           {seed.open && (
                             <Chip
                               label="Open Pack"
@@ -255,6 +294,8 @@ function Profile() {
                             />
                           )}
                         </Stack>
+
+                        {/* Date Added */}
                         <Typography color="text.secondary" variant="body2">
                           Added:{" "}
                           {new Date(seed.dateAcquired).toLocaleDateString()}
@@ -262,44 +303,82 @@ function Profile() {
                       </Stack>
                     </CardContent>
                   </Card>
-                </Grid>
+                </Box>
               ))}
-            </Grid>
+            </Box>
           )}
         </CardContent>
       </Card>
 
       {/* Clones Section */}
-      <Card>
+      <Card sx={{ mb: 4 }}>
         <CardContent>
-          <Typography variant="h5" gutterBottom>
+          <Typography variant="h6" gutterBottom>
             Clones Collection
           </Typography>
           {clones.length === 0 ? (
             <Typography color="text.secondary">No clones added yet.</Typography>
           ) : (
-            <Grid container spacing={3}>
+            <Box display="flex" flexWrap="wrap" gap={2}>
               {clones.map((clone) => (
-                <Grid item xs={12} sm={6} md={4} key={clone.id}>
+                <Box
+                  key={clone.id}
+                  sx={{
+                    width: { xs: "100%", sm: "48%", md: "30%" }, // Responsive widths
+                  }}
+                >
                   <Card variant="outlined">
                     <CardContent>
                       <Stack spacing={1}>
+                        {/* Clone Title and Availability */}
                         <Box
                           sx={{
                             display: "flex",
+                            flexWrap: "wrap",
+                            gap: 1,
                             justifyContent: "space-between",
-                            alignItems: "flex-start",
+                            alignItems: "center",
                           }}
                         >
-                          <Typography variant="h6">{clone.strain}</Typography>
+                          {/* Strain Name */}
                           <Chip
-                            label={
-                              clone.available ? "Available" : "Unavailable"
-                            }
-                            color={clone.available ? "success" : "default"}
-                            size="small"
+                            label={clone.strain}
+                            sx={{
+                              overflow: "hidden", // Hide overflowing text
+                              textOverflow: "ellipsis", // Add ellipsis for overflow
+                              whiteSpace: "nowrap", // Prevent text wrapping
+                            }}
                           />
+
+                          {/* Icons */}
+                          <Stack
+                            direction="row"
+                            spacing={1}
+                            sx={{
+                              flexShrink: 0, // Prevent icons from shrinking
+                            }}
+                          >
+                            <Tooltip title="Female">
+                              <Chip
+                                label="♀"
+                                size="small"
+                                variant="outlined"
+                                sx={{ fontSize: "1rem" }}
+                              />
+                            </Tooltip>
+                            {clone.available ? (
+                              <Tooltip title="Available">
+                                <CheckCircleIcon color="success" />
+                              </Tooltip>
+                            ) : (
+                              <Tooltip title="Unavailable">
+                                <CancelIcon color="error" />
+                              </Tooltip>
+                            )}
+                          </Stack>
                         </Box>
+
+                        {/* Clone Details */}
                         <Typography variant="body2">
                           <strong>Breeder:</strong> {clone.breeder}
                         </Typography>
@@ -308,26 +387,21 @@ function Profile() {
                             <strong>Cut Name:</strong> {clone.cutName}
                           </Typography>
                         )}
+                        {clone.breederCut && (
+                          <Chip
+                            sx={{ maxWidth: "40%" }}
+                            label="Breeder Cut"
+                            size="small"
+                            variant="outlined"
+                          />
+                        )}
                         {clone.generation && (
                           <Typography variant="body2">
                             <strong>Generation:</strong> {clone.generation}
                           </Typography>
                         )}
 
-                        <Stack direction="row" spacing={1}>
-                          <Chip
-                            label={clone.sex}
-                            size="small"
-                            variant="outlined"
-                          />
-                          {clone.breederCut && (
-                            <Chip
-                              label="Breeder Cut"
-                              size="small"
-                              variant="outlined"
-                            />
-                          )}
-                        </Stack>
+                        {/* Date Added */}
                         <Typography color="text.secondary" variant="body2">
                           Added:{" "}
                           {new Date(clone.dateAcquired).toLocaleDateString()}
@@ -335,9 +409,9 @@ function Profile() {
                       </Stack>
                     </CardContent>
                   </Card>
-                </Grid>
+                </Box>
               ))}
-            </Grid>
+            </Box>
           )}
         </CardContent>
       </Card>

@@ -6,9 +6,9 @@ import {
   Checkbox,
   Card,
   CardContent,
-  Box,
-  Grid,
   Button,
+  Stack,
+  CardActions,
 } from "@mui/material";
 
 interface PaymentsPageProps {
@@ -34,37 +34,36 @@ const PaymentsPage: React.FC<PaymentsPageProps> = ({ onSave }) => {
 
   return (
     <Container maxWidth="sm">
-      <Typography variant="h4" gutterBottom>
-        Select Payment Methods
-      </Typography>
       <Card>
         <CardContent>
-          <Grid container spacing={2}>
-            {paymentMethods.map((method) => (
-              <Grid item xs={12} key={method}>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={selectedMethods.includes(method)}
-                      onChange={() => handleCheckboxChange(method)}
-                    />
-                  }
-                  label={method}
-                />
-              </Grid>
-            ))}
-          </Grid>
-          <Box sx={{ mt: 2 }}>
-            <Button
-              variant="contained"
-              color="primary"
-              fullWidth
-              onClick={handleSave}
-            >
-              Save
-            </Button>
-          </Box>
+          <Typography variant="h6" gutterBottom>
+            Select Payment Platforms
+          </Typography>
+
+          {paymentMethods.map((method) => (
+            <Stack>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={selectedMethods.includes(method)}
+                    onChange={() => handleCheckboxChange(method)}
+                  />
+                }
+                label={method}
+              />
+            </Stack>
+          ))}
         </CardContent>
+        <CardActions>
+          <Button
+            variant="contained"
+            color="primary"
+            fullWidth
+            onClick={handleSave}
+          >
+            Save
+          </Button>
+        </CardActions>
       </Card>
     </Container>
   );

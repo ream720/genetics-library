@@ -14,6 +14,7 @@ import {
   Tab,
   Paper,
   Container,
+  Snackbar,
 } from "@mui/material";
 import {
   getFirestore,
@@ -50,6 +51,8 @@ function SearchPage() {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState(0);
+  const [showSnackbar, setShowSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
 
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
@@ -117,6 +120,11 @@ function SearchPage() {
       ];
 
       setSearchResults(transformedResults);
+
+      if (transformedResults.length === 0) {
+        setSnackbarMessage("No search results found.");
+        setShowSnackbar(true);
+      }
     } catch (err) {
       console.error("Error searching:", err);
       setError("Failed to perform search. Please try again.");
@@ -212,10 +220,9 @@ function SearchPage() {
   };
 
   const filteredResults = searchResults.filter((result) => {
-    if (activeTab === 0) return true;
-    if (activeTab === 1) return result.type === "user";
-    if (activeTab === 2) return result.type === "seed";
-    if (activeTab === 3) return result.type === "clone";
+    if (activeTab === 0) return result.type === "user"; // Show only users
+    if (activeTab === 1) return result.type === "seed"; // Show only seeds
+    if (activeTab === 2) return result.type === "clone"; // Show only clones
     return false;
   });
 
@@ -237,15 +244,9 @@ function SearchPage() {
   return (
     <Container maxWidth="md">
       <Box sx={{ p: 1 }}>
-        {/* Smaller Heading */}
-        <Typography variant="h6" gutterBottom>
-          Search
-        </Typography>
-
         <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-          {/* Use size="small" for a more compact TextField */}
           <TextField
-            size="small"
+            size="medium"
             label="Search Users, Seeds, or Clones"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -253,9 +254,8 @@ function SearchPage() {
             fullWidth
             sx={{ mr: 1 }}
           />
-          {/* Smaller Button variant (or remove variant to default) */}
           <Button
-            size="small"
+            size="medium"
             variant="contained"
             onClick={handleSearch}
             disabled={loading || !searchQuery.trim()}
@@ -264,26 +264,21 @@ function SearchPage() {
           </Button>
         </Box>
 
-        {/* Centered loading indicator with smaller top margin */}
         {loading && (
           <Box sx={{ display: "flex", justifyContent: "center", mt: 1 }}>
             <CircularProgress size={24} />
           </Box>
         )}
 
-        {/* Error message, smaller margin */}
         {error && (
           <Typography color="error" sx={{ mt: 1 }}>
             {error}
           </Typography>
         )}
 
-        {/* Make the tabs more compact */}
         {searchResults.length > 0 && (
           <Paper sx={{ mt: 1, p: 1 }}>
-            {/* Remove variant="fullWidth" or use smaller styling if you like */}
             <Tabs value={activeTab} onChange={handleTabChange}>
-              <Tab label={`All (${searchResults.length})`} />
               <Tab
                 label={`Users (${
                   searchResults.filter((r) => r.type === "user").length
@@ -329,6 +324,13 @@ function SearchPage() {
             </ListItem>
           ))}
         </List>
+
+        <Snackbar
+          open={showSnackbar}
+          autoHideDuration={2200}
+          onClose={() => setShowSnackbar(false)}
+          message={snackbarMessage}
+        />
       </Box>
     </Container>
   );
