@@ -102,7 +102,7 @@ function Login() {
         <div>
           Don't have an account? <Link to="/signup">Sign up</Link>
         </div>
-        <div>
+        <div hidden>
           <Link to="/forgot-password">Forgot Password?</Link>
         </div>
       </Paper>

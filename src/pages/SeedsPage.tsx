@@ -3,36 +3,25 @@ import {
   Box,
   Typography,
   Button,
-  TextField,
-  Table,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
   Checkbox,
-  FormControlLabel,
   Stack,
-  TableSortLabel,
-  tableCellClasses,
-  Paper,
-  TableContainer,
+  FormControlLabel,
+  TextField,
   IconButton,
-  Menu,
-  MenuItem,
+  Tooltip,
 } from "@mui/material";
-import { MoreVert } from "@mui/icons-material";
-import { visuallyHidden } from "@mui/utils";
+import {
+  DataGrid,
+  GridColDef,
+  GridRowModesModel,
+  GridRowModes,
+} from "@mui/x-data-grid";
 import { useSeedContext } from "../context/SeedContext";
 import { Seed } from "../types";
-
-// Interface for table sorting
-interface SeedOrder {
-  orderBy: keyof Seed;
-  order: "asc" | "desc";
-}
+import { Edit, Delete, SaveAs, Cancel } from "@mui/icons-material";
 
 const SeedsPage: React.FC = () => {
-  const { seeds, addSeed, deleteSeed, updateSeed } = useSeedContext();
+  const { seeds, addSeed, deleteSeed, updateSeed, setSeeds } = useSeedContext();
 
   // Form states
   const [newSeedBreeder, setNewSeedBreeder] = React.useState("");
@@ -43,36 +32,10 @@ const SeedsPage: React.FC = () => {
   const [newOpen, setNewOpen] = React.useState(false);
   const [isAvailable, setIsAvailable] = React.useState(false);
 
-  // Edit states
-  const [editingSeed, setEditingSeed] = React.useState<Seed | null>(null);
-  const [editForm, setEditForm] = React.useState({
-    breeder: "",
-    strain: "",
-    generation: "",
-    numSeeds: 0,
-    feminized: false,
-    open: false,
-    available: false,
-  });
-
-  // Actions dropdown state
-  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
-  const [menuSeedId, setMenuSeedId] = React.useState<string | null>(null);
-  const handleMenuOpen = (
-    event: React.MouseEvent<HTMLButtonElement>,
-    seedId: string
-  ) => {
-    setAnchorEl(event.currentTarget);
-    setMenuSeedId(seedId);
-  };
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-    setMenuSeedId(null);
-  };
-
-  // Sorting states
-  const [order, setOrder] = React.useState<SeedOrder["order"]>("asc");
-  const [orderBy, setOrderBy] = React.useState<SeedOrder["orderBy"]>("breeder");
+  // Row edit state
+  const [rowModesModel, setRowModesModel] = React.useState<GridRowModesModel>(
+    {}
+  );
 
   // Handle adding a new seed
   const handleAddSeed = () => {
@@ -97,81 +60,205 @@ const SeedsPage: React.FC = () => {
     }
   };
 
-  // Handle sorting
-  const handleRequestSort = (property: keyof Seed) => {
-    const isAsc = orderBy === property && order === "asc";
-    setOrder(isAsc ? "desc" : "asc");
-    setOrderBy(property);
+  // Handle row delete
+  const handleRowDelete = (id: string) => {
+    deleteSeed(id);
   };
 
-  function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
-    if (b[orderBy] < a[orderBy]) {
-      return -1;
-    }
-    if (b[orderBy] > a[orderBy]) {
-      return 1;
-    }
-    return 0;
-  }
+  // Handle row update
+  const processRowUpdate = async (newRow: Seed, oldRow: Seed) => {
+    console.log("processRowUpdate called:");
+    console.log("New Row Data:", newRow);
+    console.log("Old Row Data:", oldRow);
 
-  function getComparator(
-    sortOrder: SeedOrder["order"],
-    sortField: SeedOrder["orderBy"]
-  ): (a: Seed, b: Seed) => number {
-    return sortOrder === "desc"
-      ? (a, b) => descendingComparator(a, b, sortField)
-      : (a, b) => -descendingComparator(a, b, sortField);
-  }
-
-  function sortSeeds(array: Seed[], comparator: (a: Seed, b: Seed) => number) {
-    const stabilizedThis = array.map(
-      (el, index) => [el, index] as [Seed, number]
-    );
-    stabilizedThis.sort((a, b) => {
-      const order = comparator(a[0], b[0]);
-      if (order !== 0) return order;
-      return a[1] - b[1];
-    });
-    return stabilizedThis.map((el) => el[0]);
-  }
-
-  // Handle edit click
-  const handleEditClick = (seed: Seed) => {
-    setEditingSeed(seed);
-    setEditForm({
-      breeder: seed.breeder,
-      strain: seed.strain,
-      generation: seed.generation,
-      numSeeds: seed.numSeeds,
-      feminized: seed.feminized,
-      open: seed.open,
-      available: seed.available,
-    });
-    handleMenuClose();
-  };
-
-  // Handle form changes
-  const handleEditFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
-    setEditForm((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-  };
-
-  // Save changes
-  const handleSaveChanges = () => {
-    if (editingSeed) {
-      updateSeed(editingSeed.id!, editForm).then(() => {
-        setEditingSeed(null);
+    try {
+      let hasChanges = false;
+      Object.keys(newRow).forEach((key) => {
+        if (newRow[key as keyof Seed] !== oldRow[key as keyof Seed]) {
+          console.log(
+            `Field changed: ${key}, Old Value: ${
+              oldRow[key as keyof Seed]
+            }, New Value: ${newRow[key as keyof Seed]}`
+          );
+          hasChanges = true;
+        }
       });
+
+      if (!hasChanges) {
+        console.warn("No changes detected. Skipping Firestore update.");
+        setRowModesModel({
+          ...rowModesModel,
+          [newRow.id!]: { mode: GridRowModes.View }, // Ensure mode resets
+        });
+        return oldRow;
+      }
+
+      // Update Firestore
+      await updateSeed(newRow.id!, newRow);
+      console.log("Firestore update successful:", newRow);
+
+      // Optimistic Update: Update the `seeds` state
+      setSeeds((prevSeeds) =>
+        prevSeeds.map((seed) => (seed.id === newRow.id ? newRow : seed))
+      );
+
+      // Switch the row back to view mode
+      setRowModesModel({
+        ...rowModesModel,
+        [newRow.id!]: { mode: GridRowModes.View },
+      });
+
+      return newRow; // Return the updated row to the DataGrid
+    } catch (error) {
+      console.error("Failed to update Firestore:", error);
+
+      // Revert to the old row on error
+      setRowModesModel({
+        ...rowModesModel,
+        [oldRow.id!]: { mode: GridRowModes.View, ignoreModifications: true },
+      });
+
+      return oldRow;
     }
   };
 
-  // Cancel editing
-  const handleCancelEditing = () => {
-    setEditingSeed(null);
+  // Handle row edit start
+  const handleEditClick = (id: string) => {
+    setRowModesModel({
+      ...rowModesModel,
+      [id]: { mode: GridRowModes.Edit },
+    });
   };
+
+  // Handle row edit cancel
+  const handleCancelClick = (id: string) => {
+    setRowModesModel({
+      ...rowModesModel,
+      [id]: { mode: GridRowModes.View, ignoreModifications: true },
+    });
+  };
+
+  // Define columns
+  const columns: GridColDef[] = [
+    {
+      field: "breeder",
+      headerName: "Breeder",
+      headerAlign: "center",
+      align: "left",
+      editable: true,
+      width: 150,
+      flex: 0,
+    },
+    {
+      field: "strain",
+      headerName: "Strain",
+      headerAlign: "center",
+      align: "left",
+      editable: true,
+      width: 150,
+      flex: 0,
+    },
+    {
+      field: "generation",
+      headerName: "Generation",
+      headerAlign: "center",
+      align: "center",
+      editable: true,
+      width: 100,
+      flex: 0,
+    },
+    {
+      field: "numSeeds",
+      headerName: "Seeds",
+      type: "number",
+      headerAlign: "center",
+      align: "center",
+      editable: true,
+      width: 75,
+      flex: 0,
+    },
+    {
+      field: "feminized",
+      headerName: "Feminized?",
+      type: "boolean",
+      headerAlign: "center",
+      align: "center",
+      editable: true,
+      flex: 0,
+    },
+    {
+      field: "open",
+      headerName: "Open?",
+      headerAlign: "center",
+      align: "center",
+      type: "boolean",
+      editable: true,
+      width: 75,
+      flex: 0,
+    },
+    {
+      field: "available",
+      headerName: "Available?",
+      headerAlign: "center",
+      align: "center",
+      type: "boolean",
+      editable: true,
+      width: 100,
+      flex: 0,
+    },
+    {
+      field: "actions",
+      headerName: "Actions",
+      renderCell: (params) => {
+        const isEditing = rowModesModel[params.id]?.mode === GridRowModes.Edit;
+
+        return isEditing ? (
+          <>
+            <Tooltip title="Save">
+              <IconButton
+                onClick={() =>
+                  setRowModesModel({
+                    ...rowModesModel,
+                    [params.id]: { mode: GridRowModes.View },
+                  })
+                }
+                aria-label="save"
+              >
+                <SaveAs />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Cancel">
+              <IconButton
+                onClick={() => handleCancelClick(params.id.toString())}
+                aria-label="cancel"
+              >
+                <Cancel />
+              </IconButton>
+            </Tooltip>
+          </>
+        ) : (
+          <>
+            <Tooltip title="Edit">
+              <IconButton
+                onClick={() => handleEditClick(params.id.toString())}
+                aria-label="edit"
+              >
+                <Edit />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Delete">
+              <IconButton
+                onClick={() => handleRowDelete(params.id.toString())}
+                aria-label="delete"
+              >
+                <Delete />
+              </IconButton>
+            </Tooltip>
+          </>
+        );
+      },
+    },
+  ];
 
   return (
     <Box sx={{ p: 3 }}>
@@ -262,244 +349,30 @@ const SeedsPage: React.FC = () => {
         </Stack>
       </Box>
 
-      {/* Table Section */}
-      <Box sx={{ display: "flex", justifyContent: "center", mb: 2, p: 2 }}>
-        <TableContainer
-          component={Paper}
-          sx={{
-            maxWidth: { xs: "100%", md: "80%" },
-            margin: "0 auto",
-            overflowX: "auto",
+      {/* Data Grid Section */}
+      <Box sx={{ height: 600, width: "100%", overflowX: "auto" }}>
+        <DataGrid
+          rows={seeds.map((seed) => ({
+            ...seed,
+            id: seed.id, // Ensure each row has a unique id
+          }))}
+          columns={columns}
+          processRowUpdate={processRowUpdate} // Ensure this is passed correctly
+          onProcessRowUpdateError={(error) =>
+            console.error("Error during row update:", error)
+          }
+          rowModesModel={rowModesModel}
+          onRowModesModelChange={(newModel) => setRowModesModel(newModel)}
+          initialState={{
+            pagination: {
+              paginationModel: {
+                pageSize: 10, // Default page size
+              },
+            },
           }}
-        >
-          <Table
-            sx={{
-              [`& .${tableCellClasses.head}`]: {
-                backgroundColor: "#518548",
-                color: "white",
-              },
-              [`& .${tableCellClasses.body}`]: {
-                color: "white",
-              },
-            }}
-          >
-            <TableHead>
-              <TableRow>
-                <TableCell>
-                  <TableSortLabel
-                    active={orderBy === "breeder"}
-                    direction={orderBy === "breeder" ? order : "asc"}
-                    onClick={() => handleRequestSort("breeder")}
-                  >
-                    Breeder
-                    {orderBy === "breeder" && (
-                      <Box component="span" sx={visuallyHidden}>
-                        {order === "desc"
-                          ? "sorted descending"
-                          : "sorted ascending"}
-                      </Box>
-                    )}
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell>
-                  <TableSortLabel
-                    active={orderBy === "strain"}
-                    direction={orderBy === "strain" ? order : "asc"}
-                    onClick={() => handleRequestSort("strain")}
-                  >
-                    Strain
-                    {orderBy === "strain" && (
-                      <Box component="span" sx={visuallyHidden}>
-                        {order === "desc"
-                          ? "sorted descending"
-                          : "sorted ascending"}
-                      </Box>
-                    )}
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell>
-                  <TableSortLabel
-                    active={orderBy === "generation"}
-                    direction={orderBy === "generation" ? order : "asc"}
-                    onClick={() => handleRequestSort("generation")}
-                  >
-                    Generation
-                    {orderBy === "generation" && (
-                      <Box component="span" sx={visuallyHidden}>
-                        {order === "desc"
-                          ? "sorted descending"
-                          : "sorted ascending"}
-                      </Box>
-                    )}
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell>
-                  <TableSortLabel
-                    active={orderBy === "numSeeds"}
-                    direction={orderBy === "numSeeds" ? order : "asc"}
-                    onClick={() => handleRequestSort("numSeeds")}
-                  >
-                    # of Seeds
-                    {orderBy === "numSeeds" && (
-                      <Box component="span" sx={visuallyHidden}>
-                        {order === "desc"
-                          ? "sorted descending"
-                          : "sorted ascending"}
-                      </Box>
-                    )}
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell>
-                  <TableSortLabel
-                    active={orderBy === "feminized"}
-                    direction={orderBy === "feminized" ? order : "asc"}
-                    onClick={() => handleRequestSort("feminized")}
-                  >
-                    Feminized?
-                    {orderBy === "feminized" && (
-                      <Box component="span" sx={visuallyHidden}>
-                        {order === "desc"
-                          ? "sorted descending"
-                          : "sorted ascending"}
-                      </Box>
-                    )}
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell>
-                  <TableSortLabel
-                    active={orderBy === "open"}
-                    direction={orderBy === "open" ? order : "asc"}
-                    onClick={() => handleRequestSort("open")}
-                  >
-                    Open?
-                    {orderBy === "open" && (
-                      <Box component="span" sx={visuallyHidden}>
-                        {order === "desc"
-                          ? "sorted descending"
-                          : "sorted ascending"}
-                      </Box>
-                    )}
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell>
-                  <TableSortLabel
-                    active={orderBy === "available"}
-                    direction={orderBy === "available" ? order : "asc"}
-                    onClick={() => handleRequestSort("available")}
-                  >
-                    Available?
-                    {orderBy === "available" && (
-                      <Box component="span" sx={visuallyHidden}>
-                        {order === "desc"
-                          ? "sorted descending"
-                          : "sorted ascending"}
-                      </Box>
-                    )}
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {sortSeeds(seeds, getComparator(order, orderBy)).map((seed) => (
-                <TableRow key={seed.id}>
-                  {editingSeed?.id === seed.id ? (
-                    <>
-                      <TableCell>
-                        <TextField
-                          name="breeder"
-                          value={editForm.breeder}
-                          onChange={handleEditFormChange}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <TextField
-                          name="strain"
-                          value={editForm.strain}
-                          onChange={handleEditFormChange}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <TextField
-                          name="generation"
-                          value={editForm.generation}
-                          onChange={handleEditFormChange}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <TextField
-                          name="numSeeds"
-                          type="number"
-                          value={editForm.numSeeds}
-                          onChange={handleEditFormChange}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Checkbox
-                          name="feminized"
-                          checked={editForm.feminized}
-                          onChange={handleEditFormChange}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Checkbox
-                          name="open"
-                          checked={editForm.open}
-                          onChange={handleEditFormChange}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Checkbox
-                          name="available"
-                          checked={editForm.available}
-                          onChange={handleEditFormChange}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Button onClick={handleSaveChanges}>Save</Button>
-                        <Button onClick={handleCancelEditing}>Cancel</Button>
-                      </TableCell>
-                    </>
-                  ) : (
-                    <>
-                      <TableCell>{seed.breeder}</TableCell>
-                      <TableCell>{seed.strain}</TableCell>
-                      <TableCell>{seed.generation}</TableCell>
-                      <TableCell>{seed.numSeeds}</TableCell>
-                      <TableCell>{seed.feminized ? "Yes" : "No"}</TableCell>
-                      <TableCell>{seed.open ? "Yes" : "No"}</TableCell>
-                      <TableCell>{seed.available ? "Yes" : "No"}</TableCell>
-                      <TableCell>
-                        <IconButton
-                          onClick={(e) => handleMenuOpen(e, seed.id!)}
-                        >
-                          <MoreVert />
-                        </IconButton>
-                        <Menu
-                          anchorEl={anchorEl}
-                          open={menuSeedId === seed.id}
-                          onClose={handleMenuClose}
-                        >
-                          <MenuItem onClick={() => handleEditClick(seed)}>
-                            Edit
-                          </MenuItem>
-                          <MenuItem
-                            onClick={() => {
-                              deleteSeed(seed.id!);
-                              handleMenuClose();
-                            }}
-                          >
-                            Delete
-                          </MenuItem>
-                        </Menu>
-                      </TableCell>
-                    </>
-                  )}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+          pageSizeOptions={[10, 20, 50]} // Page size options
+          disableRowSelectionOnClick // Prevent row selection on click
+        />
       </Box>
     </Box>
   );

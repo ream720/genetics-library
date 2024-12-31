@@ -26,6 +26,7 @@ interface SeedContextProps {
   updateSeed: (id: string, updatedSeed: Partial<Seed>) => Promise<void>;
   deleteSeed: (id: string) => Promise<void>;
   refetchSeeds: () => Promise<void>; // Function to manually refresh seeds
+  setSeeds: React.Dispatch<React.SetStateAction<Seed[]>>; // Add this line
 }
 
 const SeedContext = createContext<SeedContextProps | undefined>(undefined);
@@ -94,24 +95,38 @@ export const SeedProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  // const updateSeed = async (id: string, updatedSeed: Partial<Seed>) => {
+  //   console.log("updateSeed called");
+  //   try {
+  //     const seedDocRef = doc(db, "seeds", id);
+
+  //     // Optimistic Update: Update local state immediately
+  //     setSeeds((prevSeeds) =>
+  //       prevSeeds.map((s) => (s.id === id ? { ...s, ...updatedSeed } : s))
+  //     );
+
+  //     await updateDoc(seedDocRef, updatedSeed);
+  //   } catch (error) {
+  //     console.error("Error updating document: ", error);
+
+  //     // Rollback: Revert to the original state on error
+  //     // (You might need to store the original seed data temporarily for a more accurate rollback)
+  //     await fetchSeeds();
+
+  //     throw error;
+  //   }
+  // };
+
   const updateSeed = async (id: string, updatedSeed: Partial<Seed>) => {
-    console.log("updateSeed called");
+    console.log("updateSeed called with ID:", id);
+    console.log("Updated Seed Data:", updatedSeed);
+
     try {
       const seedDocRef = doc(db, "seeds", id);
-
-      // Optimistic Update: Update local state immediately
-      setSeeds((prevSeeds) =>
-        prevSeeds.map((s) => (s.id === id ? { ...s, ...updatedSeed } : s))
-      );
-
-      await updateDoc(seedDocRef, updatedSeed);
+      await updateDoc(seedDocRef, updatedSeed); // Update Firestore
+      console.log("Firestore update successful for ID:", id);
     } catch (error) {
-      console.error("Error updating document: ", error);
-
-      // Rollback: Revert to the original state on error
-      // (You might need to store the original seed data temporarily for a more accurate rollback)
-      await fetchSeeds();
-
+      console.error("Error updating document:", error);
       throw error;
     }
   };
@@ -145,7 +160,7 @@ export const SeedProvider: React.FC<{ children: React.ReactNode }> = ({
 
   return (
     <SeedContext.Provider
-      value={{ seeds, addSeed, updateSeed, deleteSeed, refetchSeeds }}
+      value={{ seeds, addSeed, updateSeed, deleteSeed, refetchSeeds, setSeeds }}
     >
       {children}
     </SeedContext.Provider>

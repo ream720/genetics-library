@@ -37,7 +37,7 @@ function Signup() {
       }
     } catch (error) {
       console.error("Error during signup:", error);
-      setError("Failed to create an account");
+      setError("username already exists - try again ");
     }
 
     setLoading(false);
