@@ -62,7 +62,7 @@ export const SeedProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch (error) {
       console.error("Error fetching documents: ", error);
     }
-  }, [currentUser?.uid]);
+  }, [currentUser]);
 
   const addSeed = async (seed: Seed) => {
     console.log("addSeed called");

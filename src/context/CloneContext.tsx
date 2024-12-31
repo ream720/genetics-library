@@ -26,6 +26,7 @@ interface CloneContextProps {
   updateClone: (id: string, updatedClone: Partial<Clone>) => Promise<void>;
   deleteClone: (id: string) => Promise<void>;
   refetchClones: () => Promise<void>;
+  setClones: React.Dispatch<React.SetStateAction<Clone[]>>;
 }
 
 const CloneContext = createContext<CloneContextProps | undefined>(undefined);
@@ -61,29 +62,34 @@ export const CloneProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch (error) {
       console.error("Error fetching documents: ", error);
     }
-  }, [currentUser?.uid]);
+  }, [currentUser]);
 
   const addClone = async (clone: Clone) => {
+    console.log("addClone called");
     try {
       if (!currentUser) {
         console.error("Cannot add clone: User not logged in.");
-        return;
+        return; // Prevent adding clones when not logged in
       }
 
       const cloneData = {
         ...clone,
-        userId: currentUser.uid,
+        userId: currentUser.uid, // Always set userId
       };
 
-      // Optimistic Update
-      setClones((prevClones) => [...prevClones, cloneData as Clone]);
+      console.log("Attempting Firestore write (addDoc)");
+      const docRef = await addDoc(clonesCollectionRef, cloneData); // Let Firestore generate ID
+      console.log("Firestore write successful (addDoc)");
 
-      await addDoc(clonesCollectionRef, cloneData);
+      // Optimistic Update: Add to local state immediately, using Firestore ID
+      setClones((prevClones) => [
+        ...prevClones,
+        { ...cloneData, id: docRef.id } as Clone, // Include Firestore ID
+      ]);
     } catch (error) {
       console.error("Error adding document: ", error);
 
-      // Rollback
-      setClones((prevClones) => prevClones.filter((c) => c.id !== clone.id));
+      // No rollback needed as the optimistic update includes the Firestore ID.
 
       throw error;
     }
@@ -135,7 +141,14 @@ export const CloneProvider: React.FC<{ children: React.ReactNode }> = ({
 
   return (
     <CloneContext.Provider
-      value={{ clones, addClone, updateClone, deleteClone, refetchClones }}
+      value={{
+        clones,
+        addClone,
+        updateClone,
+        deleteClone,
+        refetchClones,
+        setClones,
+      }}
     >
       {children}
     </CloneContext.Provider>

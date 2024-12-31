@@ -316,6 +316,8 @@ const SeedsPage: React.FC = () => {
               fullWidth
             />
           </Stack>
+
+          {/* Column 2 */}
           <Stack spacing={2}>
             <TextField
               label="Generation"
@@ -331,6 +333,8 @@ const SeedsPage: React.FC = () => {
               fullWidth
             />
           </Stack>
+
+          {/* Column 3 */}
           <Stack spacing={1}>
             <FormControlLabel
               control={
