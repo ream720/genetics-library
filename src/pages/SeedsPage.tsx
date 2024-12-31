@@ -23,19 +23,29 @@ import {
 } from "@mui/x-data-grid";
 import { useSeedContext } from "../context/SeedContext";
 import { Seed } from "../types";
-import { Edit, Delete, SaveAs, Cancel } from "@mui/icons-material";
+import {
+  Edit,
+  Delete,
+  SaveAs,
+  Cancel,
+  AddCircleOutline,
+} from "@mui/icons-material";
 
 const SeedsPage: React.FC = () => {
   const { seeds, addSeed, deleteSeed, updateSeed, setSeeds } = useSeedContext();
 
   // Form states
-  const [newSeedBreeder, setNewSeedBreeder] = React.useState("");
-  const [newSeedStrain, setNewSeedStrain] = React.useState("");
-  const [newSeedGeneration, setNewSeedGeneration] = React.useState("");
-  const [newNumSeeds, setNewNumSeeds] = React.useState(0);
-  const [newFeminized, setNewFeminized] = React.useState(false);
-  const [newOpen, setNewOpen] = React.useState(false);
+  const [seedBreeder, setSeedBreeder] = React.useState("");
+  const [seedStrain, setSeedStrain] = React.useState("");
+  const [filalGeneration, setFilalGeneration] = React.useState("");
+  const [numSeeds, setNumSeeds] = React.useState(0);
+  const [isFeminized, setIsFeminized] = React.useState(false);
+  const [isOpen, setIsOpen] = React.useState(false);
   const [isAvailable, setIsAvailable] = React.useState(false);
+
+  // Validation states
+  const [breederError, setBreederError] = React.useState(false);
+  const [strainError, setStrainError] = React.useState(false);
 
   // Row edit state
   const [rowModesModel, setRowModesModel] = React.useState<GridRowModesModel>(
@@ -68,23 +78,31 @@ const SeedsPage: React.FC = () => {
 
   // Handle adding a new seed
   const handleAddSeed = () => {
-    if (newSeedBreeder && newSeedStrain) {
+    const isBreederValid = Boolean(seedBreeder.trim());
+    const isStrainValid = Boolean(seedStrain.trim());
+
+    setBreederError(!isBreederValid);
+    setStrainError(!isStrainValid);
+
+    if (seedBreeder && seedStrain) {
       addSeed({
-        breeder: newSeedBreeder,
-        strain: newSeedStrain,
-        generation: newSeedGeneration,
-        numSeeds: newNumSeeds,
-        feminized: newFeminized,
-        open: newOpen,
+        breeder: seedBreeder,
+        strain: seedStrain,
+        generation: filalGeneration,
+        numSeeds: numSeeds,
+        feminized: isFeminized,
+        open: isOpen,
         dateAcquired: new Date().toISOString(),
         available: isAvailable,
       });
-      setNewSeedBreeder("");
-      setNewSeedStrain("");
-      setNewSeedGeneration("");
-      setNewNumSeeds(0);
-      setNewFeminized(false);
-      setNewOpen(false);
+
+      // Reset form fields and validation
+      setSeedBreeder("");
+      setSeedStrain("");
+      setFilalGeneration("");
+      setNumSeeds(0);
+      setIsFeminized(false);
+      setIsOpen(false);
       setIsAvailable(false);
     }
   };
@@ -203,7 +221,7 @@ const SeedsPage: React.FC = () => {
     },
     {
       field: "feminized",
-      headerName: "Feminized?",
+      headerName: "Feminized",
       type: "boolean",
       headerAlign: "center",
       align: "center",
@@ -212,7 +230,7 @@ const SeedsPage: React.FC = () => {
     },
     {
       field: "open",
-      headerName: "Open?",
+      headerName: "Opened",
       headerAlign: "center",
       align: "center",
       type: "boolean",
@@ -222,7 +240,7 @@ const SeedsPage: React.FC = () => {
     },
     {
       field: "available",
-      headerName: "Available?",
+      headerName: "Available",
       headerAlign: "center",
       align: "center",
       type: "boolean",
@@ -304,15 +322,23 @@ const SeedsPage: React.FC = () => {
         <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
           <Stack spacing={2}>
             <TextField
+              required
+              placeholder="Archive Seed Bank"
               label="Breeder"
-              value={newSeedBreeder}
-              onChange={(e) => setNewSeedBreeder(e.target.value)}
+              value={seedBreeder}
+              onChange={(e) => setSeedBreeder(e.target.value)}
+              error={breederError}
+              helperText={breederError ? "Breeder is required" : ""}
               fullWidth
             />
             <TextField
+              required
+              placeholder="Moonbow 112"
               label="Strain"
-              value={newSeedStrain}
-              onChange={(e) => setNewSeedStrain(e.target.value)}
+              value={seedStrain}
+              error={strainError}
+              helperText={strainError ? "Strain is required" : ""}
+              onChange={(e) => setSeedStrain(e.target.value)}
               fullWidth
             />
           </Stack>
@@ -320,59 +346,67 @@ const SeedsPage: React.FC = () => {
           {/* Column 2 */}
           <Stack spacing={2}>
             <TextField
+              placeholder="F1, S1, etc."
               label="Generation"
-              value={newSeedGeneration}
-              onChange={(e) => setNewSeedGeneration(e.target.value)}
+              value={filalGeneration}
+              onChange={(e) => setFilalGeneration(e.target.value)}
               fullWidth
             />
             <TextField
               label="# of Seeds"
+              placeholder="12"
               type="number"
-              value={newNumSeeds}
-              onChange={(e) => setNewNumSeeds(Number(e.target.value))}
+              value={numSeeds}
+              onChange={(e) => setNumSeeds(Number(e.target.value))}
               fullWidth
             />
           </Stack>
 
           {/* Column 3 */}
           <Stack spacing={1}>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={newFeminized}
-                  onChange={(e) => setNewFeminized(e.target.checked)}
-                />
-              }
-              label="Feminized"
-            />
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={newOpen}
-                  onChange={(e) => setNewOpen(e.target.checked)}
-                />
-              }
-              label="Open"
-            />
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={isAvailable}
-                  onChange={(e) => setIsAvailable(e.target.checked)}
-                />
-              }
-              label="Available?"
-            />
+            <Stack>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    size="small"
+                    checked={isFeminized}
+                    onChange={(e) => setIsFeminized(e.target.checked)}
+                  />
+                }
+                label="Feminized"
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    size="small"
+                    checked={isOpen}
+                    onChange={(e) => setIsOpen(e.target.checked)}
+                  />
+                }
+                label="Open"
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    size="small"
+                    checked={isAvailable}
+                    onChange={(e) => setIsAvailable(e.target.checked)}
+                  />
+                }
+                label="Available?"
+              />
+            </Stack>
           </Stack>
+
           <Stack>
-            <Button
-              sx={{ mt: { xs: 2, md: 5 } }}
-              size="small"
-              variant="contained"
-              onClick={handleAddSeed}
-            >
-              Add Seed
-            </Button>
+            <Tooltip title="Add Seed">
+              <IconButton
+                sx={{ mt: { xs: 2, md: 5 }, color: "primary.main" }}
+                onClick={handleAddSeed}
+              >
+                <AddCircleOutline fontSize="large" />
+              </IconButton>
+            </Tooltip>
           </Stack>
         </Stack>
       </Box>

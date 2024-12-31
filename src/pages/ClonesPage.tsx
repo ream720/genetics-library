@@ -27,19 +27,29 @@ import {
 } from "@mui/x-data-grid";
 import { useCloneContext } from "../context/CloneContext";
 import { Clone } from "../types";
-import { Edit, Delete, SaveAs, Cancel } from "@mui/icons-material";
+import {
+  Edit,
+  Delete,
+  SaveAs,
+  Cancel,
+  AddCircleOutline,
+} from "@mui/icons-material";
 
 const ClonesPage: React.FC = () => {
   const { clones, addClone, deleteClone, updateClone } = useCloneContext();
 
   // Form states
-  const [newBreeder, setNewBreeder] = React.useState("");
-  const [newStrain, setNewStrain] = React.useState("");
-  const [newCutName, setNewCutName] = React.useState("");
-  const [newGeneration, setNewGeneration] = React.useState("");
-  const [newSex, setNewSex] = React.useState<"Male" | "Female">("Male");
-  const [newBreederCut, setNewBreederCut] = React.useState(false);
-  const [newAvailable, setNewAvailable] = React.useState(false);
+  const [cloneBreeder, setCloneBreeder] = React.useState("");
+  const [cloneStrain, setCloneStrain] = React.useState("");
+  const [cutName, setCutName] = React.useState("");
+  const [filalGeneration, setFilalGeneration] = React.useState("");
+  const [isMale, setIsMale] = React.useState<"Male" | "Female">("Male");
+  const [isBreederCut, setIsBreederCut] = React.useState(false);
+  const [isAvailable, setIsAvailable] = React.useState(false);
+
+  // Validation states
+  const [breederError, setBreederError] = React.useState(false);
+  const [strainError, setStrainError] = React.useState(false);
 
   // Row edit state
   const [rowModesModel, setRowModesModel] = React.useState<GridRowModesModel>(
@@ -52,26 +62,32 @@ const ClonesPage: React.FC = () => {
 
   // Handle adding a new clone
   const handleAddClone = () => {
-    if (newBreeder && newStrain) {
+    const isBreederValid = Boolean(cloneBreeder.trim());
+    const isStrainValid = Boolean(cloneStrain.trim());
+
+    setBreederError(!isBreederValid);
+    setStrainError(!isStrainValid);
+
+    if (cloneBreeder && cloneStrain) {
       addClone({
-        breeder: newBreeder,
-        strain: newStrain,
-        cutName: newCutName,
-        generation: newGeneration,
-        sex: newSex,
-        breederCut: newBreederCut,
-        available: newAvailable,
+        breeder: cloneBreeder,
+        strain: cloneStrain,
+        cutName: cutName,
+        generation: filalGeneration,
+        sex: isMale,
+        breederCut: isBreederCut,
+        available: isAvailable,
         dateAcquired: new Date().toISOString(),
       });
 
       // Reset form fields
-      setNewBreeder("");
-      setNewStrain("");
-      setNewCutName("");
-      setNewGeneration("");
-      setNewSex("Male");
-      setNewBreederCut(false);
-      setNewAvailable(false);
+      setCloneBreeder("");
+      setCloneStrain("");
+      setCutName("");
+      setFilalGeneration("");
+      setIsMale("Male");
+      setIsBreederCut(false);
+      setIsAvailable(false);
     }
   };
 
@@ -273,16 +289,22 @@ const ClonesPage: React.FC = () => {
           <Stack spacing={2}>
             <TextField
               required
+              placeholder="Bloom Seed Co"
               label="Breeder"
-              value={newBreeder}
-              onChange={(e) => setNewBreeder(e.target.value)}
+              value={cloneBreeder}
+              onChange={(e) => setCloneBreeder(e.target.value)}
+              error={breederError}
+              helperText={breederError ? "Breeder is required" : ""}
               fullWidth
             />
             <TextField
               required
+              placeholder="Strawguava"
               label="Strain"
-              value={newStrain}
-              onChange={(e) => setNewStrain(e.target.value)}
+              value={cloneStrain}
+              onChange={(e) => setCloneStrain(e.target.value)}
+              error={strainError}
+              helperText={strainError ? "Strain is required" : ""}
               fullWidth
             />
           </Stack>
@@ -290,16 +312,17 @@ const ClonesPage: React.FC = () => {
           {/* Column 2 */}
           <Stack spacing={2}>
             <TextField
+              placeholder="Harry Palms Cut"
               label="Cut Name"
-              value={newCutName}
-              onChange={(e) => setNewCutName(e.target.value)}
+              value={cutName}
+              onChange={(e) => setCutName(e.target.value)}
               fullWidth
             />
             <TextField
               label="Generation"
               placeholder="F1, S1, etc."
-              value={newGeneration}
-              onChange={(e) => setNewGeneration(e.target.value)}
+              value={filalGeneration}
+              onChange={(e) => setFilalGeneration(e.target.value)}
               fullWidth
             />
           </Stack>
@@ -309,44 +332,49 @@ const ClonesPage: React.FC = () => {
             <FormControl fullWidth>
               <InputLabel>Sex</InputLabel>
               <Select
-                value={newSex}
-                onChange={(e) => setNewSex(e.target.value as "Male" | "Female")}
+                size="small"
+                value={isMale}
+                onChange={(e) => setIsMale(e.target.value as "Male" | "Female")}
                 label="Sex"
               >
                 <MenuItem value="Male">Male</MenuItem>
                 <MenuItem value="Female">Female</MenuItem>
               </Select>
             </FormControl>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={newBreederCut}
-                  onChange={(e) => setNewBreederCut(e.target.checked)}
-                />
-              }
-              label="Breeder Cut"
-            />
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={newAvailable}
-                  onChange={(e) => setNewAvailable(e.target.checked)}
-                />
-              }
-              label="Available?"
-            />
+            <Stack>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    size="small"
+                    checked={isBreederCut}
+                    onChange={(e) => setIsBreederCut(e.target.checked)}
+                  />
+                }
+                label="Breeder Cut"
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    size="small"
+                    checked={isAvailable}
+                    onChange={(e) => setIsAvailable(e.target.checked)}
+                  />
+                }
+                label="Available?"
+              />
+            </Stack>
           </Stack>
 
           {/* Column 4 */}
           <Stack>
-            <Button
-              sx={{ mt: { xs: 2, md: 5 } }}
-              size="small"
-              variant="contained"
-              onClick={handleAddClone}
-            >
-              Add Clone
-            </Button>
+            <Tooltip title="Add Clone">
+              <IconButton
+                sx={{ mt: { xs: 2, md: 5 }, color: "primary.main" }}
+                onClick={handleAddClone}
+              >
+                <AddCircleOutline fontSize="large" />
+              </IconButton>
+            </Tooltip>
           </Stack>
         </Stack>
       </Box>
