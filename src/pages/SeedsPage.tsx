@@ -382,7 +382,7 @@ const SeedsPage: React.FC = () => {
         <DataGrid
           rows={seeds.map((seed) => ({
             ...seed,
-            id: seed.id, // Ensure each row has a unique id
+            id: seed.id,
           }))}
           columns={columns}
           processRowUpdate={processRowUpdate} // Ensure this is passed correctly
@@ -405,6 +405,7 @@ const SeedsPage: React.FC = () => {
           }}
         />
       </Box>
+
       {/* Delete Confirmation Dialog */}
       <Dialog
         open={deleteDialogOpen}

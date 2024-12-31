@@ -115,28 +115,78 @@ const ClonesPage: React.FC = () => {
 
   // Define columns
   const columns: GridColDef[] = [
-    { field: "breeder", headerName: "Breeder", editable: true, flex: 1 },
-    { field: "strain", headerName: "Strain", editable: true, flex: 1 },
-    { field: "cutName", headerName: "Cut Name", editable: true, flex: 1 },
-    { field: "generation", headerName: "Generation", editable: true, flex: 1 },
-    { field: "sex", headerName: "Sex", editable: true, flex: 1 },
+    {
+      field: "breeder",
+      headerName: "Breeder",
+      headerAlign: "center",
+      align: "left",
+      editable: true,
+      width: 150,
+      flex: 0,
+    },
+    {
+      field: "strain",
+      headerName: "Strain",
+      headerAlign: "center",
+      align: "left",
+      editable: true,
+      width: 150,
+      flex: 0,
+    },
+    {
+      field: "cutName",
+      headerName: "Cut Name",
+      headerAlign: "center",
+      align: "left",
+      editable: true,
+      width: 125,
+      flex: 0,
+    },
+    {
+      field: "generation",
+      headerName: "Generation",
+      headerAlign: "center",
+      align: "center",
+      editable: true,
+      width: 100,
+      flex: 0,
+    },
+    {
+      field: "sex",
+      headerName: "Sex",
+      headerAlign: "center",
+      align: "center",
+      editable: true,
+      width: 65,
+      flex: 0,
+    },
     {
       field: "breederCut",
       headerName: "Breeder Cut",
+      headerAlign: "center",
+      align: "center",
       type: "boolean",
       editable: true,
-      flex: 1,
+      width: 95,
+      flex: 0,
     },
     {
       field: "available",
       headerName: "Available?",
+      headerAlign: "center",
+      align: "center",
       type: "boolean",
       editable: true,
-      flex: 1,
+      width: 85,
+      flex: 0,
     },
     {
       field: "actions",
       headerName: "Actions",
+      headerAlign: "center",
+      align: "center",
+      width: 100,
+      flex: 0,
       renderCell: (params) => {
         const isEditing = rowModesModel[params.id]?.mode === GridRowModes.Edit;
 
@@ -302,7 +352,7 @@ const ClonesPage: React.FC = () => {
       </Box>
 
       {/* Data Grid Section */}
-      <Box sx={{ height: 600, width: "100%" }}>
+      <Box sx={{ height: 600, width: "100%", overflowX: "auto" }}>
         <DataGrid
           rows={clones.map((clone) => ({ ...clone, id: clone.id }))}
           columns={columns}
@@ -312,6 +362,15 @@ const ClonesPage: React.FC = () => {
           }
           rowModesModel={rowModesModel}
           onRowModesModelChange={(newModel) => setRowModesModel(newModel)}
+          initialState={{
+            pagination: {
+              paginationModel: {
+                pageSize: 10, // Default page size
+              },
+            },
+          }}
+          pageSizeOptions={[10, 20, 50]} // Page size options
+          disableRowSelectionOnClick // Prevent row selection on click
           onCellEditStart={(_params, event) => {
             event.defaultMuiPrevented = true;
           }}
