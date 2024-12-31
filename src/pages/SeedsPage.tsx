@@ -9,6 +9,11 @@ import {
   TextField,
   IconButton,
   Tooltip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
 } from "@mui/material";
 import {
   DataGrid,
@@ -37,6 +42,30 @@ const SeedsPage: React.FC = () => {
     {}
   );
 
+  // Confirmation dialog state
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [seedToDelete, setSeedToDelete] = React.useState<Seed | null>(null);
+
+  // Handle opening the delete confirmation dialog
+  const handleDeleteClick = (seed: Seed) => {
+    setSeedToDelete(seed);
+    setDeleteDialogOpen(true);
+  };
+
+  // Handle closing the delete confirmation dialog
+  const handleCloseDeleteDialog = () => {
+    setDeleteDialogOpen(false);
+    setSeedToDelete(null);
+  };
+
+  // Handle confirming the delete action
+  const handleConfirmDelete = () => {
+    if (seedToDelete) {
+      deleteSeed(seedToDelete.id!); // Call deleteSeed with the selected seed ID
+    }
+    handleCloseDeleteDialog(); // Close the dialog
+  };
+
   // Handle adding a new seed
   const handleAddSeed = () => {
     if (newSeedBreeder && newSeedStrain) {
@@ -58,11 +87,6 @@ const SeedsPage: React.FC = () => {
       setNewOpen(false);
       setIsAvailable(false);
     }
-  };
-
-  // Handle row delete
-  const handleRowDelete = (id: string) => {
-    deleteSeed(id);
   };
 
   // Handle row update
@@ -248,10 +272,10 @@ const SeedsPage: React.FC = () => {
             </Tooltip>
             <Tooltip title="Delete">
               <IconButton
-                onClick={() => handleRowDelete(params.id.toString())}
+                onClick={() => handleDeleteClick(params.row)} // Use handleDeleteClick
                 aria-label="delete"
               >
-                <Delete />
+                <Delete color="error" />
               </IconButton>
             </Tooltip>
           </>
@@ -372,8 +396,37 @@ const SeedsPage: React.FC = () => {
           }}
           pageSizeOptions={[10, 20, 50]} // Page size options
           disableRowSelectionOnClick // Prevent row selection on click
+          onCellEditStart={(_params, event) => {
+            event.defaultMuiPrevented = true; // Disable default double-click to edit behavior
+          }}
         />
       </Box>
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleCloseDeleteDialog}
+        aria-labelledby="delete-dialog-title"
+      >
+        <DialogTitle id="delete-dialog-title">Confirm Delete</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete{" "}
+            <strong>{seedToDelete?.strain}</strong>?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDeleteDialog} color="primary">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmDelete}
+            color="error"
+            variant="contained"
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
