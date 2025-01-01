@@ -251,6 +251,10 @@ const SeedsPage: React.FC = () => {
     {
       field: "actions",
       headerName: "Actions",
+      headerAlign: "center",
+      align: "center",
+      width: 100,
+      flex: 0,
       renderCell: (params) => {
         const isEditing = rowModesModel[params.id]?.mode === GridRowModes.Edit;
 
@@ -401,7 +405,7 @@ const SeedsPage: React.FC = () => {
           <Stack>
             <Tooltip title="Add Seed">
               <IconButton
-                sx={{ mt: { xs: 2, md: 5 }, color: "primary.main" }}
+                sx={{ mt: { xs: 0, md: 3 }, color: "primary.main" }}
                 onClick={handleAddSeed}
               >
                 <AddCircleOutline fontSize="large" />

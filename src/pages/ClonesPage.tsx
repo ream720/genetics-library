@@ -369,7 +369,7 @@ const ClonesPage: React.FC = () => {
           <Stack>
             <Tooltip title="Add Clone">
               <IconButton
-                sx={{ mt: { xs: 2, md: 5 }, color: "primary.main" }}
+                sx={{ mt: { xs: 0, md: 3 }, color: "primary.main" }}
                 onClick={handleAddClone}
               >
                 <AddCircleOutline fontSize="large" />
