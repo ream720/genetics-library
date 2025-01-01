@@ -54,7 +54,7 @@ function Profile() {
   const { currentUser } = useAuth();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [profileSeeds, setProfileSeeds] = useState<Seed[]>([]);
-  const [clones, setClones] = useState<Clone[]>([]);
+  const [profileClones, setProfileClones] = useState<Clone[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { userId } = useParams<{ userId: string }>();
@@ -109,7 +109,7 @@ function Profile() {
                 ...doc.data(),
               } as Clone)
           );
-          setClones(clonesData);
+          setProfileClones(clonesData);
         } else {
           setError("User profile not found.");
         }
@@ -128,7 +128,7 @@ function Profile() {
     seed.strain.toLowerCase().includes(seedSearchQuery.toLowerCase())
   );
 
-  const filteredClones = clones.filter((clone) =>
+  const filteredClones = profileClones.filter((clone) =>
     clone.strain.toLowerCase().includes(cloneSearchQuery.toLowerCase())
   );
 
@@ -284,7 +284,10 @@ function Profile() {
             value={seedSearchQuery}
             onChange={(e) => setSeedSearchQuery(e.target.value)}
           />
-          {filteredSeeds.length === 0 ? (
+
+          {profileSeeds.length === 0 ? ( // Check if no seeds are added
+            <Typography color="text.secondary">No seeds added yet.</Typography>
+          ) : filteredSeeds.length === 0 ? ( // Check if search yields no results
             <Typography color="text.secondary">
               No seeds match your search.
             </Typography>
@@ -412,7 +415,9 @@ function Profile() {
             value={cloneSearchQuery}
             onChange={(e) => setCloneSearchQuery(e.target.value)}
           />
-          {filteredClones.length === 0 ? (
+          {profileClones.length === 0 ? ( // Check if no clones are added
+            <Typography color="text.secondary">No clones added yet.</Typography>
+          ) : filteredClones.length === 0 ? ( // Check if search yields no results
             <Typography color="text.secondary">
               No clones match your search.
             </Typography>
