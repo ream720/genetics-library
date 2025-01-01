@@ -20,12 +20,16 @@ import {
   CircularProgress,
   Stack,
   Tooltip,
+  AccordionSummary,
+  Accordion,
+  AccordionDetails,
 } from "@mui/material";
 import CashAppBadge from "../assets/cashapp-badge.svg";
 import { CurrencyBitcoin, AttachMoney } from "@mui/icons-material";
 import { Seed, Clone } from "../types";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 interface UserProfile {
   email: string;
@@ -233,11 +237,29 @@ function Profile() {
       </Box>
 
       {/* Seeds Section */}
-      <Card sx={{ mb: 4 }}>
-        <CardContent>
+      <Accordion
+        square={false}
+        defaultExpanded
+        sx={{
+          mb: 4,
+          borderRadius: 2,
+          boxShadow: "0px 1px 3px rgba(0, 0, 0, 0.2)", // Matches Card's shadow
+          overflow: "hidden",
+          transition: "all 0.3s ease", // Smooth animation
+        }}
+      >
+        <AccordionSummary
+          expandIcon={
+            <Tooltip title="Expand/Collapse">
+              <ExpandMoreIcon />
+            </Tooltip>
+          }
+        >
           <Typography variant="h6" gutterBottom>
             Seeds Collection
           </Typography>
+        </AccordionSummary>
+        <AccordionDetails>
           {profileSeeds.length === 0 ? (
             <Typography color="text.secondary">No seeds added yet.</Typography>
           ) : (
@@ -330,15 +352,33 @@ function Profile() {
               ))}
             </Box>
           )}
-        </CardContent>
-      </Card>
+        </AccordionDetails>
+      </Accordion>
 
       {/* Clones Section */}
-      <Card sx={{ mb: 4 }}>
-        <CardContent>
+      <Accordion
+        square={false}
+        defaultExpanded
+        sx={{
+          mb: 4,
+          borderRadius: 2,
+          boxShadow: "0px 1px 3px rgba(0, 0, 0, 0.2)", // Matches Card's shadow
+          overflow: "hidden",
+          transition: "all 0.3s ease", // Smooth animation
+        }}
+      >
+        <AccordionSummary
+          expandIcon={
+            <Tooltip title="Expand/Collapse">
+              <ExpandMoreIcon />
+            </Tooltip>
+          }
+        >
           <Typography variant="h6" gutterBottom>
             Clones Collection
           </Typography>
+        </AccordionSummary>
+        <AccordionDetails>
           {clones.length === 0 ? (
             <Typography color="text.secondary">No clones added yet.</Typography>
           ) : (
@@ -436,8 +476,8 @@ function Profile() {
               ))}
             </Box>
           )}
-        </CardContent>
-      </Card>
+        </AccordionDetails>
+      </Accordion>
     </Box>
   );
 }
