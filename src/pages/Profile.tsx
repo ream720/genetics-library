@@ -184,26 +184,22 @@ function Profile() {
         </Box>
 
         {/* Payment Methods */}
-        <Card
-          elevation={0}
-          sx={{
-            p: 2,
-            borderRadius: 2,
-            bgcolor: "background.paper",
-            boxShadow: "0px 1px 3px rgba(0, 0, 0, 0.2)",
-            maxWidth: 300,
-            textAlign: "center",
-          }}
-        >
-          <Typography variant="body1" fontWeight="bold" mb={1}>
-            Accepted Payment Methods
-          </Typography>
-          {!userProfile?.paymentMethods ||
-          userProfile.paymentMethods.length === 0 ? (
-            <Typography color="text.secondary" variant="body2">
-              No payment methods selected.
+        {userProfile?.paymentMethods ? (
+          <Card
+            elevation={0}
+            sx={{
+              p: 2,
+              borderRadius: 2,
+              bgcolor: "background.paper",
+              boxShadow: "0px 1px 3px rgba(0, 0, 0, 0.2)",
+              maxWidth: 300,
+              textAlign: "center",
+            }}
+          >
+            <Typography variant="body1" fontWeight="bold" mb={1}>
+              Accepted Payment Methods
             </Typography>
-          ) : (
+
             <Stack
               direction="row"
               spacing={1}
@@ -249,27 +245,29 @@ function Profile() {
                 );
               })}
             </Stack>
-          )}
-        </Card>
+          </Card>
+        ) : null}
+
         {/* Contact Info */}
-        <Card
-          elevation={0}
-          sx={{
-            p: 2,
-            borderRadius: 2,
-            bgcolor: "background.paper",
-            boxShadow: "0px 1px 3px rgba(0, 0, 0, 0.2)",
-            maxWidth: 300,
-            textAlign: "center",
-          }}
-        >
-          <Typography variant="body1" fontWeight="bold" mb={1}>
-            Contact Info
-          </Typography>
-          {userProfile?.contactInfo ? (
+        {userProfile?.contactInfo ? (
+          <Card
+            elevation={0}
+            sx={{
+              p: 2,
+              borderRadius: 2,
+              bgcolor: "background.paper",
+              boxShadow: "0px 1px 3px rgba(0, 0, 0, 0.2)",
+              maxWidth: 300,
+              textAlign: "center",
+            }}
+          >
+            <Typography variant="body1" fontWeight="bold" mb={1}>
+              Contact Info
+            </Typography>
+
             <Typography variant="body2">{userProfile.contactInfo}</Typography>
-          ) : null}
-        </Card>
+          </Card>
+        ) : null}
       </Box>
 
       {/* Seeds Section */}
