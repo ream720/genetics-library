@@ -37,6 +37,7 @@ interface UserProfile {
   username: string;
   photoURL?: string;
   paymentMethods?: string[];
+  contactInfo?: string;
 }
 
 // Map payment methods to their logos/icons
@@ -249,6 +250,25 @@ function Profile() {
               })}
             </Stack>
           )}
+        </Card>
+        {/* Contact Info */}
+        <Card
+          elevation={0}
+          sx={{
+            p: 2,
+            borderRadius: 2,
+            bgcolor: "background.paper",
+            boxShadow: "0px 1px 3px rgba(0, 0, 0, 0.2)",
+            maxWidth: 300,
+            textAlign: "center",
+          }}
+        >
+          <Typography variant="body1" fontWeight="bold" mb={1}>
+            Contact Info
+          </Typography>
+          {userProfile?.contactInfo ? (
+            <Typography variant="body2">{userProfile.contactInfo}</Typography>
+          ) : null}
         </Card>
       </Box>
 

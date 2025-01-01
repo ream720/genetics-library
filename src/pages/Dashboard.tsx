@@ -82,6 +82,13 @@ function Dashboard() {
               >
                 Manage Payment Platforms
               </Button>
+              <Button
+                sx={{ maxWidth: "400px" }}
+                variant="contained"
+                onClick={() => navigate("/contact-info")}
+              >
+                Manage Contact Info
+              </Button>
             </Stack>
           </CardContent>
         </Card>

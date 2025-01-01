@@ -34,6 +34,7 @@ import Login from "./components/Login";
 import Signup from "./components/Signup";
 import useIdleTimer from "./hooks/useIdleTimer";
 import SearchPage from "./pages/SearchPage";
+import ContactInfo from "./pages/ContactInfo";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 
@@ -330,7 +331,14 @@ const AppWithRouter: React.FC = () => {
               </PrivateRoute>
             }
           />
-
+          <Route
+            path="/contact-info"
+            element={
+              <PrivateRoute>
+                <ContactInfo />
+              </PrivateRoute>
+            }
+          />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
         </Routes>
