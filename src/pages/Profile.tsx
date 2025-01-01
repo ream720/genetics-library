@@ -216,30 +216,35 @@ function Profile() {
                 );
 
                 return (
-                  <Box
-                    key={method}
-                    sx={{
-                      width: 30,
-                      height: 30,
-                      display: "flex",
-                      justifyContent: "center",
-                      alignItems: "center",
-                    }}
-                  >
-                    {paymentMethod?.logo ? (
-                      <img
-                        src={paymentMethod.logo}
-                        alt={`${method} Logo`}
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "contain",
-                        }}
-                      />
-                    ) : (
-                      paymentMethod?.icon
-                    )}
-                  </Box>
+                  <Tooltip title={method} key={method}>
+                    <Box
+                      key={method}
+                      sx={{
+                        width: 50,
+                        height: 50,
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        border: "1px solid #ccc",
+                        borderRadius: "35%",
+                        padding: 1,
+                      }}
+                    >
+                      {paymentMethod?.logo ? (
+                        <img
+                          src={paymentMethod.logo}
+                          alt={`${method} Logo`}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "contain",
+                          }}
+                        />
+                      ) : (
+                        paymentMethod?.icon
+                      )}
+                    </Box>
+                  </Tooltip>
                 );
               })}
             </Stack>

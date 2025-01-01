@@ -93,6 +93,9 @@ const PaymentsPage: React.FC<PaymentsPageProps> = ({ onSave, currentUser }) => {
                   display: "flex",
                   justifyContent: "center",
                   alignItems: "center",
+                  border: "1px solid #ccc",
+                  borderRadius: "35%",
+                  padding: 1,
                 }}
               >
                 {method.logo ? (
