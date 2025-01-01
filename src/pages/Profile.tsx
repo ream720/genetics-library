@@ -23,6 +23,7 @@ import {
   AccordionSummary,
   Accordion,
   AccordionDetails,
+  TextField,
 } from "@mui/material";
 import CashAppBadge from "../assets/cashapp-badge.svg";
 import { CurrencyBitcoin, AttachMoney } from "@mui/icons-material";
@@ -57,6 +58,8 @@ function Profile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { userId } = useParams<{ userId: string }>();
+  const [seedSearchQuery, setSeedSearchQuery] = useState<string>("");
+  const [cloneSearchQuery, setCloneSearchQuery] = useState<string>("");
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -120,6 +123,14 @@ function Profile() {
 
     fetchUserData();
   }, [currentUser, userId]);
+
+  const filteredSeeds = profileSeeds.filter((seed) =>
+    seed.strain.toLowerCase().includes(seedSearchQuery.toLowerCase())
+  );
+
+  const filteredClones = clones.filter((clone) =>
+    clone.strain.toLowerCase().includes(cloneSearchQuery.toLowerCase())
+  );
 
   if (loading) {
     return (
@@ -249,26 +260,41 @@ function Profile() {
         }}
       >
         <AccordionSummary
+          sx={{
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
+          }}
           expandIcon={
             <Tooltip title="Expand/Collapse">
               <ExpandMoreIcon />
             </Tooltip>
           }
         >
-          <Typography variant="h6" gutterBottom>
-            Seeds Collection
-          </Typography>
+          <Typography variant="h6">Seeds Collection</Typography>
         </AccordionSummary>
+
         <AccordionDetails>
-          {profileSeeds.length === 0 ? (
-            <Typography color="text.secondary">No seeds added yet.</Typography>
+          {/* Search Input */}
+          <TextField
+            sx={{ flexGrow: 1, mb: 2 }}
+            size="small"
+            variant="outlined"
+            placeholder="Search seeds by strain..."
+            value={seedSearchQuery}
+            onChange={(e) => setSeedSearchQuery(e.target.value)}
+          />
+          {filteredSeeds.length === 0 ? (
+            <Typography color="text.secondary">
+              No seeds match your search.
+            </Typography>
           ) : (
             <Box display="flex" flexWrap="wrap" gap={2}>
-              {profileSeeds.map((seed) => (
+              {filteredSeeds.map((seed) => (
                 <Box
                   key={seed.id}
                   sx={{
-                    width: { xs: "100%", sm: "48%", md: "30%" }, // Responsive widths
+                    width: { xs: "100%", sm: "48%", md: "30%" },
                   }}
                 >
                   <Card variant="outlined">
@@ -278,7 +304,6 @@ function Profile() {
                         <Box
                           sx={{
                             display: "flex",
-                            // flexWrap: "wrap", // Allows content to wrap to the next line if necessary
                             gap: 1,
                             justifyContent: "space-between",
                             alignItems: "center",
@@ -290,19 +315,15 @@ function Profile() {
                               seed.strain
                             }`}
                             sx={{
-                              overflow: "hidden", // Hide overflowing text
-                              textOverflow: "ellipsis", // Add ellipsis for overflow
-                              whiteSpace: "nowrap", // Prevent text wrapping
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
                             }}
                           />
-
-                          {/* Availability Icon */}
                           <Stack
                             direction="row"
                             spacing={1}
-                            sx={{
-                              flexShrink: 0, // Prevent icons from shrinking
-                            }}
+                            sx={{ flexShrink: 0 }}
                           >
                             {seed.available ? (
                               <Tooltip title="Available">
@@ -368,22 +389,36 @@ function Profile() {
         }}
       >
         <AccordionSummary
+          sx={{
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
+          }}
           expandIcon={
             <Tooltip title="Expand/Collapse">
               <ExpandMoreIcon />
             </Tooltip>
           }
         >
-          <Typography variant="h6" gutterBottom>
-            Clones Collection
-          </Typography>
+          <Typography variant="h6">Clones Collection</Typography>
         </AccordionSummary>
         <AccordionDetails>
-          {clones.length === 0 ? (
-            <Typography color="text.secondary">No clones added yet.</Typography>
+          {/* Search Input */}
+          <TextField
+            sx={{ flexGrow: 1, mb: 2 }}
+            size="small"
+            variant="outlined"
+            placeholder="Search clones by strain..."
+            value={cloneSearchQuery}
+            onChange={(e) => setCloneSearchQuery(e.target.value)}
+          />
+          {filteredClones.length === 0 ? (
+            <Typography color="text.secondary">
+              No clones match your search.
+            </Typography>
           ) : (
             <Box display="flex" flexWrap="wrap" gap={2}>
-              {clones.map((clone) => (
+              {filteredClones.map((clone) => (
                 <Box
                   key={clone.id}
                   sx={{
