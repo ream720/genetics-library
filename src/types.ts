@@ -1,5 +1,5 @@
 export interface Seed {
-  id?: string; // Unique identifier
+  id: string; // Unique identifier
   breeder: string; // Breeder of the seed
   strain: string; // Strain type (e.g., indica, sativa, hybrid)
   generation: string; // Generation of the seed (e.g., F1, F2, etc.)
@@ -12,7 +12,7 @@ export interface Seed {
 }
 
 export interface Clone {
-  id?: string; // Unique identifier
+  id: string; // Unique identifier
   breeder: string; // Breeder of the clone
   strain: string; // Strain type
   cutName: string;

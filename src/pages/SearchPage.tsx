@@ -303,7 +303,7 @@ function SearchPage() {
             <ListItem
               key={`${result.type}-${result.id}`}
               component={Link}
-              to={`/profile/${result.userId}`}
+              to={`/profile/${result.userId}?itemType=${result.type}&itemId=${result.id}`}
               sx={{
                 bgcolor: "background.paper",
                 mb: 0.5,

@@ -9,7 +9,7 @@ import {
   getDocs,
 } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
-import { useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import {
   Avatar,
   Typography,
@@ -61,6 +61,28 @@ function Profile() {
   const { userId } = useParams<{ userId: string }>();
   const [seedSearchQuery, setSeedSearchQuery] = useState<string>("");
   const [cloneSearchQuery, setCloneSearchQuery] = useState<string>("");
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
+
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+
+  // Get item info from query params
+  const itemType = searchParams.get("itemType"); // possible values: "seed" or "clone"
+  const itemId = searchParams.get("itemId");
+
+  useEffect(() => {
+    if (!loading && itemType && itemId) {
+      const elementId = `${itemType}-${itemId}`;
+      const target = document.getElementById(elementId);
+
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "center" });
+        setHighlightedId(elementId);
+        // Optionally clear highlight after 2-3 seconds
+        setTimeout(() => setHighlightedId(null), 2000);
+      }
+    }
+  }, [loading, itemType, itemId]);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -319,11 +341,17 @@ function Profile() {
               {filteredSeeds.map((seed) => (
                 <Box
                   key={seed.id}
-                  sx={{
-                    width: { xs: "100%", sm: "48%", md: "30%" },
-                  }}
+                  id={`seed-${seed.id}`} // Add an id
+                  sx={{ width: { xs: "100%", sm: "48%", md: "30%" } }}
                 >
-                  <Card variant="outlined">
+                  <Card
+                    className={
+                      highlightedId === `seed-${seed.id}`
+                        ? "highlight-animate"
+                        : ""
+                    }
+                    variant="outlined"
+                  >
                     <CardContent>
                       <Stack spacing={1}>
                         {/* Seed Title and Availability */}
@@ -449,11 +477,17 @@ function Profile() {
               {filteredClones.map((clone) => (
                 <Box
                   key={clone.id}
-                  sx={{
-                    width: { xs: "100%", sm: "48%", md: "30%" },
-                  }}
+                  id={`clone-${clone.id}`} // Add an id
+                  sx={{ width: { xs: "100%", sm: "48%", md: "30%" } }}
                 >
-                  <Card variant="outlined">
+                  <Card
+                    className={
+                      highlightedId === `clone-${clone.id}`
+                        ? "highlight-animate"
+                        : ""
+                    }
+                    variant="outlined"
+                  >
                     <CardContent>
                       <Stack spacing={1}>
                         {/* Clone Title and Availability */}
