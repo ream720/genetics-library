@@ -20,6 +20,7 @@ import {
   GridColDef,
   GridRowModesModel,
   GridRowModes,
+  GridEditBooleanCell,
 } from "@mui/x-data-grid";
 import { useSeedContext } from "../context/SeedContext";
 import { Seed } from "../types";
@@ -30,6 +31,8 @@ import {
   Cancel,
   AddCircleOutline,
 } from "@mui/icons-material";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CancelIcon from "@mui/icons-material/Cancel";
 
 const SeedsPage: React.FC = () => {
   const { seeds, addSeed, deleteSeed, updateSeed, setSeeds } = useSeedContext();
@@ -221,32 +224,77 @@ const SeedsPage: React.FC = () => {
     },
     {
       field: "feminized",
-      headerName: "Feminized",
-      type: "boolean",
+      headerName: "Sex",
       headerAlign: "center",
       align: "center",
       editable: true,
       flex: 0,
+      renderCell: (params) => {
+        return params.value ? "♀" : "♂";
+      },
+      renderEditCell: (params) => {
+        return <GridEditBooleanCell {...params} />;
+      },
     },
     {
       field: "open",
-      headerName: "Opened",
+      headerName: "Sealed",
       headerAlign: "center",
       align: "center",
-      type: "boolean",
       editable: true,
       width: 75,
       flex: 0,
+      renderCell: (params) => {
+        const isOpened = params.value; // boolean
+        const symbol = isOpened ? "🔓" : "🔒";
+        const tooltipText = isOpened ? "Open Pack" : "Sealed Pack";
+
+        return (
+          <Tooltip title={tooltipText}>
+            <span style={{ fontSize: "1rem" }}>{symbol}</span>
+          </Tooltip>
+        );
+      },
+      renderEditCell: (params) => {
+        // EDIT mode → show a built‐in boolean checkbox
+        return <GridEditBooleanCell {...params} />;
+      },
     },
     {
       field: "available",
       headerName: "Available",
       headerAlign: "center",
       align: "center",
-      type: "boolean",
       editable: true,
       width: 100,
       flex: 0,
+      renderCell: (params) => {
+        const isAvailable = params.value;
+        return (
+          <Box
+            sx={{
+              width: "100%",
+              height: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {isAvailable ? (
+              <Tooltip style={{ fontSize: "1.2rem" }} title="Available">
+                <CheckCircleIcon color="success" />
+              </Tooltip>
+            ) : (
+              <Tooltip style={{ fontSize: "1.2rem" }} title="Unavailable">
+                <CancelIcon color="error" />
+              </Tooltip>
+            )}
+          </Box>
+        );
+      },
+      renderEditCell: (params) => {
+        return <GridEditBooleanCell {...params} />;
+      },
     },
     {
       field: "actions",

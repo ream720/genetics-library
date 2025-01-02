@@ -24,6 +24,7 @@ import {
   GridColDef,
   GridRowModesModel,
   GridRowModes,
+  GridEditBooleanCell,
 } from "@mui/x-data-grid";
 import { useCloneContext } from "../context/CloneContext";
 import { Clone } from "../types";
@@ -33,7 +34,10 @@ import {
   SaveAs,
   Cancel,
   AddCircleOutline,
+  Verified,
 } from "@mui/icons-material";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CancelIcon from "@mui/icons-material/Cancel";
 
 const ClonesPage: React.FC = () => {
   const { clones, addClone, deleteClone, updateClone } = useCloneContext();
@@ -175,26 +179,81 @@ const ClonesPage: React.FC = () => {
       editable: true,
       width: 65,
       flex: 0,
+      renderCell: (params) => {
+        const sexValue = params.value; // likely "Female" or "Male"
+        if (sexValue === "Female") return "♀";
+        if (sexValue === "Male") return "♂";
+        return ""; // fallback if unknown
+      },
     },
     {
       field: "breederCut",
       headerName: "Breeder Cut",
       headerAlign: "center",
       align: "center",
-      type: "boolean",
       editable: true,
       width: 95,
       flex: 0,
+      // Show Verified icon if breederCut === true, otherwise show nothing
+      renderCell: (params) => {
+        const hasBreederCut = params.value; // boolean
+        if (hasBreederCut) {
+          // If breederCut === true, show Verified icon
+          return (
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: "100%",
+                height: "100%",
+              }}
+            >
+              <Tooltip style={{ fontSize: "1.2rem" }} title="Breeder Cut">
+                <Verified color="success" />
+              </Tooltip>
+            </Box>
+          );
+        }
+        return null;
+      },
+      renderEditCell: (params) => <GridEditBooleanCell {...params} />,
     },
     {
       field: "available",
       headerName: "Available?",
       headerAlign: "center",
       align: "center",
-      type: "boolean",
       editable: true,
       width: 85,
       flex: 0,
+      renderCell: (params) => {
+        const isAvailable = params.value;
+        return (
+          <Box
+            sx={{
+              width: "100%",
+              height: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {isAvailable ? (
+              <Tooltip style={{ fontSize: "1.2rem" }} title="Available">
+                <CheckCircleIcon color="success" />
+              </Tooltip>
+            ) : (
+              <Tooltip style={{ fontSize: "1.2rem" }} title="Unavailable">
+                <CancelIcon color="error" />
+              </Tooltip>
+            )}
+          </Box>
+        );
+      },
+      renderEditCell: (params) => {
+        return <GridEditBooleanCell {...params} />;
+      },
     },
     {
       field: "actions",
