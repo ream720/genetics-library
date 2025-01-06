@@ -15,6 +15,7 @@ import CashAppBadge from "../assets/cashapp-badge.svg";
 import { CurrencyBitcoin, AttachMoney } from "@mui/icons-material";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
+import { useNavigate } from "react-router-dom";
 
 interface PaymentsPageProps {
   onSave: (methods: string[]) => void;
@@ -38,6 +39,7 @@ const paymentMethods: PaymentMethod[] = [
 ];
 
 const PaymentsPage: React.FC<PaymentsPageProps> = ({ onSave, currentUser }) => {
+  const navigate = useNavigate();
   const [selectedMethods, setSelectedMethods] = useState<string[]>([]);
 
   useEffect(() => {
@@ -68,6 +70,7 @@ const PaymentsPage: React.FC<PaymentsPageProps> = ({ onSave, currentUser }) => {
 
   const handleSave = () => {
     onSave(selectedMethods);
+    navigate("/");
   };
 
   return (

@@ -23,7 +23,11 @@ interface ExtendedUser extends User {
 interface AuthContextProps {
   currentUser: ExtendedUser | null;
   loading: boolean;
-  signup: (email: string, password: string) => Promise<UserCredential>;
+  signup: (
+    email: string,
+    password: string,
+    username: string
+  ) => Promise<UserCredential>;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -45,7 +49,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Sign up function
   const signup = async (
     email: string,
-    password: string
+    password: string,
+    username: string
   ): Promise<UserCredential> => {
     const userCredential = await createUserWithEmailAndPassword(
       auth,
@@ -57,7 +62,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Save user profile in Firestore
     await setDoc(doc(db, "users", user.uid), {
       email: user.email,
-      username: "", // Default username; you can customize this
+      username: username, // Default username; you can customize this
+      userNameLower: username.toLowerCase(),
     });
 
     return userCredential;

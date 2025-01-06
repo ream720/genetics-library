@@ -137,8 +137,8 @@ function SearchPage() {
     const lowerQuery = queryText.toLowerCase();
     const usersQuery = query(
       collection(db, "users"),
-      where("username", ">=", lowerQuery),
-      where("username", "<=", lowerQuery + "\uf8ff")
+      where("userNameLower", ">=", lowerQuery),
+      where("userNameLower", "<=", lowerQuery + "\uf8ff")
     );
     const usersSnapshot = await getDocs(usersQuery);
     return usersSnapshot.docs.map((doc) => ({

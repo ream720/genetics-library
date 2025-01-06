@@ -2,8 +2,6 @@ import React, { useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import { TextField, Button, Stack, Paper, Typography } from "@mui/material";
-import { doc, setDoc } from "firebase/firestore";
-import { db } from "../../firebaseConfig";
 
 function Signup() {
   const emailRef = useRef<HTMLInputElement>(null);
@@ -22,22 +20,17 @@ function Signup() {
       setLoading(true);
       if (emailRef.current && passwordRef.current && usernameRef.current) {
         // Call signup and get the userCredential
-        const userCredential = await signup(
+        await signup(
           emailRef.current.value,
-          passwordRef.current.value
+          passwordRef.current.value,
+          usernameRef.current.value
         );
-
-        // Create a user profile in Firestore with the username
-        await setDoc(doc(db, "users", userCredential.user.uid), {
-          email: userCredential.user.email,
-          username: usernameRef.current.value, // Store username
-        });
 
         navigate("/");
       }
     } catch (error) {
       console.error("Error during signup:", error);
-      setError("username already exists - try again ");
+      setError("email or username already exists - try again ");
     }
 
     setLoading(false);

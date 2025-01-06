@@ -214,7 +214,8 @@ function Profile() {
         </Box>
 
         {/* Payment Methods */}
-        {userProfile?.paymentMethods ? (
+        {userProfile?.paymentMethods &&
+        userProfile?.paymentMethods?.length > 0 ? (
           <Card
             elevation={0}
             sx={{
