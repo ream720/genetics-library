@@ -14,6 +14,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  Autocomplete,
 } from "@mui/material";
 import {
   DataGrid,
@@ -58,6 +59,11 @@ const SeedsPage: React.FC = () => {
   // Confirmation dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [seedToDelete, setSeedToDelete] = React.useState<Seed | null>(null);
+
+  // Return unique breeder names from the seeds array
+  const uniqueBreeders = Array.from(
+    new Set(seeds.map((s) => s.breeder))
+  ).sort();
 
   // Handle opening the delete confirmation dialog
   const handleDeleteClick = (seed: Seed) => {
@@ -373,15 +379,26 @@ const SeedsPage: React.FC = () => {
       <Box sx={{ display: "flex", justifyContent: "center", mb: 2, p: 2 }}>
         <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
           <Stack spacing={2}>
-            <TextField
-              required
-              placeholder="Archive Seed Bank"
-              label="Breeder"
-              value={seedBreeder}
-              onChange={(e) => setSeedBreeder(e.target.value)}
-              error={breederError}
-              helperText={breederError ? "Breeder is required" : ""}
-              fullWidth
+            <Autocomplete
+              options={uniqueBreeders}
+              freeSolo
+              inputValue={seedBreeder}
+              onInputChange={(_event, newInputValue) => {
+                setSeedBreeder(newInputValue);
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  required
+                  placeholder="Archive Seed Bank"
+                  label="Breeder"
+                  value={seedBreeder}
+                  onChange={(e) => setSeedBreeder(e.target.value)}
+                  error={breederError}
+                  helperText={breederError ? "Breeder is required" : ""}
+                  fullWidth
+                />
+              )}
             />
             <TextField
               required

@@ -1,14 +1,16 @@
 import { useEffect, useState } from "react";
-import { Box, TextField, Button, Typography, Snackbar } from "@mui/material";
+import { Box, TextField, Button, Typography } from "@mui/material";
 import { useAuth } from "../context/AuthContext";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
+import { useNavigate } from "react-router-dom";
 
 function ContactInfo() {
   const [contactInfo, setContactInfo] = useState<string>("");
-  const [snackbarOpen, setSnackbarOpen] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const { currentUser } = useAuth();
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchContactInfo = async () => {
@@ -37,15 +39,11 @@ function ContactInfo() {
 
     try {
       await saveContactInfo(contactInfo);
-      console.log("Contact Info:", contactInfo);
-      setSnackbarOpen(true);
+      navigate("/");
     } catch (error) {
+      alert("Failed to save contact info - try again.");
       console.error("Error saving contact info:", error);
     }
-  };
-
-  const handleSnackbarClose = () => {
-    setSnackbarOpen(false);
   };
 
   const saveContactInfo = async (info: string) => {
@@ -96,12 +94,6 @@ function ContactInfo() {
           </Button>
         </>
       )}
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={3000}
-        onClose={handleSnackbarClose}
-        message="Contact info saved!"
-      />
     </Box>
   );
 }

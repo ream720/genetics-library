@@ -18,6 +18,7 @@ import {
   InputLabel,
   MenuItem,
   Select,
+  Autocomplete,
 } from "@mui/material";
 import {
   DataGrid,
@@ -63,6 +64,11 @@ const ClonesPage: React.FC = () => {
   // Confirmation dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [cloneToDelete, setCloneToDelete] = React.useState<Clone | null>(null);
+
+  // Return unique breeder names from the seeds array
+  const uniqueBreeders = Array.from(
+    new Set(clones.map((c) => c.breeder))
+  ).sort();
 
   // Handle adding a new clone
   const handleAddClone = () => {
@@ -346,15 +352,26 @@ const ClonesPage: React.FC = () => {
       <Box sx={{ display: "flex", justifyContent: "center", mb: 2, p: 2 }}>
         <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
           <Stack spacing={2}>
-            <TextField
-              required
-              placeholder="Bloom Seed Co"
-              label="Breeder"
-              value={cloneBreeder}
-              onChange={(e) => setCloneBreeder(e.target.value)}
-              error={breederError}
-              helperText={breederError ? "Breeder is required" : ""}
-              fullWidth
+            <Autocomplete
+              options={uniqueBreeders}
+              freeSolo
+              inputValue={cloneBreeder}
+              onInputChange={(_event, newInputValue) => {
+                setCloneBreeder(newInputValue);
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  required
+                  placeholder="Bloom Seed Co"
+                  label="Breeder"
+                  value={cloneBreeder}
+                  onChange={(e) => setCloneBreeder(e.target.value)}
+                  error={breederError}
+                  helperText={breederError ? "Breeder is required" : ""}
+                  fullWidth
+                />
+              )}
             />
             <TextField
               required
