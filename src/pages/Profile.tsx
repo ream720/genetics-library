@@ -1,36 +1,44 @@
-import { useState, useEffect } from "react";
-import { useAuth } from "../context/AuthContext";
 import {
-  doc,
-  getDoc,
-  collection,
-  query,
-  where,
-  getDocs,
-} from "firebase/firestore";
-import { db } from "../../firebaseConfig";
-import { useLocation, useParams } from "react-router-dom";
+  AttachMoney,
+  BrokenImage,
+  CurrencyBitcoin,
+  Verified,
+} from "@mui/icons-material";
+import CancelIcon from "@mui/icons-material/Cancel";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {
-  Avatar,
-  Typography,
-  Box,
-  Card,
-  CardContent,
-  Chip,
-  CircularProgress,
-  Stack,
-  Tooltip,
-  AccordionSummary,
   Accordion,
   AccordionDetails,
+  AccordionSummary,
+  Avatar,
+  Box,
+  Card,
+  CardActions,
+  CardContent,
+  CardHeader,
+  Chip,
+  CircularProgress,
+  Grid,
+  Stack,
   TextField,
+  Tooltip,
+  Typography,
 } from "@mui/material";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+} from "firebase/firestore";
+import { useEffect, useState } from "react";
+import { useLocation, useParams } from "react-router-dom";
+import { db } from "../../firebaseConfig";
 import CashAppBadge from "../assets/cashapp-badge.svg";
-import { CurrencyBitcoin, AttachMoney } from "@mui/icons-material";
-import { Seed, Clone } from "../types";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import CancelIcon from "@mui/icons-material/Cancel";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import { useAuth } from "../context/AuthContext";
+import { Clone, Seed } from "../types";
 
 interface UserProfile {
   email: string;
@@ -337,12 +345,15 @@ function Profile() {
               No seeds match your search.
             </Typography>
           ) : (
-            <Box display="flex" flexWrap="wrap" gap={2}>
+            <Grid container spacing={2}>
               {filteredSeeds.map((seed) => (
-                <Box
+                <Grid
+                  item
+                  xs={12}
+                  sm={6}
+                  md={4}
                   key={seed.id}
-                  id={`seed-${seed.id}`} // Add an id
-                  sx={{ width: { xs: "100%", sm: "48%", md: "30%" } }}
+                  id={`seed-${seed.id}`}
                 >
                   <Card
                     className={
@@ -352,45 +363,25 @@ function Profile() {
                     }
                     variant="outlined"
                   >
-                    <CardContent>
-                      <Stack spacing={1}>
-                        {/* Seed Title and Availability */}
-                        <Box
-                          sx={{
-                            display: "flex",
-                            gap: 1,
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                          }}
-                        >
-                          {/* Strain Name with Feminized Symbol */}
-                          <Chip
-                            label={`${seed.feminized ? "♀" : ""} ${
-                              seed.strain
-                            }`}
-                            sx={{
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              whiteSpace: "nowrap",
-                            }}
-                          />
-                          <Stack
-                            direction="row"
-                            spacing={1}
-                            sx={{ flexShrink: 0 }}
-                          >
-                            {seed.available ? (
-                              <Tooltip title="Available">
-                                <CheckCircleIcon color="success" />
-                              </Tooltip>
-                            ) : (
-                              <Tooltip title="Unavailable">
-                                <CancelIcon color="error" />
-                              </Tooltip>
-                            )}
-                          </Stack>
-                        </Box>
-
+                    <CardHeader
+                      title={`${seed.feminized === true ? "♀" : ""} ${
+                        seed.strain
+                      }`}
+                      action={
+                        // Icons for availability
+                        seed.available ? (
+                          <Tooltip title="Available">
+                            <CheckCircleIcon color="success" />
+                          </Tooltip>
+                        ) : (
+                          <Tooltip title="Unavailable">
+                            <CancelIcon color="error" />
+                          </Tooltip>
+                        )
+                      }
+                    />
+                    <CardContent sx={{ paddingY: 1 }}>
+                      <Stack>
                         {/* Seed Details */}
                         <Typography variant="body2">
                           <strong>Breeder:</strong> {seed.breeder}
@@ -403,29 +394,24 @@ function Profile() {
                             <strong>Generation:</strong> {seed.generation}
                           </Typography>
                         )}
-
-                        {/* Seed Tags */}
-                        <Stack paddingTop={1} direction="row" spacing={1}>
-                          {seed.open && (
-                            <Chip
-                              label="Open Pack"
-                              size="small"
-                              variant="outlined"
-                            />
-                          )}
-                        </Stack>
-
-                        {/* Date Added */}
-                        <Typography color="text.secondary" variant="body2">
-                          Added:{" "}
-                          {new Date(seed.dateAcquired).toLocaleDateString()}
-                        </Typography>
+                        {seed.open && (
+                          <Tooltip title="Open Pack">
+                            <BrokenImage color="warning" />
+                          </Tooltip>
+                        )}
                       </Stack>
                     </CardContent>
+                    <CardActions sx={{ justifyContent: "flex-end" }}>
+                      {/* Date Added */}
+                      <Typography color="text.secondary" variant="caption">
+                        Added:{" "}
+                        {new Date(seed.dateAcquired).toLocaleDateString()}
+                      </Typography>
+                    </CardActions>
                   </Card>
-                </Box>
+                </Grid>
               ))}
-            </Box>
+            </Grid>
           )}
         </AccordionDetails>
       </Accordion>
@@ -473,12 +459,15 @@ function Profile() {
               No clones match your search.
             </Typography>
           ) : (
-            <Box display="flex" flexWrap="wrap" gap={2}>
+            <Grid container spacing={2}>
               {filteredClones.map((clone) => (
-                <Box
+                <Grid
+                  item
+                  xs={12}
+                  sm={6}
+                  md={4}
                   key={clone.id}
-                  id={`clone-${clone.id}`} // Add an id
-                  sx={{ width: { xs: "100%", sm: "48%", md: "30%" } }}
+                  id={`clone-${clone.id}`}
                 >
                   <Card
                     className={
@@ -488,64 +477,36 @@ function Profile() {
                     }
                     variant="outlined"
                   >
-                    <CardContent>
-                      <Stack spacing={1}>
-                        {/* Clone Title and Availability */}
-                        <Box
-                          sx={{
-                            display: "flex",
-                            flexWrap: "wrap",
-                            gap: 1,
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                          }}
-                        >
-                          <Stack
-                            direction="row"
-                            spacing={1}
-                            alignItems={"center"}
-                          >
-                            {" "}
-                            {/* Strain Name with Sex Symbol */}
-                            <Chip
-                              label={`${clone.sex === "Female" ? "♀" : ""} ${
-                                clone.strain
-                              }`}
-                              sx={{
-                                overflow: "hidden", // Hide overflowing text
-                                textOverflow: "ellipsis", // Add ellipsis for overflow
-                                whiteSpace: "nowrap", // Prevent text wrapping
-                              }}
-                            />
-                            {clone.breederCut && (
-                              <Chip
-                                size="small"
-                                label="Breeder Cut"
-                                variant="outlined"
-                              />
-                            )}
-                          </Stack>
-
-                          {/* Icons and Tags */}
-                          <Stack
-                            direction="row"
-                            spacing={1}
-                            sx={{
-                              flexShrink: 0, // Prevent icons from shrinking
-                            }}
-                          >
-                            {clone.available ? (
-                              <Tooltip title="Available">
-                                <CheckCircleIcon color="success" />
-                              </Tooltip>
-                            ) : (
-                              <Tooltip title="Unavailable">
-                                <CancelIcon color="error" />
-                              </Tooltip>
-                            )}
-                          </Stack>
-                        </Box>
-
+                    <CardHeader
+                      title={`${clone.sex === "Female" ? "♀" : ""} ${
+                        clone.strain
+                      }`}
+                      subheader={
+                        clone.breederCut ? (
+                          <Chip
+                            sx={{ mt: 1 }}
+                            size="small"
+                            label="Breeder Cut"
+                            variant="outlined"
+                            icon={<Verified />}
+                          />
+                        ) : null
+                      }
+                      action={
+                        // Icons for availability
+                        clone.available ? (
+                          <Tooltip title="Available">
+                            <CheckCircleIcon color="success" />
+                          </Tooltip>
+                        ) : (
+                          <Tooltip title="Unavailable">
+                            <CancelIcon color="error" />
+                          </Tooltip>
+                        )
+                      }
+                    />
+                    <CardContent sx={{ paddingY: 1 }}>
+                      <Stack>
                         {/* Clone Details */}
                         <Typography variant="body2">
                           <strong>Breeder:</strong> {clone.breeder}
@@ -560,18 +521,19 @@ function Profile() {
                             <strong>Generation:</strong> {clone.generation}
                           </Typography>
                         )}
-
-                        {/* Date Added */}
-                        <Typography color="text.secondary" variant="body2">
-                          Added:{" "}
-                          {new Date(clone.dateAcquired).toLocaleDateString()}
-                        </Typography>
                       </Stack>
                     </CardContent>
+                    <CardActions sx={{ justifyContent: "flex-end" }}>
+                      {/* Date Added */}
+                      <Typography color="text.secondary" variant="caption">
+                        Added:{" "}
+                        {new Date(clone.dateAcquired).toLocaleDateString()}
+                      </Typography>
+                    </CardActions>
                   </Card>
-                </Box>
+                </Grid>
               ))}
-            </Box>
+            </Grid>
           )}
         </AccordionDetails>
       </Accordion>

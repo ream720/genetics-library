@@ -210,7 +210,7 @@ const ClonesPage: React.FC = () => {
               }}
             >
               <Tooltip style={{ fontSize: "1.2rem" }} title="Breeder Cut">
-                <Verified color="success" />
+                <Verified />
               </Tooltip>
             </Box>
           );
