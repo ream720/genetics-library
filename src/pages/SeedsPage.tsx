@@ -15,6 +15,9 @@ import {
   DialogContentText,
   DialogTitle,
   Autocomplete,
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
 } from "@mui/material";
 import {
   DataGrid,
@@ -34,6 +37,7 @@ import {
 } from "@mui/icons-material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 const SeedsPage: React.FC = () => {
   const { seeds, addSeed, deleteSeed, updateSeed, setSeeds } = useSeedContext();
@@ -41,6 +45,7 @@ const SeedsPage: React.FC = () => {
   // Form states
   const [seedBreeder, setSeedBreeder] = React.useState("");
   const [seedStrain, setSeedStrain] = React.useState("");
+  const [lineage, setLineage] = React.useState("");
   const [filalGeneration, setFilalGeneration] = React.useState("");
   const [numSeeds, setNumSeeds] = React.useState(0);
   const [isFeminized, setIsFeminized] = React.useState(false);
@@ -103,6 +108,7 @@ const SeedsPage: React.FC = () => {
         open: isOpen,
         dateAcquired: new Date().toISOString(),
         available: isAvailable,
+        lineage: lineage,
       });
 
       // Reset form fields and validation
@@ -113,6 +119,7 @@ const SeedsPage: React.FC = () => {
       setIsFeminized(false);
       setIsOpen(false);
       setIsAvailable(false);
+      setLineage("");
     }
   };
 
@@ -402,23 +409,12 @@ const SeedsPage: React.FC = () => {
             />
             <TextField
               required
-              placeholder="Moonbow 112"
+              placeholder="Dark Rainbow"
               label="Strain"
               value={seedStrain}
               error={strainError}
               helperText={strainError ? "Strain is required" : ""}
               onChange={(e) => setSeedStrain(e.target.value)}
-              fullWidth
-            />
-          </Stack>
-
-          {/* Column 2 */}
-          <Stack spacing={2}>
-            <TextField
-              placeholder="F1, S1, etc."
-              label="Generation"
-              value={filalGeneration}
-              onChange={(e) => setFilalGeneration(e.target.value)}
               fullWidth
             />
             <TextField
@@ -464,6 +460,30 @@ const SeedsPage: React.FC = () => {
                 }
                 label="Available?"
               />
+              <Box paddingTop={1} maxWidth={300}>
+                <Accordion>
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Typography>Optional Info</Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <TextField
+                      sx={{ mb: 1 }}
+                      label="Lineage"
+                      placeholder="GMO x Rainbow Belts F1"
+                      value={lineage}
+                      onChange={(e) => setLineage(e.target.value)}
+                      fullWidth
+                    />
+                    <TextField
+                      placeholder="F1, S1, etc."
+                      label="Generation"
+                      value={filalGeneration}
+                      onChange={(e) => setFilalGeneration(e.target.value)}
+                      fullWidth
+                    />
+                  </AccordionDetails>
+                </Accordion>
+              </Box>
             </Stack>
           </Stack>
 

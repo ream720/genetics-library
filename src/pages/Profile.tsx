@@ -368,6 +368,7 @@ function Profile() {
                       title={`${seed.feminized === true ? "♀" : ""} ${
                         seed.strain
                       }`}
+                      subheader={seed.lineage}
                       action={
                         // Icons for availability
                         seed.available ? (
@@ -482,17 +483,18 @@ function Profile() {
                       title={`${clone.sex === "Female" ? "♀" : ""} ${
                         clone.strain
                       }`}
-                      subheader={
-                        clone.breederCut ? (
-                          <Chip
-                            sx={{ mt: 1 }}
-                            size="small"
-                            label="Breeder Cut"
-                            variant="outlined"
-                            icon={<Verified />}
-                          />
-                        ) : null
-                      }
+                      subheader={clone.lineage}
+                      // subheader={
+                      //   clone.breederCut ? (
+                      //     <Chip
+                      //       sx={{ mt: 1 }}
+                      //       size="small"
+                      //       label="Breeder Cut"
+                      //       variant="outlined"
+                      //       icon={<Verified />}
+                      //     />
+                      //   ) : null
+                      // }
                       action={
                         // Icons for availability
                         clone.available ? (
@@ -509,6 +511,15 @@ function Profile() {
                     <CardContent sx={{ paddingY: 1 }}>
                       <Stack>
                         {/* Clone Details */}
+                        {clone.breederCut && (
+                          <Chip
+                            sx={{ mb: 1, maxWidth: 125 }}
+                            size="small"
+                            label="Breeder Cut"
+                            variant="outlined"
+                            icon={<Verified />}
+                          />
+                        )}
                         <Typography variant="body2">
                           <strong>Breeder:</strong> {clone.breeder}
                         </Typography>

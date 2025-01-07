@@ -19,6 +19,9 @@ import {
   MenuItem,
   Select,
   Autocomplete,
+  AccordionSummary,
+  Accordion,
+  AccordionDetails,
 } from "@mui/material";
 import {
   DataGrid,
@@ -39,6 +42,7 @@ import {
 } from "@mui/icons-material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 const ClonesPage: React.FC = () => {
   const { clones, addClone, deleteClone, updateClone } = useCloneContext();
@@ -46,9 +50,10 @@ const ClonesPage: React.FC = () => {
   // Form states
   const [cloneBreeder, setCloneBreeder] = React.useState("");
   const [cloneStrain, setCloneStrain] = React.useState("");
+  const [lineage, setLineage] = React.useState("");
   const [cutName, setCutName] = React.useState("");
   const [filalGeneration, setFilalGeneration] = React.useState("");
-  const [isMale, setIsMale] = React.useState<"Male" | "Female">("Male");
+  const [isMale, setIsMale] = React.useState<"Male" | "Female">("Female");
   const [isBreederCut, setIsBreederCut] = React.useState(false);
   const [isAvailable, setIsAvailable] = React.useState(false);
 
@@ -88,6 +93,7 @@ const ClonesPage: React.FC = () => {
         breederCut: isBreederCut,
         available: isAvailable,
         dateAcquired: new Date().toISOString(),
+        lineage: lineage,
       });
 
       // Reset form fields
@@ -98,6 +104,7 @@ const ClonesPage: React.FC = () => {
       setIsMale("Male");
       setIsBreederCut(false);
       setIsAvailable(false);
+      setLineage("");
     }
   };
 
@@ -351,7 +358,7 @@ const ClonesPage: React.FC = () => {
       {/* Add Clone Form */}
       <Box sx={{ display: "flex", justifyContent: "center", mb: 2, p: 2 }}>
         <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-          <Stack spacing={2}>
+          <Stack spacing={1}>
             <Autocomplete
               options={uniqueBreeders}
               freeSolo
@@ -375,7 +382,7 @@ const ClonesPage: React.FC = () => {
             />
             <TextField
               required
-              placeholder="Strawguava"
+              placeholder="Candy Fumez"
               label="Strain"
               value={cloneStrain}
               onChange={(e) => setCloneStrain(e.target.value)}
@@ -383,65 +390,80 @@ const ClonesPage: React.FC = () => {
               helperText={strainError ? "Strain is required" : ""}
               fullWidth
             />
-          </Stack>
-
-          {/* Column 2 */}
-          <Stack spacing={2}>
-            <TextField
-              placeholder="Harry Palms Cut"
-              label="Cut Name"
-              value={cutName}
-              onChange={(e) => setCutName(e.target.value)}
-              fullWidth
+            <FormControlLabel
+              control={
+                <Checkbox
+                  size="small"
+                  checked={isBreederCut}
+                  onChange={(e) => setIsBreederCut(e.target.checked)}
+                />
+              }
+              label="Breeder Cut"
             />
-            <TextField
-              label="Generation"
-              placeholder="F1, S1, etc."
-              value={filalGeneration}
-              onChange={(e) => setFilalGeneration(e.target.value)}
-              fullWidth
+            <FormControlLabel
+              control={
+                <Checkbox
+                  size="small"
+                  checked={isAvailable}
+                  onChange={(e) => setIsAvailable(e.target.checked)}
+                />
+              }
+              label="Available?"
             />
           </Stack>
 
           {/* Column 3 */}
-          <Stack spacing={1}>
-            <FormControl fullWidth>
-              <InputLabel>Sex</InputLabel>
-              <Select
-                size="small"
-                value={isMale}
-                onChange={(e) => setIsMale(e.target.value as "Male" | "Female")}
-                label="Sex"
-              >
-                <MenuItem value="Male">Male</MenuItem>
-                <MenuItem value="Female">Female</MenuItem>
-              </Select>
-            </FormControl>
+          <Stack maxWidth={"300px"} spacing={1}>
             <Stack>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    size="small"
-                    checked={isBreederCut}
-                    onChange={(e) => setIsBreederCut(e.target.checked)}
-                  />
-                }
-                label="Breeder Cut"
-              />
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    size="small"
-                    checked={isAvailable}
-                    onChange={(e) => setIsAvailable(e.target.checked)}
-                  />
-                }
-                label="Available?"
-              />
+              <Box>
+                <Accordion>
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Typography>Optional Info</Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <TextField
+                      sx={{ mb: 1 }}
+                      label="Lineage"
+                      placeholder="Sherbanger x Z"
+                      value={lineage}
+                      onChange={(e) => setLineage(e.target.value)}
+                      fullWidth
+                    />
+                    <TextField
+                      sx={{ mb: 1 }}
+                      placeholder="Harry Palms Cut"
+                      label="Cut Name"
+                      value={cutName}
+                      onChange={(e) => setCutName(e.target.value)}
+                      fullWidth
+                    />
+                    <TextField
+                      sx={{ mb: 2 }}
+                      label="Generation"
+                      placeholder="F1, S1, etc."
+                      value={filalGeneration}
+                      onChange={(e) => setFilalGeneration(e.target.value)}
+                      fullWidth
+                    />
+                    <FormControl fullWidth>
+                      <InputLabel>Sex</InputLabel>
+                      <Select
+                        size="small"
+                        value={isMale}
+                        onChange={(e) =>
+                          setIsMale(e.target.value as "Female" | "Male")
+                        }
+                        label="Sex"
+                      >
+                        <MenuItem value="Male">Male</MenuItem>
+                        <MenuItem value="Female">Female</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </AccordionDetails>
+                </Accordion>
+              </Box>
             </Stack>
           </Stack>
-
-          {/* Column 4 */}
           <Stack>
             <Tooltip title="Add Clone">
               <IconButton
@@ -452,6 +474,8 @@ const ClonesPage: React.FC = () => {
               </IconButton>
             </Tooltip>
           </Stack>
+
+          {/* Column 4 */}
         </Stack>
       </Box>
 
