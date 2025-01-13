@@ -6,7 +6,15 @@ import {
   signOut,
   UserCredential,
 } from "firebase/auth";
-import { getDoc, doc, setDoc } from "firebase/firestore";
+import {
+  getDoc,
+  doc,
+  setDoc,
+  query,
+  where,
+  getDocs,
+  collection,
+} from "firebase/firestore";
 import {
   ReactNode,
   useState,
@@ -15,9 +23,10 @@ import {
   useContext,
 } from "react";
 import { auth, db } from "../../firebaseConfig";
+import { UsernameAlreadyInUseError } from "../errors/UsernameAlreadyInUserError";
 
 interface ExtendedUser extends User {
-  username?: string; // Add username as an optional property
+  username?: string;
 }
 
 interface AuthContextProps {
@@ -52,6 +61,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     password: string,
     username: string
   ): Promise<UserCredential> => {
+    // 1. Check if username already exists
+    const usersRef = collection(db, "users");
+    const q = query(
+      usersRef,
+      where("userNameLower", "==", username.toLowerCase())
+    );
+    const querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
+      throw new UsernameAlreadyInUseError("Username already exists");
+    }
+
+    // 2. If username is unique, create the user
     const userCredential = await createUserWithEmailAndPassword(
       auth,
       email,
@@ -59,10 +81,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
     const user = userCredential.user;
 
-    // Save user profile in Firestore
+    // 3. Save user profile in Firestore
     await setDoc(doc(db, "users", user.uid), {
       email: user.email,
-      username: username, // Default username; you can customize this
+      username,
       userNameLower: username.toLowerCase(),
     });
 
@@ -71,9 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Login function
   const login = async (email: string, password: string) => {
-    console.log("Attempting to log in...");
     await signInWithEmailAndPassword(auth, email, password);
-    console.log("Login successful");
   };
 
   // Logout function
@@ -91,7 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (userDoc.exists()) {
           setCurrentUser({
             ...user,
-            username: userDoc.data().username, // Add Firestore username to the user object
+            username: userDoc.data().username,
           } as ExtendedUser);
         } else {
           setCurrentUser(user as ExtendedUser);
@@ -102,7 +122,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     });
 
-    return unsubscribe;
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   const value: AuthContextProps = {

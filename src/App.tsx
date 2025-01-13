@@ -45,6 +45,7 @@ import ModeNightOutlinedIcon from "@mui/icons-material/ModeNightOutlined";
 import SearchIcon from "@mui/icons-material/Search";
 import AccountCircleIcon from "@mui/icons-material/AccountCircleOutlined";
 import DashboardIcon from "@mui/icons-material/Dashboard";
+import LoginIcon from "@mui/icons-material/Login";
 // or HomeIcon from "@mui/icons-material/Home" if you prefer
 
 interface PrivateRouteProps {
@@ -265,7 +266,9 @@ const AppWithRouter: React.FC = () => {
           )}
 
           {/* Login Tab: only if not logged in */}
-          {!currentUser && <Tab label="Login" value="/login" />}
+          {!currentUser && (
+            <Tab label="Login" icon={<LoginIcon />} value="/login" />
+          )}
         </Tabs>
       </AppBar>
 

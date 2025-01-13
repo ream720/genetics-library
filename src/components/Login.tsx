@@ -9,6 +9,7 @@ import {
   Alert,
   IconButton,
   InputAdornment,
+  Box,
 } from "@mui/material";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
@@ -58,55 +59,64 @@ function Login() {
   };
 
   return (
-    <Stack spacing={3} sx={{ p: 3, maxWidth: 400 }}>
-      <Paper elevation={3} sx={{ p: 3 }}>
-        {error && <Alert severity="error">{error}</Alert>}
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        minHeight: "30vh", // fills the full viewport height
+      }}
+    >
+      <Stack spacing={3} sx={{ p: 3, maxWidth: 400 }}>
+        <Paper elevation={3} sx={{ p: 3 }}>
+          {error && <Alert severity="error">{error}</Alert>}
 
-        <form onSubmit={handleSubmit}>
-          <TextField
-            sx={{ mb: 2 }}
-            label="Email"
-            type="email"
-            placeholder="Email"
-            inputRef={emailRef}
-            required
-            fullWidth
-          />
-          <TextField
-            sx={{ mb: 2 }}
-            label="Password"
-            type={showPassword ? "text" : "password"}
-            placeholder="Password"
-            inputRef={passwordRef}
-            required
-            fullWidth
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton onClick={handleClickShowPassword} edge="end">
-                    {showPassword ? <Visibility /> : <VisibilityOff />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
-          <Button
-            sx={{ mb: 2 }}
-            disabled={loading}
-            type="submit"
-            variant="contained"
-          >
-            Login
-          </Button>
-        </form>
-        <div>
-          Don't have an account? <Link to="/signup">Sign up</Link>
-        </div>
-        <div hidden>
-          <Link to="/forgot-password">Forgot Password?</Link>
-        </div>
-      </Paper>
-    </Stack>
+          <form onSubmit={handleSubmit}>
+            <TextField
+              sx={{ mb: 2 }}
+              label="Email"
+              type="email"
+              placeholder="Email"
+              inputRef={emailRef}
+              required
+              fullWidth
+            />
+            <TextField
+              sx={{ mb: 2 }}
+              label="Password"
+              type={showPassword ? "text" : "password"}
+              placeholder="Password"
+              inputRef={passwordRef}
+              required
+              fullWidth
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={handleClickShowPassword} edge="end">
+                      {showPassword ? <Visibility /> : <VisibilityOff />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+            <Button
+              sx={{ mb: 2 }}
+              disabled={loading}
+              type="submit"
+              variant="contained"
+            >
+              Login
+            </Button>
+          </form>
+          <div>
+            Don't have an account? <Link to="/signup">Sign up</Link>
+          </div>
+          <div hidden>
+            <Link to="/forgot-password">Forgot Password?</Link>
+          </div>
+        </Paper>
+      </Stack>
+    </Box>
   );
 }
 
