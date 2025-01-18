@@ -50,6 +50,7 @@ This project is a web application that allows users to manage their seed and clo
 
 - Firebase Firestore for database
 - Firebase Authentication for user management
+- Github Actions, Pages, Projects
 
 ### Icons and Components
 
