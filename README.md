@@ -14,7 +14,7 @@ This project is a web application that allows users to manage their seed and clo
 - Profile picture (WIP)
 - Accepted payment methods
 
-### 2. Seeds Collection
+### 2. Seed Collection
 
 ### Users can manage their seed collections with details such as:
 
@@ -26,7 +26,7 @@ This project is a web application that allows users to manage their seed and clo
 - Additional tags like "Open Pack"
 - Date the seeds were added
 
-### 3. Clones Collection
+### 3. Clone Collection
 
 ### Users can manage their clone collections with details including:
 
