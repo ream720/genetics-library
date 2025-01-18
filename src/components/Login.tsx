@@ -10,6 +10,7 @@ import {
   IconButton,
   InputAdornment,
   Box,
+  Card,
 } from "@mui/material";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
@@ -82,58 +83,60 @@ function Login() {
         minHeight: "30vh", // fills the full viewport height
       }}
     >
-      <Stack spacing={3} sx={{ p: 3, maxWidth: 400 }}>
+      <Stack sx={{ p: 1, maxWidth: 400 }}>
         <Paper elevation={3} sx={{ p: 3 }}>
-          {error && <Alert severity="error">{error}</Alert>}
+          <Card sx={{ p: 2 }}>
+            {error && <Alert severity="error">{error}</Alert>}
 
-          <form onSubmit={handleSubmit}>
-            <TextField
-              sx={{ mb: 2 }}
-              label="Email"
-              type="email"
-              placeholder="Email"
-              inputRef={emailRef}
-              required
-              fullWidth
-            />
-            <TextField
-              sx={{ mb: 2 }}
-              label="Password"
-              type={showPassword ? "text" : "password"}
-              placeholder="Password"
-              inputRef={passwordRef}
-              required
-              fullWidth
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton onClick={handleClickShowPassword} edge="end">
-                      {showPassword ? <Visibility /> : <VisibilityOff />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-            <Button
-              sx={{ mb: 2 }}
-              disabled={loading}
-              type="submit"
-              variant="contained"
-            >
-              Login
-            </Button>
-          </form>
+            <form onSubmit={handleSubmit}>
+              <TextField
+                sx={{ mb: 2 }}
+                label="Email"
+                type="email"
+                placeholder="Email"
+                inputRef={emailRef}
+                required
+                fullWidth
+              />
+              <TextField
+                sx={{ mb: 2 }}
+                label="Password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                inputRef={passwordRef}
+                required
+                fullWidth
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton onClick={handleClickShowPassword} edge="end">
+                        {showPassword ? <Visibility /> : <VisibilityOff />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              <Button
+                sx={{ mb: 2 }}
+                disabled={loading}
+                type="submit"
+                variant="contained"
+              >
+                Login
+              </Button>
+            </form>
 
-          <Stack spacing={2} sx={{ mt: 2 }}>
-            <Button
-              variant="outlined"
-              startIcon={<GoogleIcon />}
-              onClick={handleGoogleSignIn}
-              disabled={loading}
-            >
-              Sign in with Google
-            </Button>
-          </Stack>
+            <Stack spacing={2} sx={{ mt: 2 }}>
+              <Button
+                variant="outlined"
+                startIcon={<GoogleIcon />}
+                onClick={handleGoogleSignIn}
+                disabled={loading}
+              >
+                Sign in with Google
+              </Button>
+            </Stack>
+          </Card>
 
           <Box sx={{ mt: 2 }}>
             <div>

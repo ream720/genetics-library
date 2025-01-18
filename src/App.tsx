@@ -32,6 +32,7 @@ import { CloneProvider } from "./context/CloneContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import Login from "./components/Login";
 import Signup from "./components/Signup";
+import ForgotPassword from "./components/ForgotPassword";
 import useIdleTimer from "./hooks/useIdleTimer";
 import SearchPage from "./pages/SearchPage";
 import ContactInfo from "./pages/ContactInfo";
@@ -344,6 +345,7 @@ const AppWithRouter: React.FC = () => {
           />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
         </Routes>
       </Box>
     </ThemeProvider>

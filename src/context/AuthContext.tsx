@@ -6,6 +6,7 @@ import {
   signOut,
   UserCredential,
   signInWithPopup,
+  sendPasswordResetEmail,
 } from "firebase/auth";
 import {
   getDoc,
@@ -41,6 +42,7 @@ interface AuthContextProps {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
@@ -107,6 +109,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await signOut(auth);
   };
 
+  const resetPassword = (email: string) => {
+    return sendPasswordResetEmail(auth, email);
+  };
+
   // Monitor authentication state and fetch additional user data
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -140,6 +146,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     login,
     logout,
     signInWithGoogle,
+    resetPassword,
   };
 
   return (
