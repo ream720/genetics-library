@@ -47,7 +47,6 @@ import SearchIcon from "@mui/icons-material/Search";
 import AccountCircleIcon from "@mui/icons-material/AccountCircleOutlined";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import LoginIcon from "@mui/icons-material/Login";
-// or HomeIcon from "@mui/icons-material/Home" if you prefer
 
 interface PrivateRouteProps {
   children: React.ReactNode;
@@ -57,7 +56,7 @@ interface PrivateRouteProps {
 const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
   const { currentUser } = useAuth();
   const location = useLocation();
-  return currentUser ? (
+  return currentUser?.username ? (
     <>{children}</>
   ) : (
     <Navigate to="/login" state={{ from: location.pathname }} />

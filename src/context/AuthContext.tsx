@@ -41,8 +41,9 @@ interface AuthContextProps {
   ) => Promise<UserCredential>;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
+  signInWithGoogle: () => Promise<{ requiresProfile: boolean }>;
   resetPassword: (email: string) => Promise<void>;
+  completeGoogleSignup: (username: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
@@ -59,25 +60,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<ExtendedUser | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Sign up function
-  const signup = async (
-    email: string,
-    password: string,
-    username: string
-  ): Promise<UserCredential> => {
-    // 1. Check if username already exists
+  // Check if username exists
+  const checkUsernameExists = async (username: string): Promise<boolean> => {
     const usersRef = collection(db, "users");
     const q = query(
       usersRef,
       where("userNameLower", "==", username.toLowerCase())
     );
     const querySnapshot = await getDocs(q);
+    return !querySnapshot.empty;
+  };
 
-    if (!querySnapshot.empty) {
+  // Sign up function
+  const signup = async (
+    email: string,
+    password: string,
+    username: string
+  ): Promise<UserCredential> => {
+    if (await checkUsernameExists(username)) {
       throw new UsernameAlreadyInUseError("Username already exists");
     }
 
-    // 2. If username is unique, create the user
     const userCredential = await createUserWithEmailAndPassword(
       auth,
       email,
@@ -85,7 +88,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
     const user = userCredential.user;
 
-    // 3. Save user profile in Firestore
     await setDoc(doc(db, "users", user.uid), {
       email: user.email,
       username,
@@ -95,13 +97,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return userCredential;
   };
 
+  // Complete Google signup by adding username
+  const completeGoogleSignup = async (username: string) => {
+    if (!auth.currentUser) {
+      throw new Error("No user signed in");
+    }
+
+    if (await checkUsernameExists(username)) {
+      throw new UsernameAlreadyInUseError("Username already exists");
+    }
+
+    await setDoc(
+      doc(db, "users", auth.currentUser.uid),
+      {
+        email: auth.currentUser.email,
+        username,
+        userNameLower: username.toLowerCase(),
+      },
+      { merge: true }
+    );
+
+    setCurrentUser((prev) =>
+      prev ? ({ ...prev, username } as ExtendedUser) : null
+    );
+  };
+
+  // Enhanced Google sign-in
+  const signInWithGoogle = async () => {
+    const result = await signInWithPopup(auth, googleProvider);
+    const userDoc = await getDoc(doc(db, "users", result.user.uid));
+
+    return {
+      requiresProfile: !userDoc.exists() || !userDoc.data()?.username,
+    };
+  };
+
   // Login function
   const login = async (email: string, password: string) => {
     await signInWithEmailAndPassword(auth, email, password);
-  };
-
-  const signInWithGoogle = () => {
-    return signInWithPopup(auth, googleProvider).then(() => {});
   };
 
   // Logout function
@@ -147,6 +180,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     logout,
     signInWithGoogle,
     resetPassword,
+    completeGoogleSignup,
   };
 
   return (

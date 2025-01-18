@@ -11,10 +11,14 @@ import {
   InputAdornment,
   Box,
   Card,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
-import GoogleIcon from "@mui/icons-material/Google"; // Import Google Icon
+import GoogleIcon from "@mui/icons-material/Google";
 
 interface LocationState {
   from?: {
@@ -25,17 +29,20 @@ interface LocationState {
 function Login() {
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
-  const { login, signInWithGoogle, currentUser } = useAuth();
+  const usernameRef = useRef<HTMLInputElement>(null);
+  const { login, signInWithGoogle, completeGoogleSignup, currentUser } =
+    useAuth();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showProfileDialog, setShowProfileDialog] = useState(false);
+  const [profileError, setProfileError] = useState("");
 
   const location = useLocation() as { state?: LocationState };
   const navigate = useNavigate();
 
-  // Redirect to the intended page if the user is already logged in
   useEffect(() => {
-    if (currentUser) {
+    if (currentUser?.username) {
       navigate(location.state?.from?.pathname || "/");
     }
   }, [currentUser, navigate, location.state?.from]);
@@ -60,11 +67,36 @@ function Login() {
     try {
       setError("");
       setLoading(true);
-      await signInWithGoogle();
-      // Redirect is handled by useEffect
+      const { requiresProfile } = await signInWithGoogle();
+
+      if (requiresProfile) {
+        setShowProfileDialog(true);
+      }
     } catch (error) {
       console.error("Google Sign-In Error:", error);
       setError("Failed to sign in with Google");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleProfileSubmit = async () => {
+    if (!usernameRef.current?.value) {
+      setProfileError("Username is required");
+      return;
+    }
+
+    try {
+      setProfileError("");
+      setLoading(true);
+      await completeGoogleSignup(usernameRef.current.value);
+      setShowProfileDialog(false);
+    } catch (error) {
+      if (error instanceof Error) {
+        setProfileError(error.message);
+      } else {
+        setProfileError("Failed to complete profile setup");
+      }
     } finally {
       setLoading(false);
     }
@@ -80,7 +112,7 @@ function Login() {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        minHeight: "30vh", // fills the full viewport height
+        minHeight: "30vh",
       }}
     >
       <Stack sx={{ p: 1, maxWidth: 400 }}>
@@ -121,6 +153,7 @@ function Login() {
                 disabled={loading}
                 type="submit"
                 variant="contained"
+                fullWidth
               >
                 Login
               </Button>
@@ -132,6 +165,7 @@ function Login() {
                 startIcon={<GoogleIcon />}
                 onClick={handleGoogleSignIn}
                 disabled={loading}
+                fullWidth
               >
                 Sign in with Google
               </Button>
@@ -147,6 +181,28 @@ function Login() {
             </div>
           </Box>
         </Paper>
+
+        {/* Profile Setup Dialog */}
+        <Dialog open={showProfileDialog} onClose={() => {}}>
+          <DialogTitle>Complete Your Profile</DialogTitle>
+          <DialogContent>
+            {profileError && <Alert severity="error">{profileError}</Alert>}
+            <TextField
+              autoFocus
+              margin="dense"
+              label="Choose a Username"
+              type="text"
+              fullWidth
+              inputRef={usernameRef}
+              required
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleProfileSubmit} disabled={loading}>
+              Complete Setup
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Stack>
     </Box>
   );
