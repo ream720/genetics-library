@@ -5,6 +5,7 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   UserCredential,
+  signInWithPopup,
 } from "firebase/auth";
 import {
   getDoc,
@@ -22,7 +23,7 @@ import {
   createContext,
   useContext,
 } from "react";
-import { auth, db } from "../../firebaseConfig";
+import { auth, db, googleProvider } from "../../firebaseConfig";
 import { UsernameAlreadyInUseError } from "../errors/UsernameAlreadyInUserError";
 
 interface ExtendedUser extends User {
@@ -39,6 +40,7 @@ interface AuthContextProps {
   ) => Promise<UserCredential>;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
@@ -96,6 +98,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await signInWithEmailAndPassword(auth, email, password);
   };
 
+  const signInWithGoogle = () => {
+    return signInWithPopup(auth, googleProvider).then(() => {});
+  };
+
   // Logout function
   const logout = async () => {
     await signOut(auth);
@@ -133,6 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signup,
     login,
     logout,
+    signInWithGoogle,
   };
 
   return (

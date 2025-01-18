@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import GoogleIcon from "@mui/icons-material/Google"; // Import Google Icon
 
 interface LocationState {
   from?: {
@@ -23,7 +24,7 @@ interface LocationState {
 function Login() {
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
-  const { login, currentUser } = useAuth();
+  const { login, signInWithGoogle, currentUser } = useAuth();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -49,6 +50,20 @@ function Login() {
       }
     } catch {
       setError("Failed to log in");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      setError("");
+      setLoading(true);
+      await signInWithGoogle();
+      // Redirect is handled by useEffect
+    } catch (error) {
+      console.error("Google Sign-In Error:", error);
+      setError("Failed to sign in with Google");
     } finally {
       setLoading(false);
     }
@@ -108,12 +123,26 @@ function Login() {
               Login
             </Button>
           </form>
-          <div>
-            Don't have an account? <Link to="/signup">Sign up</Link>
-          </div>
-          <div hidden>
-            <Link to="/forgot-password">Forgot Password?</Link>
-          </div>
+
+          <Stack spacing={2} sx={{ mt: 2 }}>
+            <Button
+              variant="outlined"
+              startIcon={<GoogleIcon />}
+              onClick={handleGoogleSignIn}
+              disabled={loading}
+            >
+              Sign in with Google
+            </Button>
+          </Stack>
+
+          <Box sx={{ mt: 2 }}>
+            <div>
+              Don't have an account? <Link to="/signup">Sign up</Link>
+            </div>
+            <div style={{ marginTop: "8px" }}>
+              <Link to="/forgot-password">Forgot Password?</Link>
+            </div>
+          </Box>
         </Paper>
       </Stack>
     </Box>
