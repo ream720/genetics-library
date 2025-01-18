@@ -23,7 +23,7 @@ jobs:
         run: npm install
 
       - name: Build project
-        run: npm run build
+        run: npm run build:gh-pages
         env: # Pass secrets as environment variables
           VITE_APP_FIREBASE_API_KEY: ${{ secrets.VITE_APP_FIREBASE_API_KEY }}
           VITE_APP_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_APP_FIREBASE_AUTH_DOMAIN }}
