@@ -31,7 +31,7 @@ This project is a web application that allows users to manage their seed and clo
 ### Users can manage their clone collections with details including:
 
 - Strain name
-- Breeder
+- Breeder name
 - Cut name and generation
 - Sex of the clone (indicated by a small label)
 - Availability status (with success or error icons)
