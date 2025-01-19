@@ -28,16 +28,11 @@ import {
 } from "@mui/x-data-grid";
 import { useSeedContext } from "../context/SeedContext";
 import { Seed } from "../types";
-import {
-  Edit,
-  Delete,
-  SaveAs,
-  Cancel,
-  AddCircleOutline,
-} from "@mui/icons-material";
+import { Edit, Delete, AddCircleOutline } from "@mui/icons-material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import EditSeedModal from "../components/EditSeedModal";
 
 const SeedsPage: React.FC = () => {
   const { seeds, addSeed, deleteSeed, updateSeed, setSeeds } = useSeedContext();
@@ -51,6 +46,8 @@ const SeedsPage: React.FC = () => {
   const [isFeminized, setIsFeminized] = React.useState(false);
   const [isOpen, setIsOpen] = React.useState(false);
   const [isAvailable, setIsAvailable] = React.useState(false);
+  const [editModalOpen, setEditModalOpen] = React.useState(false);
+  const [selectedSeed, setSelectedSeed] = React.useState<Seed | null>(null);
 
   // Validation states
   const [breederError, setBreederError] = React.useState(false);
@@ -181,19 +178,22 @@ const SeedsPage: React.FC = () => {
   };
 
   // Handle row edit start
-  const handleEditClick = (id: string) => {
-    setRowModesModel({
-      ...rowModesModel,
-      [id]: { mode: GridRowModes.Edit },
-    });
+  const handleEditClick = (seed: Seed) => {
+    setSelectedSeed(seed);
+    setEditModalOpen(true);
   };
 
-  // Handle row edit cancel
-  const handleCancelClick = (id: string) => {
-    setRowModesModel({
-      ...rowModesModel,
-      [id]: { mode: GridRowModes.View, ignoreModifications: true },
-    });
+  const handleSaveEdit = async (updatedSeed: Seed) => {
+    try {
+      await updateSeed(updatedSeed.id!, updatedSeed);
+      setSeeds((prevSeeds) =>
+        prevSeeds.map((seed) =>
+          seed.id === updatedSeed.id ? updatedSeed : seed
+        )
+      );
+    } catch (error) {
+      console.error("Failed to update seed:", error);
+    }
   };
 
   // Define columns
@@ -316,54 +316,26 @@ const SeedsPage: React.FC = () => {
       align: "center",
       width: 100,
       flex: 0,
-      renderCell: (params) => {
-        const isEditing = rowModesModel[params.id]?.mode === GridRowModes.Edit;
-
-        return isEditing ? (
-          <>
-            <Tooltip title="Save">
-              <IconButton
-                onClick={() =>
-                  setRowModesModel({
-                    ...rowModesModel,
-                    [params.id]: { mode: GridRowModes.View },
-                  })
-                }
-                aria-label="save"
-              >
-                <SaveAs />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Cancel">
-              <IconButton
-                onClick={() => handleCancelClick(params.id.toString())}
-                aria-label="cancel"
-              >
-                <Cancel />
-              </IconButton>
-            </Tooltip>
-          </>
-        ) : (
-          <>
-            <Tooltip title="Edit">
-              <IconButton
-                onClick={() => handleEditClick(params.id.toString())}
-                aria-label="edit"
-              >
-                <Edit />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Delete">
-              <IconButton
-                onClick={() => handleDeleteClick(params.row)} // Use handleDeleteClick
-                aria-label="delete"
-              >
-                <Delete color="error" />
-              </IconButton>
-            </Tooltip>
-          </>
-        );
-      },
+      renderCell: (params) => (
+        <>
+          <Tooltip title="Edit">
+            <IconButton
+              onClick={() => handleEditClick(params.row)}
+              aria-label="edit"
+            >
+              <Edit />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Delete">
+            <IconButton
+              onClick={() => handleDeleteClick(params.row)}
+              aria-label="delete"
+            >
+              <Delete color="error" />
+            </IconButton>
+          </Tooltip>
+        </>
+      ),
     },
   ];
 
@@ -555,6 +527,15 @@ const SeedsPage: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      <EditSeedModal
+        open={editModalOpen}
+        onClose={() => {
+          setEditModalOpen(false);
+          setSelectedSeed(null);
+        }}
+        seed={selectedSeed}
+        onSave={handleSaveEdit}
+      />
     </Box>
   );
 };

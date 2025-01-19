@@ -23,29 +23,18 @@ import {
   Accordion,
   AccordionDetails,
 } from "@mui/material";
-import {
-  DataGrid,
-  GridColDef,
-  GridRowModesModel,
-  GridRowModes,
-  GridEditBooleanCell,
-} from "@mui/x-data-grid";
+import { DataGrid, GridColDef, GridEditBooleanCell } from "@mui/x-data-grid";
 import { useCloneContext } from "../context/CloneContext";
 import { Clone } from "../types";
-import {
-  Edit,
-  Delete,
-  SaveAs,
-  Cancel,
-  AddCircleOutline,
-  Verified,
-} from "@mui/icons-material";
+import { Edit, Delete, AddCircleOutline, Verified } from "@mui/icons-material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import EditCloneModal from "../components/EditCloneModal";
 
 const ClonesPage: React.FC = () => {
-  const { clones, addClone, deleteClone, updateClone } = useCloneContext();
+  const { clones, addClone, deleteClone, updateClone, setClones } =
+    useCloneContext();
 
   // Form states
   const [cloneBreeder, setCloneBreeder] = React.useState("");
@@ -56,15 +45,12 @@ const ClonesPage: React.FC = () => {
   const [isMale, setIsMale] = React.useState<"Male" | "Female">("Female");
   const [isBreederCut, setIsBreederCut] = React.useState(false);
   const [isAvailable, setIsAvailable] = React.useState(false);
+  const [editModalOpen, setEditModalOpen] = React.useState(false);
+  const [selectedClone, setSelectedClone] = React.useState<Clone | null>(null);
 
   // Validation states
   const [breederError, setBreederError] = React.useState(false);
   const [strainError, setStrainError] = React.useState(false);
-
-  // Row edit state
-  const [rowModesModel, setRowModesModel] = React.useState<GridRowModesModel>(
-    {}
-  );
 
   // Confirmation dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
@@ -108,6 +94,11 @@ const ClonesPage: React.FC = () => {
     }
   };
 
+  const handleEditClick = (clone: Clone) => {
+    setSelectedClone(clone);
+    setEditModalOpen(true);
+  };
+
   // Handle delete confirmation
   const handleDeleteClick = (clone: Clone) => {
     setCloneToDelete(clone);
@@ -126,23 +117,16 @@ const ClonesPage: React.FC = () => {
     handleCloseDeleteDialog(); // Close the dialog
   };
 
-  // Handle row updates
-  const processRowUpdate = async (newRow: Clone, oldRow: Clone) => {
+  const handleSaveEdit = async (updatedClone: Clone) => {
     try {
-      console.log("Saving changes for:", newRow);
-      await updateClone(newRow.id!, newRow);
-
-      // Switch the row back to view mode
-      setRowModesModel((prevModel) => ({
-        ...prevModel,
-        [newRow.id!]: { mode: GridRowModes.View },
-      }));
-
-      console.log("Clone saved successfully:", newRow);
-      return newRow; // Return the updated row to the DataGrid
+      await updateClone(updatedClone.id!, updatedClone);
+      setClones((prevClones) =>
+        prevClones.map((clone) =>
+          clone.id === updatedClone.id ? updatedClone : clone
+        )
+      );
     } catch (error) {
       console.error("Failed to update clone:", error);
-      return oldRow; // Revert to the old row on error
     }
   };
 
@@ -275,68 +259,26 @@ const ClonesPage: React.FC = () => {
       align: "center",
       width: 100,
       flex: 0,
-      renderCell: (params) => {
-        const isEditing = rowModesModel[params.id]?.mode === GridRowModes.Edit;
-
-        return isEditing ? (
-          <>
-            <Tooltip title="Save">
-              <IconButton
-                onClick={() =>
-                  setRowModesModel((prevModel) => ({
-                    ...prevModel,
-                    [params.id]: { mode: GridRowModes.View },
-                  }))
-                }
-                aria-label="save"
-              >
-                <SaveAs />
-              </IconButton>
-            </Tooltip>
-
-            <Tooltip title="Cancel">
-              <IconButton
-                onClick={() =>
-                  setRowModesModel({
-                    ...rowModesModel,
-                    [params.id]: {
-                      mode: GridRowModes.View,
-                      ignoreModifications: true,
-                    },
-                  })
-                }
-                aria-label="cancel"
-              >
-                <Cancel />
-              </IconButton>
-            </Tooltip>
-          </>
-        ) : (
-          <>
-            <Tooltip title="Edit">
-              <IconButton
-                onClick={() =>
-                  setRowModesModel({
-                    ...rowModesModel,
-                    [params.id]: { mode: GridRowModes.Edit },
-                  })
-                }
-                aria-label="edit"
-              >
-                <Edit />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Delete">
-              <IconButton
-                onClick={() => handleDeleteClick(params.row)}
-                aria-label="delete"
-              >
-                <Delete color="error" />
-              </IconButton>
-            </Tooltip>
-          </>
-        );
-      },
+      renderCell: (params) => (
+        <>
+          <Tooltip title="Edit">
+            <IconButton
+              onClick={() => handleEditClick(params.row)}
+              aria-label="edit"
+            >
+              <Edit />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Delete">
+            <IconButton
+              onClick={() => handleDeleteClick(params.row)}
+              aria-label="delete"
+            >
+              <Delete color="error" />
+            </IconButton>
+          </Tooltip>
+        </>
+      ),
     },
   ];
 
@@ -484,12 +426,6 @@ const ClonesPage: React.FC = () => {
         <DataGrid
           rows={clones.map((clone) => ({ ...clone, id: clone.id }))}
           columns={columns}
-          processRowUpdate={processRowUpdate}
-          onProcessRowUpdateError={(error) =>
-            console.error("Error during row update:", error)
-          }
-          rowModesModel={rowModesModel}
-          onRowModesModelChange={(newModel) => setRowModesModel(newModel)}
           initialState={{
             pagination: {
               paginationModel: {
@@ -525,6 +461,15 @@ const ClonesPage: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      <EditCloneModal
+        open={editModalOpen}
+        onClose={() => {
+          setEditModalOpen(false);
+          setSelectedClone(null);
+        }}
+        clone={selectedClone}
+        onSave={handleSaveEdit}
+      />
     </Box>
   );
 };
