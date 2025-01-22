@@ -155,12 +155,16 @@ function Profile() {
     fetchUserData();
   }, [currentUser, userId]);
 
-  const filteredSeeds = profileSeeds.filter((seed) =>
-    seed.strain.toLowerCase().includes(seedSearchQuery.toLowerCase())
+  const filteredSeeds = profileSeeds.filter(
+    (seed) =>
+      seed.strain.toLowerCase().includes(seedSearchQuery.toLowerCase()) ||
+      seed.breeder.toLowerCase().includes(seedSearchQuery.toLowerCase())
   );
 
-  const filteredClones = profileClones.filter((clone) =>
-    clone.strain.toLowerCase().includes(cloneSearchQuery.toLowerCase())
+  const filteredClones = profileClones.filter(
+    (clone) =>
+      clone.strain.toLowerCase().includes(cloneSearchQuery.toLowerCase()) ||
+      clone.breeder.toLowerCase().includes(cloneSearchQuery.toLowerCase())
   );
 
   if (loading) {
@@ -190,14 +194,14 @@ function Profile() {
   }
 
   return (
-    <Box sx={{ maxWidth: 1200, margin: "0 auto", p: 3 }}>
+    <Box sx={{ maxWidth: 1200, margin: "0 auto", p: 2 }}>
       {/* Profile Header */}
       <Box
         sx={{
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          mb: 3,
+          mb: 2,
           gap: 2,
         }}
       >
@@ -330,14 +334,16 @@ function Profile() {
 
         <AccordionDetails>
           {/* Search Input */}
-          <TextField
-            sx={{ flexGrow: 1, mb: 2 }}
-            size="small"
-            variant="outlined"
-            placeholder="Search seeds by strain..."
-            value={seedSearchQuery}
-            onChange={(e) => setSeedSearchQuery(e.target.value)}
-          />
+          <Tooltip title="Search by Breeder or Strain">
+            <TextField
+              sx={{ flexGrow: 1, mb: 2 }}
+              size="small"
+              variant="outlined"
+              placeholder="Seeds Search"
+              value={seedSearchQuery}
+              onChange={(e) => setSeedSearchQuery(e.target.value)}
+            />
+          </Tooltip>
 
           {profileSeeds.length === 0 ? ( // Check if no seeds are added
             <Typography color="text.secondary">No seeds added yet.</Typography>
@@ -346,13 +352,14 @@ function Profile() {
               No seeds match your search.
             </Typography>
           ) : (
-            <Grid container spacing={2}>
+            <Grid container spacing={1}>
               {filteredSeeds.map((seed) => (
                 <Grid
                   item
                   xs={12}
                   sm={6}
                   md={4}
+                  lg={3}
                   key={seed.id}
                   id={`seed-${seed.id}`}
                 >
@@ -382,7 +389,7 @@ function Profile() {
                         )
                       }
                     />
-                    <CardContent sx={{ paddingY: 1 }}>
+                    <CardContent sx={{ paddingY: 0 }}>
                       <Stack>
                         {/* Seed Details */}
                         <Typography variant="body2">
@@ -446,14 +453,16 @@ function Profile() {
         </AccordionSummary>
         <AccordionDetails>
           {/* Search Input */}
-          <TextField
-            sx={{ flexGrow: 1, mb: 2 }}
-            size="small"
-            variant="outlined"
-            placeholder="Search clones by strain..."
-            value={cloneSearchQuery}
-            onChange={(e) => setCloneSearchQuery(e.target.value)}
-          />
+          <Tooltip title="Search by Breeder or Strain">
+            <TextField
+              sx={{ flexGrow: 1, mb: 2 }}
+              size="small"
+              variant="outlined"
+              placeholder="Clone Search"
+              value={cloneSearchQuery}
+              onChange={(e) => setCloneSearchQuery(e.target.value)}
+            />
+          </Tooltip>
           {profileClones.length === 0 ? ( // Check if no clones are added
             <Typography color="text.secondary">No clones added yet.</Typography>
           ) : filteredClones.length === 0 ? ( // Check if search yields no results
@@ -461,13 +470,14 @@ function Profile() {
               No clones match your search.
             </Typography>
           ) : (
-            <Grid container spacing={2}>
+            <Grid container spacing={1}>
               {filteredClones.map((clone) => (
                 <Grid
                   item
                   xs={12}
                   sm={6}
                   md={4}
+                  lg={4}
                   key={clone.id}
                   id={`clone-${clone.id}`}
                 >
@@ -484,17 +494,6 @@ function Profile() {
                         clone.strain
                       }`}
                       subheader={clone.lineage}
-                      // subheader={
-                      //   clone.breederCut ? (
-                      //     <Chip
-                      //       sx={{ mt: 1 }}
-                      //       size="small"
-                      //       label="Breeder Cut"
-                      //       variant="outlined"
-                      //       icon={<Verified />}
-                      //     />
-                      //   ) : null
-                      // }
                       action={
                         // Icons for availability
                         clone.available ? (
@@ -508,7 +507,7 @@ function Profile() {
                         )
                       }
                     />
-                    <CardContent sx={{ paddingY: 1 }}>
+                    <CardContent sx={{ paddingY: 0 }}>
                       <Stack>
                         {/* Clone Details */}
                         {clone.breederCut && (
