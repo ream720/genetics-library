@@ -35,10 +35,8 @@ function ContactInfo() {
   }, [currentUser]);
 
   const handleButtonClick = async () => {
-    if (!contactInfo.trim()) return;
-
     try {
-      await saveContactInfo(contactInfo);
+      await saveContactInfo(contactInfo.trim()); // Trim the value but allow empty string
       navigate("/");
     } catch (error) {
       alert("Failed to save contact info - try again.");
