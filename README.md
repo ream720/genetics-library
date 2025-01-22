@@ -54,5 +54,5 @@ This project is a web application that allows users to manage their seed and clo
 
 ### Icons and Components
 
-- Material UI icons (CheckCircleIcon, CancelIcon)
+- Material UI icons (CheckCircleIcon, CancelIcon, other icons)
 - Material UI components (Box, Stack, Chip, Tooltip, Typography, etc.)
