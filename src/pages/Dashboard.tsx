@@ -33,21 +33,15 @@ function Dashboard() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Create mailto URL with subject and body
-    const mailtoUrl = `mailto:geneticslibrary@gmail.com?subject=Support Request&body=${encodeURIComponent(
-      message
-    )}`;
-
     try {
-      // Open default email client
-      window.location.href = mailtoUrl;
+      window.location.href = `mailto:geneticslibrary@gmail.com?subject=Support Request&body=${encodeURIComponent(
+        message
+      )}`;
       setSubmitStatus("success");
-
-      // Close modal after short delay
-      setTimeout(() => {
-        handleClose();
-      }, 2000);
-    } catch (error) {
+      setTimeout(handleClose, 2000);
+    } catch (error: unknown) {
+      // Explicitly type the error
+      console.error("Failed to open email client:", error); // Log the error
       setSubmitStatus("error");
     }
   };
