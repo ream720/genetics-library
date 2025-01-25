@@ -116,135 +116,105 @@ const AppWithRouter: React.FC = () => {
   return (
     <ThemeProvider theme={isDarkMode ? darkTheme : lightTheme}>
       <CssBaseline />
-
-      {/* -- LOGO / TOOLBAR (TOP BAR) -- */}
-      <AppBar position="static">
-        <Toolbar sx={{ width: "100%", display: "flex" }}>
-          {/* Left Box: Avatar and Username */}
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 1, // Space between items
-              width: 100, // Match the right box width
-              overflow: "hidden",
-            }}
-          >
-            {currentUser && (
-              <>
-                <Avatar
-                  src={currentUser.photoURL || ""}
-                  alt={currentUser.username || "User"}
-                  sx={{ width: 24, height: 24 }}
-                />
-                <Typography
-                  variant="caption"
-                  color="inherit"
-                  sx={{
-                    whiteSpace: "nowrap", // Prevent text from wrapping to a new line
-                    overflow: "hidden", // Hide overflowed text
-                    textOverflow: "ellipsis", // Show ellipsis for overflowed text
-                    maxWidth: 60, // Restrict the maximum width of the text
-                  }}
-                >
-                  {currentUser.username || "Guest"}
-                </Typography>
-              </>
-            )}
-          </Box>
-
-          {/* Center Box: Title */}
-          <Box sx={{ flexGrow: 1, display: "flex", justifyContent: "center" }}>
-            <Typography
-              variant="h4"
+      <Box
+        sx={{
+          minHeight: "100vh",
+          bgcolor: "background.default",
+        }}
+      >
+        {/* -- LOGO / TOOLBAR (TOP BAR) -- */}
+        <AppBar position="static">
+          <Toolbar sx={{ width: "100%", display: "flex" }}>
+            {/* Left Box: Avatar and Username */}
+            <Box
               sx={{
-                fontFamily: "'Great Vibes', cursive",
-                textAlign: "center",
+                display: "flex",
+                alignItems: "center",
+                gap: 1, // Space between items
+                width: 100, // Match the right box width
+                overflow: "hidden",
               }}
             >
-              Genetics Library
-            </Typography>
-          </Box>
+              {currentUser && (
+                <>
+                  <Avatar
+                    src={currentUser.photoURL || ""}
+                    alt={currentUser.username || "User"}
+                    sx={{ width: 24, height: 24 }}
+                  />
+                  <Typography
+                    variant="caption"
+                    color="inherit"
+                    sx={{
+                      whiteSpace: "nowrap", // Prevent text from wrapping to a new line
+                      overflow: "hidden", // Hide overflowed text
+                      textOverflow: "ellipsis", // Show ellipsis for overflowed text
+                      maxWidth: 60, // Restrict the maximum width of the text
+                    }}
+                  >
+                    {currentUser.username || "Guest"}
+                  </Typography>
+                </>
+              )}
+            </Box>
 
-          {/* Right Box: Icon Buttons */}
-          <Box
-            sx={{
-              width: 100,
-              display: "flex",
-              justifyContent: "flex-end",
-              gap: 1,
-            }}
+            {/* Center Box: Title */}
+            <Box
+              sx={{ flexGrow: 1, display: "flex", justifyContent: "center" }}
+            >
+              <Typography
+                variant="h4"
+                sx={{
+                  fontFamily: "'Great Vibes', cursive",
+                  textAlign: "center",
+                }}
+              >
+                Genetics Library
+              </Typography>
+            </Box>
+
+            {/* Right Box: Icon Buttons */}
+            <Box
+              sx={{
+                width: 100,
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 1,
+              }}
+            >
+              <IconButton onClick={handleThemeChange} color="inherit">
+                {isDarkMode ? (
+                  <ModeNightOutlinedIcon />
+                ) : (
+                  <WbSunnyOutlinedIcon />
+                )}
+              </IconButton>
+
+              {currentUser && (
+                <Tooltip title="Logout">
+                  <IconButton
+                    aria-description="Logout"
+                    color="inherit"
+                    onClick={handleLogout}
+                  >
+                    <LogoutIcon />
+                  </IconButton>
+                </Tooltip>
+              )}
+            </Box>
+          </Toolbar>
+        </AppBar>
+
+        {/* -- TABS BAR (SECOND BAR) -- */}
+        <AppBar position="static" color="default" sx={{ mt: 0.5 }}>
+          <Tabs
+            value={getActiveTabValue()}
+            onChange={handleTabChange}
+            textColor="inherit"
+            indicatorColor="secondary"
+            variant="fullWidth"
           >
-            <IconButton onClick={handleThemeChange} color="inherit">
-              {isDarkMode ? <ModeNightOutlinedIcon /> : <WbSunnyOutlinedIcon />}
-            </IconButton>
-
-            {currentUser && (
-              <Tooltip title="Logout">
-                <IconButton
-                  aria-description="Logout"
-                  color="inherit"
-                  onClick={handleLogout}
-                >
-                  <LogoutIcon />
-                </IconButton>
-              </Tooltip>
-            )}
-          </Box>
-        </Toolbar>
-      </AppBar>
-
-      {/* -- TABS BAR (SECOND BAR) -- */}
-      <AppBar position="static" color="default" sx={{ mt: 0.5 }}>
-        <Tabs
-          value={getActiveTabValue()}
-          onChange={handleTabChange}
-          textColor="inherit"
-          indicatorColor="secondary"
-          variant="fullWidth"
-        >
-          {/* Dashboard Tab: icon + text */}
-          <Tab
-            icon={
-              <Box
-                sx={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                }}
-              >
-                <DashboardIcon />
-                <Typography variant="caption" sx={{ fontSize: "0.7rem" }}>
-                  Dashboard
-                </Typography>
-              </Box>
-            }
-            value="/"
-            aria-label="Dashboard"
-          />
-
-          {/* Search Tab: icon + text */}
-          <Tab
-            icon={
-              <Box
-                sx={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                }}
-              >
-                <SearchIcon />
-                <Typography variant="caption" sx={{ fontSize: "0.7rem" }}>
-                  Search
-                </Typography>
-              </Box>
-            }
-            value="/search"
-            aria-label="Search"
-          />
-
-          {/* Profile Tab: only if logged in */}
-          {currentUser && (
+            {/* Dashboard Tab: icon + text */}
             <Tab
               icon={
                 <Box
@@ -254,98 +224,140 @@ const AppWithRouter: React.FC = () => {
                     alignItems: "center",
                   }}
                 >
-                  <AccountCircleIcon />
+                  <DashboardIcon />
                   <Typography variant="caption" sx={{ fontSize: "0.7rem" }}>
-                    Profile
+                    Dashboard
                   </Typography>
                 </Box>
               }
-              value="/profile"
-              aria-label="Profile"
+              value="/"
+              aria-label="Dashboard"
             />
-          )}
 
-          {/* Login Tab: only if not logged in */}
-          {!currentUser && (
-            <Tab label="Login" icon={<LoginIcon />} value="/login" />
-          )}
-        </Tabs>
-      </AppBar>
+            {/* Search Tab: icon + text */}
+            <Tab
+              icon={
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                  }}
+                >
+                  <SearchIcon />
+                  <Typography variant="caption" sx={{ fontSize: "0.7rem" }}>
+                    Search
+                  </Typography>
+                </Box>
+              }
+              value="/search"
+              aria-label="Search"
+            />
 
-      {/* -- MAIN CONTENT -- */}
-      <Box sx={{ mt: 2 }}>
-        <Routes>
-          <Route
-            path="/"
-            element={
-              <PrivateRoute>
-                <Dashboard />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <PrivateRoute>
-                <Profile />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/profile/:userId"
-            element={
-              <PrivateRoute>
-                <Profile />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/seeds"
-            element={
-              <PrivateRoute>
-                <SeedsPage />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/clones"
-            element={
-              <PrivateRoute>
-                <ClonesPage />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/search"
-            element={
-              <PrivateRoute>
-                <SearchPage />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/payments"
-            element={
-              <PrivateRoute>
-                <PaymentsPage
-                  onSave={savePaymentOptions}
-                  currentUser={currentUser || undefined}
-                />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/contact-info"
-            element={
-              <PrivateRoute>
-                <ContactInfo />
-              </PrivateRoute>
-            }
-          />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-        </Routes>
+            {/* Profile Tab: only if logged in */}
+            {currentUser && (
+              <Tab
+                icon={
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                    }}
+                  >
+                    <AccountCircleIcon />
+                    <Typography variant="caption" sx={{ fontSize: "0.7rem" }}>
+                      Profile
+                    </Typography>
+                  </Box>
+                }
+                value="/profile"
+                aria-label="Profile"
+              />
+            )}
+
+            {/* Login Tab: only if not logged in */}
+            {!currentUser && (
+              <Tab label="Login" icon={<LoginIcon />} value="/login" />
+            )}
+          </Tabs>
+        </AppBar>
+
+        {/* -- MAIN CONTENT -- */}
+        <Box sx={{ mt: 2 }}>
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <PrivateRoute>
+                  <Dashboard />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <PrivateRoute>
+                  <Profile />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/profile/:userId"
+              element={
+                <PrivateRoute>
+                  <Profile />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/seeds"
+              element={
+                <PrivateRoute>
+                  <SeedsPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/clones"
+              element={
+                <PrivateRoute>
+                  <ClonesPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/search"
+              element={
+                <PrivateRoute>
+                  <SearchPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/payments"
+              element={
+                <PrivateRoute>
+                  <PaymentsPage
+                    onSave={savePaymentOptions}
+                    currentUser={currentUser || undefined}
+                  />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/contact-info"
+              element={
+                <PrivateRoute>
+                  <ContactInfo />
+                </PrivateRoute>
+              }
+            />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+          </Routes>
+        </Box>
       </Box>
     </ThemeProvider>
   );
