@@ -1,5 +1,5 @@
 export interface Seed {
-  id?: string; // Unique identifier
+  id: string; // Unique identifier
   breeder: string; // Breeder of the seed
   strain: string; // Strain type (e.g., indica, sativa, hybrid)
   lineage: string; //parent strains of a given seed hybrid

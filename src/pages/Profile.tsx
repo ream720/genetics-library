@@ -1,4 +1,5 @@
 import {
+  AccountTree,
   AttachMoney,
   BrokenImage,
   CurrencyBitcoin,
@@ -17,7 +18,6 @@ import {
   CardActions,
   CardContent,
   CardHeader,
-  Chip,
   CircularProgress,
   Grid,
   Stack,
@@ -370,27 +370,95 @@ function Profile() {
                         : ""
                     }
                     variant="outlined"
+                    sx={{
+                      height: 150, // Fixed height
+                      display: "flex",
+                      flexDirection: "column",
+                    }}
                   >
                     <CardHeader
-                      title={`${seed.feminized === true ? "♀" : ""} ${
-                        seed.strain
-                      }`}
-                      subheader={seed.lineage}
+                      sx={{
+                        py: 1,
+                        pb: 0,
+                        "& .MuiCardHeader-content": {
+                          overflow: "hidden",
+                          minWidth: 0, // Enables truncation in flex container
+                        },
+                        "& .MuiCardHeader-action": {
+                          marginTop: 0, // Align with title
+                          marginRight: 0, // Remove default margin
+                        },
+                      }}
+                      title={
+                        <Box
+                          display="flex"
+                          alignItems="center"
+                          gap={1}
+                          minWidth={0}
+                        >
+                          <Tooltip
+                            title={`${seed.feminized === true ? "♀" : ""} ${
+                              seed.strain
+                            }`}
+                          >
+                            <Typography
+                              variant="subtitle1"
+                              component="span"
+                              sx={{
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                minWidth: 0,
+                              }}
+                            >
+                              {`${seed.feminized === true ? "♀" : ""} ${
+                                seed.strain
+                              }`}
+                            </Typography>
+                          </Tooltip>
+                          {seed.open && (
+                            <Tooltip title="Open Pack">
+                              <BrokenImage
+                                color="warning"
+                                fontSize="small"
+                                sx={{ flexShrink: 0 }}
+                              />
+                            </Tooltip>
+                          )}
+                        </Box>
+                      }
                       action={
-                        // Icons for availability
-                        seed.available ? (
-                          <Tooltip title="Available">
-                            <CheckCircleIcon color="success" />
-                          </Tooltip>
-                        ) : (
-                          <Tooltip title="Unavailable">
-                            <CancelIcon color="error" />
-                          </Tooltip>
-                        )
+                        <Box display="flex" gap={1} ml={1}>
+                          {seed.lineage && (
+                            <Tooltip
+                              title={seed.lineage || "No lineage information"}
+                            >
+                              <AccountTree color="action" fontSize="small" />
+                            </Tooltip>
+                          )}
+
+                          {seed.available ? (
+                            <Tooltip title="Available">
+                              <CheckCircleIcon
+                                color="success"
+                                fontSize="small"
+                              />
+                            </Tooltip>
+                          ) : (
+                            <Tooltip title="Unavailable">
+                              <CancelIcon color="error" fontSize="small" />
+                            </Tooltip>
+                          )}
+                        </Box>
                       }
                     />
-                    <CardContent sx={{ paddingY: 0 }}>
-                      <Stack>
+                    <CardContent
+                      sx={{
+                        py: 0.5, // Reduced padding
+                        flex: 1,
+                      }}
+                    >
+                      <Stack spacing={0.5}>
                         {/* Seed Details */}
                         <Typography variant="body2">
                           <strong>Breeder:</strong> {seed.breeder}
@@ -403,14 +471,16 @@ function Profile() {
                             <strong>Generation:</strong> {seed.generation}
                           </Typography>
                         )}
-                        {seed.open && (
-                          <Tooltip title="Open Pack">
-                            <BrokenImage color="warning" />
-                          </Tooltip>
-                        )}
                       </Stack>
                     </CardContent>
-                    <CardActions sx={{ justifyContent: "flex-end" }}>
+                    <CardActions
+                      sx={{
+                        justifyContent: "flex-end",
+                        py: 0.5,
+                        px: 2,
+                        mt: "auto",
+                      }}
+                    >
                       {/* Date Added */}
                       <Typography color="text.secondary" variant="caption">
                         Added:{" "}
@@ -477,7 +547,7 @@ function Profile() {
                   xs={12}
                   sm={6}
                   md={4}
-                  lg={4}
+                  lg={3}
                   key={clone.id}
                   id={`clone-${clone.id}`}
                 >
@@ -488,37 +558,96 @@ function Profile() {
                         : ""
                     }
                     variant="outlined"
+                    sx={{
+                      height: 150, // Fixed height
+                      display: "flex",
+                      flexDirection: "column",
+                    }}
                   >
                     <CardHeader
-                      title={`${clone.sex === "Female" ? "♀" : ""} ${
-                        clone.strain
-                      }`}
-                      subheader={clone.lineage}
+                      sx={{
+                        py: 1,
+                        pb: 0,
+                        "& .MuiCardHeader-content": {
+                          overflow: "hidden",
+                          minWidth: 0, // Enables truncation in flex container
+                        },
+                        "& .MuiCardHeader-action": {
+                          marginTop: 0, // Align with title
+                          marginRight: 0, // Remove default margin
+                        },
+                      }}
+                      title={
+                        <Box
+                          display="flex"
+                          alignItems="center"
+                          gap={1}
+                          minWidth={0}
+                        >
+                          <Tooltip
+                            title={`${clone.sex === "Female" ? "♀" : ""} ${
+                              clone.strain
+                            }`}
+                          >
+                            <Typography
+                              variant="subtitle1"
+                              component="span"
+                              sx={{
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                minWidth: 0,
+                              }}
+                            >
+                              {`${clone.sex === "Female" ? "♀" : ""} ${
+                                clone.strain
+                              }`}
+                            </Typography>
+                          </Tooltip>
+                          {clone.breederCut && (
+                            <Tooltip title="Breeder Cut">
+                              <Verified
+                                color="action"
+                                fontSize="small"
+                                sx={{ flexShrink: 0 }}
+                              />
+                            </Tooltip>
+                          )}
+                        </Box>
+                      }
                       action={
-                        // Icons for availability
-                        clone.available ? (
-                          <Tooltip title="Available">
-                            <CheckCircleIcon color="success" />
-                          </Tooltip>
-                        ) : (
-                          <Tooltip title="Unavailable">
-                            <CancelIcon color="error" />
-                          </Tooltip>
-                        )
+                        <Box display="flex" gap={1}>
+                          {clone.lineage && (
+                            <Tooltip
+                              title={clone.lineage || "No lineage information"}
+                            >
+                              <AccountTree color="action" fontSize="small" />
+                            </Tooltip>
+                          )}
+
+                          {clone.available ? (
+                            <Tooltip title="Available">
+                              <CheckCircleIcon
+                                color="success"
+                                fontSize="small"
+                              />
+                            </Tooltip>
+                          ) : (
+                            <Tooltip title="Unavailable">
+                              <CancelIcon color="error" fontSize="small" />
+                            </Tooltip>
+                          )}
+                        </Box>
                       }
                     />
-                    <CardContent sx={{ paddingY: 0 }}>
-                      <Stack>
+                    <CardContent
+                      sx={{
+                        py: 0.5, // Reduced padding
+                        flex: 1,
+                      }}
+                    >
+                      <Stack spacing={0.5}>
                         {/* Clone Details */}
-                        {clone.breederCut && (
-                          <Chip
-                            sx={{ mb: 1, maxWidth: 125 }}
-                            size="small"
-                            label="Breeder Cut"
-                            variant="outlined"
-                            icon={<Verified />}
-                          />
-                        )}
                         <Typography variant="body2">
                           <strong>Breeder:</strong> {clone.breeder}
                         </Typography>
@@ -534,7 +663,14 @@ function Profile() {
                         )}
                       </Stack>
                     </CardContent>
-                    <CardActions sx={{ justifyContent: "flex-end" }}>
+                    <CardActions
+                      sx={{
+                        justifyContent: "flex-end",
+                        py: 0.5,
+                        px: 2,
+                        mt: "auto",
+                      }}
+                    >
                       {/* Date Added */}
                       <Typography color="text.secondary" variant="caption">
                         Added:{" "}

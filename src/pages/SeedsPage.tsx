@@ -106,7 +106,7 @@ const SeedsPage: React.FC = () => {
         dateAcquired: new Date().toISOString(),
         available: isAvailable,
         lineage: lineage,
-      });
+      } as Seed);
 
       // Reset form fields and validation
       setSeedBreeder("");
