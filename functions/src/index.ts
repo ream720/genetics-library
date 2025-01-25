@@ -1,19 +1,32 @@
-/**
- * Import function triggers from their respective submodules:
- *
- * import {onCall} from "firebase-functions/v2/https";
- * import {onDocumentWritten} from "firebase-functions/v2/firestore";
- *
- * See a full list of supported triggers at https://firebase.google.com/docs/functions
- */
+import { onCall } from "firebase-functions/v2/https";
+import * as nodemailer from "nodemailer";
 
-import {onRequest} from "firebase-functions/v2/https";
-import * as logger from "firebase-functions/logger";
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: "geneticslibrary@gmail.com",
+    pass: process.env.EMAIL_PASSWORD,
+  },
+});
 
-// Start writing functions
-// https://firebase.google.com/docs/functions/typescript
+export const sendSupportEmail = onCall(async (request) => {
+  const { message } = request.data;
+  const userEmail = request.auth?.token.email;
 
-// export const helloWorld = onRequest((request, response) => {
-//   logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+  if (!request.auth) {
+    throw new Error("Unauthorized");
+  }
+
+  try {
+    await transporter.sendMail({
+      from: "geneticslibrary@gmail.com",
+      to: "geneticslibrary@gmail.com",
+      subject: "Support Request",
+      text: `Message from ${userEmail}:\n\n${message}`,
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("Email sending failed:", error);
+    throw new Error("Failed to send email");
+  }
+});
