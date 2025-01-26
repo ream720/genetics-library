@@ -10,6 +10,7 @@ import {
   Alert,
   Modal,
   TextField,
+  Snackbar,
 } from "@mui/material";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -23,6 +24,15 @@ function Dashboard() {
   const [submitStatus, setSubmitStatus] = useState<
     "idle" | "success" | "error"
   >("idle");
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: "success" | "error";
+  }>({
+    open: false,
+    message: "",
+    severity: "success",
+  });
 
   const handleContactSupport = () => setIsModalOpen(true);
 
@@ -30,6 +40,10 @@ function Dashboard() {
     setIsModalOpen(false);
     setMessage("");
     setSubmitStatus("idle");
+  };
+
+  const handleSnackbarClose = () => {
+    setSnackbar((prev) => ({ ...prev, open: false }));
   };
 
   // Update the handleSubmit function
@@ -42,13 +56,24 @@ function Dashboard() {
       const sendEmail = httpsCallable(functions, "sendSupportEmail");
       await sendEmail({ message });
       setSubmitStatus("success");
-      setTimeout(handleClose, 2000);
+      setSnackbar({
+        open: true,
+        message: "Message sent successfully!",
+        severity: "success",
+      });
+      setTimeout(handleClose, 1000);
     } catch (error: unknown) {
       // Only log errors in development
       if (process.env.NODE_ENV === "development") {
         console.error("Support email error:", error);
       }
       setSubmitStatus("error");
+      setSnackbar({
+        open: true,
+        message:
+          "Failed to send message. Please try again or contact us on Instagram @genetics_library",
+        severity: "error",
+      });
     }
   };
 
@@ -191,18 +216,6 @@ function Dashboard() {
             Contact Support
           </Typography>
 
-          {submitStatus === "success" && (
-            <Alert severity="success" sx={{ mb: 2 }}>
-              Opening email client...
-            </Alert>
-          )}
-
-          {submitStatus === "error" && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              Failed to open email client. Please try again.
-            </Alert>
-          )}
-
           <TextField
             fullWidth
             multiline
@@ -225,6 +238,22 @@ function Dashboard() {
           </Stack>
         </Box>
       </Modal>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={handleSnackbarClose}
+          severity={snackbar.severity}
+          variant="filled"
+          sx={{ width: "100%" }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }
