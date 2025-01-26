@@ -195,77 +195,81 @@ function Profile() {
 
   return (
     <Box sx={{ maxWidth: 1200, margin: "0 auto", p: 2 }}>
-      {/* Profile Header */}
+      {/* User Info */}
+
       <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          mb: 2,
-          gap: 2,
-        }}
+        display="flex"
+        flexDirection="column"
+        gap={1}
+        padding={2}
+        bgcolor={"rgba(0, 0, 0, 0.2)"}
+        borderRadius={2}
+        maxWidth={240}
       >
-        {/* User Info */}
-        <Box display="flex" gap={1} sx={{ flexGrow: 1 }}>
+        {/* Avatar and Username */}
+        <Stack direction="row" alignItems="center" spacing={1.5}>
           <Avatar
             src={userProfile?.photoURL || ""}
             alt={userProfile?.username || "User"}
-            sx={{ width: 32, height: 32 }}
+            sx={{
+              width: 36,
+              height: 36,
+              border: "2px solid rgba(255, 255, 255, 0.1)", // Subtle border
+            }}
           />
-          <Typography variant="h6" fontWeight="bold">
+          <Typography
+            variant="h6"
+            sx={{
+              fontSize: "1.1rem",
+              color: "white",
+              fontWeight: 500,
+            }}
+          >
             {userProfile?.username}
           </Typography>
-        </Box>
+        </Stack>
 
         {/* Payment Methods */}
         {userProfile?.paymentMethods &&
         userProfile?.paymentMethods?.length > 0 ? (
-          <Card
-            elevation={0}
-            sx={{
-              p: 2,
-              borderRadius: 2,
-              bgcolor: "background.paper",
-              boxShadow: "0px 1px 3px rgba(0, 0, 0, 0.2)",
-              maxWidth: 300,
-              textAlign: "center",
-            }}
-          >
-            <Typography variant="body1" fontWeight="bold" mb={1}>
+          <Box sx={{ mt: 0.5 }}>
+            <Typography
+              variant="caption"
+              sx={{
+                color: "rgba(255, 255, 255, 0.7)",
+                display: "block",
+                mb: 0.5,
+              }}
+            >
               Accepted Payment Methods
             </Typography>
-
-            <Stack
-              direction="row"
-              spacing={1}
-              justifyContent="center"
-              flexWrap="wrap"
-              sx={{ gap: 1 }}
-            >
+            <Stack direction="row" gap={0.5}>
               {userProfile.paymentMethods.map((method) => {
                 const paymentMethod = paymentMethods.find(
                   (item) => item.name === method
                 );
-
                 return (
                   <Tooltip title={method} key={method}>
                     <Box
-                      key={method}
                       sx={{
-                        width: 50,
-                        height: 50,
+                        width: 26,
+                        height: 26,
                         display: "flex",
                         justifyContent: "center",
                         alignItems: "center",
-                        border: "1px solid #ccc",
-                        borderRadius: "35%",
-                        padding: 1,
+                        bgcolor: "rgba(255, 255, 255, 0.05)",
+                        borderRadius: 1.5,
+                        padding: 0.5,
+                        transition: "background-color 0.2s",
+                        "&:hover": {
+                          bgcolor: "rgba(255, 255, 255, 0.1)",
+                        },
                       }}
                     >
                       {paymentMethod?.logo ? (
                         <img
                           src={paymentMethod.logo}
-                          alt={`${method} Logo`}
+                          alt={method}
                           style={{
                             width: "100%",
                             height: "100%",
@@ -280,28 +284,31 @@ function Profile() {
                 );
               })}
             </Stack>
-          </Card>
+          </Box>
         ) : null}
-
         {/* Contact Info */}
         {userProfile?.contactInfo ? (
-          <Card
-            elevation={0}
-            sx={{
-              p: 2,
-              borderRadius: 2,
-              bgcolor: "background.paper",
-              boxShadow: "0px 1px 3px rgba(0, 0, 0, 0.2)",
-              maxWidth: 300,
-              textAlign: "center",
-            }}
-          >
-            <Typography variant="body1" fontWeight="bold" mb={1}>
+          <Box sx={{ mt: 0.5 }}>
+            <Typography
+              variant="caption"
+              sx={{
+                color: "rgba(255, 255, 255, 0.7)",
+                display: "block",
+                mb: 0.5,
+              }}
+            >
               Contact Info
             </Typography>
-
-            <Typography variant="body2">{userProfile.contactInfo}</Typography>
-          </Card>
+            <Typography
+              variant="body2"
+              sx={{
+                color: "white",
+                fontSize: "0.85rem",
+              }}
+            >
+              {userProfile.contactInfo}
+            </Typography>
+          </Box>
         ) : null}
       </Box>
 
