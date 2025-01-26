@@ -26,8 +26,7 @@ interface ProcessImageResult {
 }
 
 const ProfileSection: React.FC = () => {
-  const { currentUser } = useAuth();
-  const { updateUserProfile } = useAuth();
+  const { currentUser, updateUserProfile } = useAuth();
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string>("");
   const [success, setSuccess] = useState<string>("");
@@ -106,8 +105,7 @@ const ProfileSection: React.FC = () => {
         photoURL: downloadURL,
       });
 
-      // Use the updateUserProfile from context instead
-
+      // Update Firebase Auth user profile
       await updateUserProfile(downloadURL);
 
       setSuccess("Profile picture updated successfully!");
@@ -130,38 +128,51 @@ const ProfileSection: React.FC = () => {
           <Typography variant="h6" gutterBottom>
             Profile Picture
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ maxWidth: "600px" }}
+          >
             Add or update your profile picture. Maximum file size is 2MB.
+          </Typography>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ mb: 3, maxWidth: "600px" }}
+          >
+            Supported formats: JPEG, PNG, WebP.
           </Typography>
         </Box>
 
-        <Stack spacing={2} alignItems="center">
-          <Avatar
-            src={currentUser?.photoURL || ""}
-            sx={{ width: 100, height: 100 }}
-          />
-
-          <Box>
-            <input
-              type="file"
-              accept={ALLOWED_TYPES.join(",")}
-              onChange={handleFileSelect}
-              style={{ display: "none" }}
-              ref={fileInputRef}
+        <Stack spacing={3}>
+          <Stack direction="row" spacing={3} alignItems="center">
+            <Avatar
+              src={currentUser?.photoURL || ""}
+              sx={{ width: 100, height: 100 }}
             />
-            <Button
-              variant="contained"
-              startIcon={currentUser?.photoURL ? <Edit /> : <CloudUpload />}
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
-            >
-              {uploading
-                ? "Uploading..."
-                : currentUser?.photoURL
-                ? "Change Picture"
-                : "Upload Picture"}
-            </Button>
-          </Box>
+            <Box>
+              <input
+                type="file"
+                accept={ALLOWED_TYPES.join(",")}
+                onChange={handleFileSelect}
+                style={{ display: "none" }}
+                ref={fileInputRef}
+              />
+              <Button
+                variant="contained"
+                size="small"
+                startIcon={currentUser?.photoURL ? <Edit /> : <CloudUpload />}
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+              >
+                {uploading
+                  ? "Uploading..."
+                  : currentUser?.photoURL
+                  ? "Change Picture"
+                  : "Upload Picture"}
+              </Button>
+            </Box>
+          </Stack>
 
           {error && (
             <Alert severity="error" sx={{ width: "100%" }}>

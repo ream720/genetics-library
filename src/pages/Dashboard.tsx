@@ -1,4 +1,4 @@
-import { Info } from "@mui/icons-material";
+import { Info, Grass, Payments, ContactMail, Email } from "@mui/icons-material";
 import {
   Button,
   Typography,
@@ -16,6 +16,8 @@ import ProfileSection from "../components/ProfileSection";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getFunctions, httpsCallable } from "firebase/functions";
+import Icon from "@mdi/react";
+import { mdiSeed } from "@mdi/js";
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -87,7 +89,7 @@ function Dashboard() {
           </Typography>
           <Stack direction="row" spacing={1} alignItems="center">
             <Info fontSize="small" />
-            <Typography variant="body1">
+            <Typography variant="subtitle2">
               Manage your seeds, clones, and payment options here.
             </Typography>
           </Stack>
@@ -112,18 +114,20 @@ function Dashboard() {
               </Box>
               <Stack direction="row" spacing={2} justifyContent="flex-start">
                 <Button
+                  startIcon={<Icon path={mdiSeed} size={0.7} />}
                   variant="contained"
-                  size="medium"
+                  size="small"
                   onClick={() => navigate("/seeds")}
                 >
-                  Manage Seeds
+                  Seeds
                 </Button>
                 <Button
+                  startIcon={<Grass />}
                   variant="contained"
-                  size="medium"
+                  size="small"
                   onClick={() => navigate("/clones")}
                 >
-                  Manage Clones
+                  Clones
                 </Button>
               </Stack>
             </CardContent>
@@ -146,18 +150,20 @@ function Dashboard() {
               </Box>
               <Stack direction="row" spacing={2} justifyContent="flex-start">
                 <Button
+                  startIcon={<Payments />}
                   variant="contained"
-                  size="medium"
+                  size="small"
                   onClick={() => navigate("/payments")}
                 >
-                  Manage Payment Platforms
+                  Payment Platforms
                 </Button>
                 <Button
+                  startIcon={<ContactMail />}
                   variant="contained"
-                  size="medium"
+                  size="small"
                   onClick={() => navigate("/contact-info")}
                 >
-                  Manage Contact Info
+                  Contact Info
                 </Button>
               </Stack>
             </CardContent>
@@ -181,8 +187,9 @@ function Dashboard() {
               </Box>
               <Stack direction="row" spacing={2} justifyContent="flex-start">
                 <Button
+                  startIcon={<Email />}
                   variant="contained"
-                  size="medium"
+                  size="small"
                   onClick={handleContactSupport}
                 >
                   Send Message
