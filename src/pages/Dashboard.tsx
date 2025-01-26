@@ -12,9 +12,9 @@ import {
   TextField,
   Snackbar,
 } from "@mui/material";
+import ProfileSection from "../components/ProfileSection";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-
 import { getFunctions, httpsCallable } from "firebase/functions";
 
 function Dashboard() {
@@ -190,6 +190,7 @@ function Dashboard() {
               </Stack>
             </CardContent>
           </Card>
+          <ProfileSection />
         </Stack>
       </Card>
       <Modal

@@ -1,5 +1,6 @@
 import {
   User,
+  updateProfile,
   onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -44,6 +45,7 @@ interface AuthContextProps {
   signInWithGoogle: () => Promise<{ requiresProfile: boolean }>;
   resetPassword: (email: string) => Promise<void>;
   completeGoogleSignup: (username: string) => Promise<void>;
+  updateUserProfile: (photoURL: string) => Promise<void>; // Add this line
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
@@ -172,6 +174,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  const updateUserProfile = async (photoURL: string) => {
+    if (!auth.currentUser) {
+      throw new Error("No user signed in");
+    }
+
+    // Use the imported updateProfile function
+    await updateProfile(auth.currentUser, { photoURL });
+
+    await setDoc(
+      doc(db, "users", auth.currentUser.uid),
+      { photoURL },
+      { merge: true }
+    );
+
+    setCurrentUser((prev) =>
+      prev ? ({ ...prev, photoURL } as ExtendedUser) : null
+    );
+  };
+
   const value: AuthContextProps = {
     currentUser,
     loading,
@@ -181,6 +202,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signInWithGoogle,
     resetPassword,
     completeGoogleSignup,
+    updateUserProfile,
   };
 
   return (
