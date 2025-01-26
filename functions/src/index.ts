@@ -36,6 +36,9 @@ export const sendSupportEmail = onCall(
         text: `Message from ${userEmail}:\n\n${message}`,
       });
 
+      if (process.env.NODE_ENV === "development") {
+        console.log("Email sent successfully:", result);
+      }
       return { success: true };
     } catch (error: unknown) {
       if (error instanceof Error) {
