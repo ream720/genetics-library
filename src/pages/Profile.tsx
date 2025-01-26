@@ -55,8 +55,8 @@ const paymentMethods = [
     logo: "https://www.paypalobjects.com/webstatic/mktg/logo/pp_cc_mark_37x23.jpg",
   },
   { name: "CashApp", logo: CashAppBadge }, // Local SVG
-  { name: "Crypto", icon: <CurrencyBitcoin fontSize="large" /> }, // Material UI icon
-  { name: "Cash", icon: <AttachMoney fontSize="large" /> }, // Material UI icon
+  { name: "Crypto", icon: <CurrencyBitcoin fontSize="small" /> }, // Material UI icon
+  { name: "Cash", icon: <AttachMoney fontSize="small" /> }, // Material UI icon
 ];
 
 function Profile() {
@@ -241,7 +241,7 @@ function Profile() {
                 mb: 0.5,
               }}
             >
-              Accepted Payment Methods
+              Accepted Payment Methods:
             </Typography>
             <Stack direction="row" gap={0.5}>
               {userProfile.paymentMethods.map((method) => {
@@ -294,10 +294,9 @@ function Profile() {
               sx={{
                 color: "rgba(255, 255, 255, 0.7)",
                 display: "block",
-                mb: 0.5,
               }}
             >
-              Contact Info
+              Contact Info:
             </Typography>
             <Typography
               variant="body2"
