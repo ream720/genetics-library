@@ -13,6 +13,8 @@ dist-ssr
 *.local
 .env
 
+functions/.env.genetics-library
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

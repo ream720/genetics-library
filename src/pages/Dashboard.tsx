@@ -14,6 +14,8 @@ import {
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { getFunctions, httpsCallable } from "firebase/functions";
+
 function Dashboard() {
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -30,18 +32,22 @@ function Dashboard() {
     setSubmitStatus("idle");
   };
 
+  // Update the handleSubmit function
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitStatus("idle");
 
     try {
-      window.location.href = `mailto:geneticslibrary@gmail.com?subject=Support Request&body=${encodeURIComponent(
-        message
-      )}`;
+      const functions = getFunctions();
+      const sendEmail = httpsCallable(functions, "sendSupportEmail");
+      await sendEmail({ message });
       setSubmitStatus("success");
       setTimeout(handleClose, 2000);
     } catch (error: unknown) {
-      // Explicitly type the error
-      console.error("Failed to open email client:", error); // Log the error
+      // Only log errors in development
+      if (process.env.NODE_ENV === "development") {
+        console.error("Support email error:", error);
+      }
       setSubmitStatus("error");
     }
   };
