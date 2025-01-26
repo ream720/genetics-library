@@ -194,7 +194,7 @@ function Profile() {
   }
 
   return (
-    <Box sx={{ maxWidth: 1200, margin: "0 auto", p: 2 }}>
+    <Box sx={{ maxWidth: 1400, margin: "0 auto", px: 2 }}>
       {/* User Info */}
 
       <Box
@@ -204,7 +204,7 @@ function Profile() {
         padding={2}
         bgcolor={"rgba(0, 0, 0, 0.2)"}
         borderRadius={2}
-        maxWidth={240}
+        maxWidth={250}
         marginBottom={2}
       >
         {/* Avatar and Username */}
