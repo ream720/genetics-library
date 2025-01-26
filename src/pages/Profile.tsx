@@ -194,123 +194,140 @@ function Profile() {
   }
 
   return (
-    <Box sx={{ maxWidth: 1400, margin: "0 auto", px: 2 }}>
+    <Box sx={{ maxWidth: 1400, marginBottom: "24px", px: 2 }}>
       {/* User Info */}
 
-      <Box
-        display="flex"
-        flexDirection="column"
-        gap={1}
-        padding={2}
-        bgcolor={"rgba(0, 0, 0, 0.2)"}
-        borderRadius={2}
-        maxWidth={250}
-        marginBottom={2}
+      <Accordion
+        defaultExpanded
+        sx={{
+          maxWidth: 420,
+          marginBottom: 2,
+          borderRadius: 2,
+          "&:before": {
+            display: "none", // Removes the default divider
+          },
+          "& .MuiAccordionSummary-root": {
+            minHeight: "48px",
+            padding: 1,
+          },
+        }}
       >
-        {/* Avatar and Username */}
-        <Stack direction="row" alignItems="center" spacing={1.5}>
-          <Avatar
-            src={userProfile?.photoURL || ""}
-            alt={userProfile?.username || "User"}
-            sx={{
-              width: 36,
-              height: 36,
-              border: "2px solid rgba(255, 255, 255, 0.1)", // Subtle border
-            }}
-          />
-          <Typography
-            variant="h6"
-            sx={{
-              fontSize: "1.1rem",
-              color: "white",
-              fontWeight: 500,
-            }}
-          >
-            {userProfile?.username}
-          </Typography>
-        </Stack>
-
-        {/* Payment Methods */}
-        {userProfile?.paymentMethods &&
-        userProfile?.paymentMethods?.length > 0 ? (
-          <Box sx={{ mt: 0.5 }}>
-            <Typography
-              variant="caption"
+        <AccordionSummary
+          expandIcon={
+            <Tooltip title="Expand/Collapse">
+              <ExpandMoreIcon />
+            </Tooltip>
+          }
+          sx={{
+            flexDirection: "row",
+            "& .MuiAccordionSummary-content": {
+              margin: 0,
+            },
+          }}
+        >
+          <Stack direction="row" alignItems="center" spacing={1.5}>
+            <Avatar
+              src={userProfile?.photoURL || ""}
+              alt={userProfile?.username || "User"}
               sx={{
-                color: "rgba(255, 255, 255, 0.7)",
-                display: "block",
-                mb: 0.5,
+                width: 36,
+                height: 36,
+                border: "2px solid rgba(255, 255, 255, 0.1)",
               }}
-            >
-              Accepted Payment Methods:
-            </Typography>
-            <Stack direction="row" gap={0.5}>
-              {userProfile.paymentMethods.map((method) => {
-                const paymentMethod = paymentMethods.find(
-                  (item) => item.name === method
-                );
-                return (
-                  <Tooltip title={method} key={method}>
-                    <Box
-                      sx={{
-                        width: 26,
-                        height: 26,
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        bgcolor: "rgba(255, 255, 255, 0.05)",
-                        borderRadius: 1.5,
-                        padding: 0.5,
-                        transition: "background-color 0.2s",
-                        "&:hover": {
-                          bgcolor: "rgba(255, 255, 255, 0.1)",
-                        },
-                      }}
-                    >
-                      {paymentMethod?.logo ? (
-                        <img
-                          src={paymentMethod.logo}
-                          alt={method}
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "contain",
-                          }}
-                        />
-                      ) : (
-                        paymentMethod?.icon
-                      )}
-                    </Box>
-                  </Tooltip>
-                );
-              })}
-            </Stack>
-          </Box>
-        ) : null}
-        {/* Contact Info */}
-        {userProfile?.contactInfo ? (
-          <Box sx={{ mt: 0.5 }}>
+            />
             <Typography
-              variant="caption"
+              variant="h6"
               sx={{
-                color: "rgba(255, 255, 255, 0.7)",
-                display: "block",
-              }}
-            >
-              Contact Info:
-            </Typography>
-            <Typography
-              variant="body2"
-              sx={{
+                fontSize: "1.1rem",
                 color: "white",
-                fontSize: "0.85rem",
+                fontWeight: 500,
               }}
             >
-              {userProfile.contactInfo}
+              {userProfile?.username}
             </Typography>
-          </Box>
-        ) : null}
-      </Box>
+          </Stack>
+        </AccordionSummary>
+
+        <AccordionDetails sx={{ pt: 0, pb: 2 }}>
+          {/* Payment Methods */}
+          {userProfile?.paymentMethods &&
+            userProfile?.paymentMethods?.length > 0 && (
+              <Box>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    display: "block",
+                  }}
+                >
+                  Accepted Payment Methods:
+                </Typography>
+                <Stack direction="row" gap={0.5}>
+                  {userProfile.paymentMethods.map((method) => {
+                    const paymentMethod = paymentMethods.find(
+                      (item) => item.name === method
+                    );
+                    return (
+                      <Tooltip title={method} key={method}>
+                        <Box
+                          sx={{
+                            width: 26,
+                            height: 26,
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            bgcolor: "rgba(255, 255, 255, 0.05)",
+                            borderRadius: 1.5,
+                            padding: 0.5,
+                            transition: "background-color 0.2s",
+                            "&:hover": {
+                              bgcolor: "rgba(255, 255, 255, 0.1)",
+                            },
+                          }}
+                        >
+                          {paymentMethod?.logo ? (
+                            <img
+                              src={paymentMethod.logo}
+                              alt={method}
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "contain",
+                              }}
+                            />
+                          ) : (
+                            paymentMethod?.icon
+                          )}
+                        </Box>
+                      </Tooltip>
+                    );
+                  })}
+                </Stack>
+              </Box>
+            )}
+
+          {/* Contact Info */}
+          {userProfile?.contactInfo && (
+            <Box sx={{ mt: 1 }}>
+              <Typography
+                variant="caption"
+                sx={{
+                  display: "block",
+                }}
+              >
+                Contact Info:
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  fontSize: "0.85rem",
+                }}
+              >
+                {userProfile.contactInfo}
+              </Typography>
+            </Box>
+          )}
+        </AccordionDetails>
+      </Accordion>
 
       {/* Seeds Section */}
       <Accordion
