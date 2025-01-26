@@ -205,6 +205,7 @@ function Profile() {
         bgcolor={"rgba(0, 0, 0, 0.2)"}
         borderRadius={2}
         maxWidth={240}
+        marginBottom={2}
       >
         {/* Avatar and Username */}
         <Stack direction="row" alignItems="center" spacing={1.5}>
@@ -316,7 +317,7 @@ function Profile() {
         square={false}
         defaultExpanded
         sx={{
-          mb: 4,
+          mb: 2,
           borderRadius: 2,
           boxShadow: "0px 1px 3px rgba(0, 0, 0, 0.2)", // Matches Card's shadow
           overflow: "hidden",
