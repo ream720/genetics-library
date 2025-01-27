@@ -202,6 +202,7 @@ function Profile() {
         sx={{
           maxWidth: 420,
           borderRadius: 2,
+          marginBottom: 2,
           "&:before": {
             display: "none", // Removes the default divider
           },
