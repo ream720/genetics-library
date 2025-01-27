@@ -101,7 +101,7 @@ function Dashboard() {
             <CardContent sx={{ p: 3 }}>
               <Box sx={{ mb: 3 }}>
                 <Typography variant="h6" gutterBottom>
-                  Manage Your Collections
+                  Your Collections
                 </Typography>
                 <Typography
                   variant="body2"
@@ -137,7 +137,7 @@ function Dashboard() {
             <CardContent sx={{ p: 3 }}>
               <Box sx={{ mb: 3 }}>
                 <Typography variant="h6" gutterBottom>
-                  Manage Your Premium Options
+                  Premium Options
                 </Typography>
                 <Typography
                   variant="body2"
