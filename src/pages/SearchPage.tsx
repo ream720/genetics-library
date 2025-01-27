@@ -34,6 +34,7 @@ const db = getFirestore(app);
 interface UserProfile {
   id: string;
   username: string;
+  profilePicture?: string;
 }
 
 interface SearchResult {
@@ -43,6 +44,7 @@ interface SearchResult {
   username?: string;
   strain?: string;
   breeder?: string;
+  profilePicture?: string;
 }
 
 function SearchPage() {
@@ -95,8 +97,10 @@ function SearchPage() {
             id: user.id,
             userId: user.id,
             username: user.username,
+            profilePicture: user.profilePicture,
           })
         ),
+        // Update seed and clone mappings to include profilePicture
         ...seeds.map(
           (seed): SearchResult => ({
             type: "seed",
@@ -105,6 +109,8 @@ function SearchPage() {
             strain: seed.strain,
             breeder: seed.breeder,
             username: userProfileMap.get(seed.userId ?? "")?.username,
+            profilePicture: userProfileMap.get(seed.userId ?? "")
+              ?.profilePicture,
           })
         ),
         ...clones.map(
@@ -115,6 +121,8 @@ function SearchPage() {
             strain: clone.strain,
             breeder: clone.breeder,
             username: userProfileMap.get(clone.userId ?? "")?.username,
+            profilePicture: userProfileMap.get(clone.userId ?? "")
+              ?.profilePicture,
           })
         ),
       ];
@@ -141,10 +149,15 @@ function SearchPage() {
       where("userNameLower", "<=", lowerQuery + "\uf8ff")
     );
     const usersSnapshot = await getDocs(usersQuery);
-    return usersSnapshot.docs.map((doc) => ({
-      id: doc.id,
-      username: doc.data().username,
-    }));
+
+    return usersSnapshot.docs.map((doc): UserProfile => {
+      const userData = doc.data();
+      return {
+        id: doc.id,
+        username: userData.username || "",
+        profilePicture: userData.photoURL || userData.profilePicture, // Check both possible field names
+      };
+    });
   };
 
   const searchSeeds = async (queryText: string): Promise<Seed[]> => {
@@ -205,15 +218,20 @@ function SearchPage() {
       userIds.map(async (userId) => {
         const userDocRef = doc(db, "users", userId);
         const userDocSnap = await getDoc(userDocRef);
+
         if (userDocSnap.exists()) {
-          return {
+          const userData = userDocSnap.data();
+          const profile: UserProfile = {
             id: userId,
-            username: userDocSnap.data()?.username,
+            username: userData?.username || "",
+            profilePicture: userData?.photoURL || userData?.profilePicture, // Check both possible field names
           };
+          return profile;
         }
         return null;
       })
     );
+
     return profiles.filter(
       (profile): profile is UserProfile => profile !== null
     );
@@ -314,7 +332,7 @@ function SearchPage() {
               }}
             >
               <ListItemAvatar>
-                <Avatar>
+                <Avatar src={result.profilePicture}>
                   {result.type === "user"
                     ? result.username?.charAt(0)
                     : result.strain?.charAt(0)}

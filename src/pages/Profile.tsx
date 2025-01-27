@@ -55,8 +55,8 @@ const paymentMethods = [
     logo: "https://www.paypalobjects.com/webstatic/mktg/logo/pp_cc_mark_37x23.jpg",
   },
   { name: "CashApp", logo: CashAppBadge }, // Local SVG
-  { name: "Crypto", icon: <CurrencyBitcoin fontSize="small" /> }, // Material UI icon
-  { name: "Cash", icon: <AttachMoney fontSize="small" /> }, // Material UI icon
+  { name: "Crypto", icon: <CurrencyBitcoin fontSize="medium" /> }, // Material UI icon
+  { name: "Cash", icon: <AttachMoney fontSize="medium" /> }, // Material UI icon
 ];
 
 function Profile() {
@@ -201,7 +201,6 @@ function Profile() {
         defaultExpanded
         sx={{
           maxWidth: 420,
-          marginBottom: 2,
           borderRadius: 2,
           "&:before": {
             display: "none", // Removes the default divider
@@ -235,14 +234,7 @@ function Profile() {
                 border: "2px solid rgba(255, 255, 255, 0.1)",
               }}
             />
-            <Typography
-              variant="h6"
-              sx={{
-                fontSize: "1.1rem",
-                color: "white",
-                fontWeight: 500,
-              }}
-            >
+            <Typography variant="h6" fontWeight={800}>
               {userProfile?.username}
             </Typography>
           </Stack>
@@ -255,75 +247,80 @@ function Profile() {
               <Box>
                 <Typography
                   variant="caption"
+                  fontWeight={800}
                   sx={{
                     display: "block",
                   }}
                 >
                   Accepted Payment Methods:
                 </Typography>
-                <Stack direction="row" gap={0.5}>
-                  {userProfile.paymentMethods.map((method) => {
-                    const paymentMethod = paymentMethods.find(
-                      (item) => item.name === method
-                    );
-                    return (
-                      <Tooltip title={method} key={method}>
-                        <Box
-                          sx={{
-                            width: 26,
-                            height: 26,
-                            display: "flex",
-                            justifyContent: "center",
-                            alignItems: "center",
-                            bgcolor: "rgba(255, 255, 255, 0.05)",
-                            borderRadius: 1.5,
-                            padding: 0.5,
-                            transition: "background-color 0.2s",
-                            "&:hover": {
-                              bgcolor: "rgba(255, 255, 255, 0.1)",
-                            },
-                          }}
-                        >
-                          {paymentMethod?.logo ? (
-                            <img
-                              src={paymentMethod.logo}
-                              alt={method}
-                              style={{
-                                width: "100%",
-                                height: "100%",
-                                objectFit: "contain",
-                              }}
-                            />
-                          ) : (
-                            paymentMethod?.icon
-                          )}
-                        </Box>
-                      </Tooltip>
-                    );
-                  })}
-                </Stack>
+                <Box sx={{ padding: 1 }}>
+                  <Stack direction="row" gap={0.5}>
+                    {userProfile.paymentMethods.map((method) => {
+                      const paymentMethod = paymentMethods.find(
+                        (item) => item.name === method
+                      );
+                      return (
+                        <Tooltip title={method} key={method}>
+                          <Box
+                            sx={{
+                              width: 32,
+                              height: 32,
+                              display: "flex",
+                              justifyContent: "center",
+                              alignItems: "center",
+                              bgcolor: "rgba(255, 255, 255, 0.05)",
+                              borderRadius: 1.5,
+                              padding: 0.5,
+                              transition: "background-color 0.2s",
+                              "&:hover": {
+                                bgcolor: "rgba(255, 255, 255, 0.1)",
+                              },
+                            }}
+                          >
+                            {paymentMethod?.logo ? (
+                              <img
+                                src={paymentMethod.logo}
+                                alt={method}
+                                style={{
+                                  width: "100%",
+                                  height: "100%",
+                                  objectFit: "contain",
+                                }}
+                              />
+                            ) : (
+                              paymentMethod?.icon
+                            )}
+                          </Box>
+                        </Tooltip>
+                      );
+                    })}
+                  </Stack>
+                </Box>
               </Box>
             )}
 
           {/* Contact Info */}
           {userProfile?.contactInfo && (
-            <Box sx={{ mt: 1 }}>
+            <Box sx={{ mt: 2 }}>
               <Typography
                 variant="caption"
+                fontWeight={800}
                 sx={{
                   display: "block",
                 }}
               >
                 Contact Info:
               </Typography>
-              <Typography
-                variant="body2"
-                sx={{
-                  fontSize: "0.85rem",
-                }}
-              >
-                {userProfile.contactInfo}
-              </Typography>
+              <Box sx={{ px: 1 }}>
+                <Typography
+                  variant="subtitle2"
+                  color="text.secondary"
+                  fontWeight={500}
+                >
+                  {userProfile.contactInfo}
+                </Typography>
+              </Box>
             </Box>
           )}
         </AccordionDetails>
