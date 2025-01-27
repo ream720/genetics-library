@@ -149,6 +149,7 @@ const AppWithRouter: React.FC = () => {
                       sx={{ width: 24, height: 24 }}
                     />
                     <Typography
+                      fontWeight={700}
                       variant="caption"
                       color="inherit"
                       sx={{
