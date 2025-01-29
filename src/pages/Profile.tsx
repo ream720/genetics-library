@@ -194,7 +194,7 @@ function Profile() {
   }
 
   return (
-    <Box sx={{ maxWidth: 1400, marginBottom: "24px", px: 2 }}>
+    <Box sx={{ maxWidth: 1400, marginBottom: "24px", margin: "auto", px: 2 }}>
       {/* User Info */}
 
       <Accordion
