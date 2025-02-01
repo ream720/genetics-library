@@ -10,6 +10,8 @@ export interface Seed {
   available: boolean;
   dateAcquired: string; // Date the seed was acquired
   userId?: string;
+  isMultiple: boolean;
+  quantity: number;
 }
 
 export interface Clone {

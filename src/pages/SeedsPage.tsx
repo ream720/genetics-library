@@ -48,6 +48,8 @@ const SeedsPage: React.FC = () => {
   const [isAvailable, setIsAvailable] = React.useState(false);
   const [editModalOpen, setEditModalOpen] = React.useState(false);
   const [selectedSeed, setSelectedSeed] = React.useState<Seed | null>(null);
+  const [isMultiple, setIsMultiple] = React.useState(false);
+  const [quantity, setQuantity] = React.useState(1);
 
   // Validation states
   const [breederError, setBreederError] = React.useState(false);
@@ -106,6 +108,8 @@ const SeedsPage: React.FC = () => {
         dateAcquired: new Date().toISOString(),
         available: isAvailable,
         lineage: lineage,
+        isMultiple: isMultiple,
+        quantity: isMultiple ? quantity : 1,
       } as Seed);
 
       // Reset form fields and validation
@@ -117,6 +121,8 @@ const SeedsPage: React.FC = () => {
       setIsOpen(false);
       setIsAvailable(false);
       setLineage("");
+      setIsMultiple(false);
+      setQuantity(1);
     }
   };
 
@@ -310,6 +316,29 @@ const SeedsPage: React.FC = () => {
       },
     },
     {
+      field: "isMultiple",
+      headerName: "Quantity",
+      headerAlign: "center",
+      align: "center",
+      editable: true,
+      width: 100,
+      flex: 0,
+      renderCell: (params) => (
+        <Box>
+          {params.value ? (
+            <Tooltip title={`${params.row.quantity} packs available`}>
+              <div>{params.row.quantity}</div>
+            </Tooltip>
+          ) : (
+            <Tooltip title="Single pack">
+              <div>1️</div>
+            </Tooltip>
+          )}
+        </Box>
+      ),
+      renderEditCell: (params) => <GridEditBooleanCell {...params} />,
+    },
+    {
       field: "actions",
       headerName: "Actions",
       headerAlign: "center",
@@ -420,7 +449,7 @@ const SeedsPage: React.FC = () => {
                     onChange={(e) => setIsOpen(e.target.checked)}
                   />
                 }
-                label="Open"
+                label="Open Pack?"
               />
               <FormControlLabel
                 control={
@@ -453,6 +482,31 @@ const SeedsPage: React.FC = () => {
                       onChange={(e) => setFilalGeneration(e.target.value)}
                       fullWidth
                     />
+                    <FormControlLabel
+                      sx={{ mt: 1 }}
+                      control={
+                        <Checkbox
+                          size="small"
+                          checked={isMultiple}
+                          onChange={(e) => setIsMultiple(e.target.checked)}
+                        />
+                      }
+                      label="Multiple Packs?"
+                    />
+                    {isMultiple && (
+                      <TextField
+                        label="Quantity"
+                        type="number"
+                        value={quantity}
+                        onChange={(e) =>
+                          setQuantity(
+                            Math.max(1, parseInt(e.target.value) || 1)
+                          )
+                        }
+                        InputProps={{ inputProps: { min: 1 } }}
+                        fullWidth
+                      />
+                    )}
                   </AccordionDetails>
                 </Accordion>
               </Box>

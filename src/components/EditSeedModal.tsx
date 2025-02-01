@@ -9,6 +9,7 @@ import {
   FormControlLabel,
   Checkbox,
   Stack,
+  Collapse,
 } from "@mui/material";
 import { Seed } from "../types";
 
@@ -28,24 +29,51 @@ const EditSeedModal: React.FC<EditSeedModalProps> = ({
   const [editedSeed, setEditedSeed] = React.useState<Seed | null>(null);
 
   React.useEffect(() => {
-    setEditedSeed(seed);
+    // Initialize with default values for new fields if they don't exist
+    setEditedSeed(
+      seed
+        ? {
+            ...seed,
+            isMultiple: seed.isMultiple || false,
+            quantity: seed.quantity || 1,
+          }
+        : null
+    );
   }, [seed]);
 
   if (!editedSeed) return null;
 
   const handleChange =
     (field: keyof Seed) => (event: React.ChangeEvent<HTMLInputElement>) => {
-      setEditedSeed({
-        ...editedSeed,
-        [field]:
-          event.target.type === "checkbox"
-            ? event.target.checked
-            : event.target.value,
-      });
+      const value =
+        event.target.type === "checkbox"
+          ? event.target.checked
+          : event.target.type === "number"
+          ? Math.max(1, parseInt(event.target.value) || 1)
+          : event.target.value;
+
+      // Reset quantity to 1 when isMultiple is turned off
+      if (field === "isMultiple" && !event.target.checked) {
+        setEditedSeed({
+          ...editedSeed,
+          isMultiple: false,
+          quantity: 1,
+        });
+      } else {
+        setEditedSeed({
+          ...editedSeed,
+          [field]: value,
+        });
+      }
     };
 
   const handleSave = () => {
-    onSave(editedSeed);
+    // Ensure quantity is 1 for non-multiple packs
+    const finalSeed = {
+      ...editedSeed,
+      quantity: editedSeed.isMultiple ? editedSeed.quantity : 1,
+    };
+    onSave(finalSeed);
     onClose();
   };
 
@@ -112,6 +140,27 @@ const EditSeedModal: React.FC<EditSeedModalProps> = ({
             }
             label="Available"
           />
+          {/* Multiple Pack Controls */}
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={editedSeed.isMultiple}
+                onChange={handleChange("isMultiple")}
+              />
+            }
+            label="Multiple Packs"
+          />
+          <Collapse in={editedSeed.isMultiple}>
+            <TextField
+              label="Quantity of Packs"
+              type="number"
+              value={editedSeed.quantity}
+              onChange={handleChange("quantity")}
+              InputProps={{ inputProps: { min: 1 } }}
+              fullWidth
+              sx={{ mt: 1 }}
+            />
+          </Collapse>
         </Stack>
       </DialogContent>
       <DialogActions>

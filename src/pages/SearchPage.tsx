@@ -45,6 +45,8 @@ interface SearchResult {
   strain?: string;
   breeder?: string;
   profilePicture?: string;
+  isMultiple?: boolean;
+  quantity?: number;
 }
 
 function SearchPage() {
@@ -111,6 +113,8 @@ function SearchPage() {
             username: userProfileMap.get(seed.userId ?? "")?.username,
             profilePicture: userProfileMap.get(seed.userId ?? "")
               ?.profilePicture,
+            isMultiple: seed.isMultiple,
+            quantity: seed.quantity,
           })
         ),
         ...clones.map(
@@ -251,11 +255,17 @@ function SearchPage() {
         secondary: "User Profile",
       };
     }
+
+    let secondary = ` ${result.quantity} `;
+
+    // Add quantity information for seeds with multiple packs
+    if (result.type === "seed" && result.isMultiple && result.quantity) {
+      secondary = `${result.breeder} • ${secondary} Packs Available`;
+    }
+
     return {
       primary: result.strain,
-      secondary: `${result.type === "seed" ? "Seed" : "Clone"} • ${
-        result.breeder
-      } • by ${result.username}`,
+      secondary: secondary,
     };
   };
 

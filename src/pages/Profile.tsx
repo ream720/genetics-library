@@ -451,6 +451,23 @@ function Profile() {
                       }
                       action={
                         <Box display="flex" gap={1} ml={1}>
+                          {seed.isMultiple && (
+                            <Tooltip title="Number of packs available">
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  bgcolor: "rgba(255, 255, 255, 0.1)",
+                                  borderRadius: 1,
+                                  px: 0.75,
+                                  py: 0.25,
+                                  fontSize: "0.75rem",
+                                }}
+                              >
+                                x{seed.quantity}
+                              </Box>
+                            </Tooltip>
+                          )}
                           {seed.lineage && (
                             <Tooltip
                               title={seed.lineage || "No lineage information"}
