@@ -256,16 +256,23 @@ function SearchPage() {
       };
     }
 
-    let secondary = ` ${result.quantity} `;
+    if (result.type === "clone") {
+      return {
+        primary: result.strain,
+        secondary: `${result.breeder} • @${result.username}`,
+      };
+    }
 
-    // Add quantity information for seeds with multiple packs
-    if (result.type === "seed" && result.isMultiple && result.quantity) {
-      secondary = `${result.breeder} • ${secondary} Packs Available`;
+    // Handle seed display
+    let secondary = result.breeder;
+
+    if (result.isMultiple && result.quantity && result.quantity > 1) {
+      secondary = `${result.breeder} • ${result.quantity} Packs Available`;
     }
 
     return {
       primary: result.strain,
-      secondary: secondary,
+      secondary: `${secondary} • @${result.username}`,
     };
   };
 
