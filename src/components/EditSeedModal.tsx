@@ -48,11 +48,13 @@ const EditSeedModal: React.FC<EditSeedModalProps> = ({
       const value =
         event.target.type === "checkbox"
           ? event.target.checked
+          : field === "quantity" && event.target.value === ""
+          ? 0 // Allow zero for quantity
           : event.target.type === "number"
-          ? Math.max(1, parseInt(event.target.value) || 1)
+          ? Math.max(0, parseInt(event.target.value) || 0) // Changed from 1 to 0
           : event.target.value;
 
-      // Reset quantity to 1 when isMultiple is turned off
+      // Rest of the function remains the same
       if (field === "isMultiple" && !event.target.checked) {
         setEditedSeed({
           ...editedSeed,
@@ -154,9 +156,8 @@ const EditSeedModal: React.FC<EditSeedModalProps> = ({
             <TextField
               label="Quantity of Packs"
               type="number"
-              value={editedSeed.quantity}
+              value={editedSeed.quantity === 0 ? "" : editedSeed.quantity}
               onChange={handleChange("quantity")}
-              InputProps={{ inputProps: { min: 1 } }}
               fullWidth
               sx={{ mt: 1 }}
             />

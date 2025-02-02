@@ -497,13 +497,15 @@ const SeedsPage: React.FC = () => {
                       <TextField
                         label="Quantity"
                         type="number"
-                        value={quantity}
-                        onChange={(e) =>
-                          setQuantity(
-                            Math.max(1, parseInt(e.target.value) || 1)
-                          )
-                        }
-                        InputProps={{ inputProps: { min: 1 } }}
+                        value={quantity === 0 ? "" : quantity}
+                        onChange={(e) => {
+                          const value =
+                            e.target.value === ""
+                              ? 0
+                              : Math.max(0, parseInt(e.target.value) || 0);
+                          setQuantity(value);
+                        }}
+                        // Remove InputProps to allow zero values
                         fullWidth
                       />
                     )}
