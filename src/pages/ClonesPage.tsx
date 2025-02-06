@@ -295,7 +295,7 @@ const ClonesPage: React.FC = () => {
   ];
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ pb: 3, px: 3 }}>
       <Typography
         variant="h4"
         gutterBottom
@@ -303,7 +303,7 @@ const ClonesPage: React.FC = () => {
           fontFamily: "Roboto, sans-serif",
           fontWeight: 600,
           textAlign: "center",
-          marginBottom: "2",
+          marginBottom: 3,
         }}
       >
         Manage Clones
@@ -311,7 +311,7 @@ const ClonesPage: React.FC = () => {
 
       {/* CSV Upload Form */}
 
-      <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
+      <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
         <CSVUpload onUploadSuccess={handleCSVUpload} />
       </Box>
       <Divider sx={{ mb: 2 }} />

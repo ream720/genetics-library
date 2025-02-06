@@ -31,6 +31,7 @@ interface CSVRow {
   Strain: string;
   Breeder: string;
   "Breeder Cut"?: boolean;
+  "Cut Name"?: string;
   Sex?: "Male" | "Female";
   Available?: boolean;
 }
@@ -43,6 +44,25 @@ const CSVUpload: React.FC<CSVUploadProps> = ({ onUploadSuccess }) => {
   );
   const [showValidationDialog, setShowValidationDialog] = useState(false);
 
+  const parseBooleanField = (value: any): boolean => {
+    if (typeof value === "boolean") return value;
+    if (typeof value === "string") {
+      const upperValue = value.trim().toUpperCase();
+      if (upperValue === "TRUE") return true;
+      if (upperValue === "FALSE") return false;
+    }
+    return false;
+  };
+
+  // const parseBooleanField = (value: any): boolean => {
+  //   if (typeof value === "boolean") return value;
+  //   if (typeof value === "string") {
+  //     const upperValue = value.trim().toUpperCase();
+  //     return upperValue === "TRUE";
+  //   }
+  //   return false;
+  // };
+
   const validateCloneData = (data: CSVRow): string[] => {
     const errors: string[] = [];
 
@@ -50,21 +70,25 @@ const CSVUpload: React.FC<CSVUploadProps> = ({ onUploadSuccess }) => {
     if (!data.Strain?.trim()) errors.push("Strain is required");
     if (!data.Breeder?.trim()) errors.push("Breeder is required");
 
-    // Sex validation
-    if (data.Sex && !["Male", "Female"].includes(data.Sex)) {
+    // Breeder Cut validation - must be TRUE or FALSE
+    const breederCutValue = data["Breeder Cut"]
+      ?.toString()
+      .trim()
+      .toUpperCase();
+    if (!breederCutValue || !["TRUE", "FALSE"].includes(breederCutValue)) {
+      errors.push("Breeder Cut must be either TRUE or FALSE");
+    }
+
+    // Sex validation - must be Male or Female
+    const sex = data.Sex?.trim();
+    if (!sex || !["Male", "Female"].includes(sex)) {
       errors.push('Sex must be either "Male" or "Female"');
     }
 
-    // Boolean field validation
-    if (
-      data["Breeder Cut"] !== undefined &&
-      typeof data["Breeder Cut"] !== "boolean"
-    ) {
-      errors.push("Breeder Cut must be true/false");
-    }
-
-    if (data.Available !== undefined && typeof data.Available !== "boolean") {
-      errors.push("Available must be true/false");
+    // Available validation - must be TRUE or FALSE
+    const availableValue = data.Available?.toString().trim().toUpperCase();
+    if (!availableValue || !["TRUE", "FALSE"].includes(availableValue)) {
+      errors.push("Available must be either TRUE or FALSE");
     }
 
     return errors;
@@ -110,11 +134,12 @@ const CSVUpload: React.FC<CSVUploadProps> = ({ onUploadSuccess }) => {
 
           // Transform CSV data to Clone objects
           const clones = results.data.map((row) => ({
-            strain: row.Strain,
-            breeder: row.Breeder,
-            breederCut: row["Breeder Cut"] || false,
-            sex: row.Sex || "Female",
-            available: row.Available || false,
+            strain: row.Strain?.trim() || "",
+            breeder: row.Breeder?.trim() || "",
+            breederCut: parseBooleanField(row["Breeder Cut"]),
+            cutName: row["Cut Name"]?.toString().trim() || "",
+            sex: (row.Sex?.trim() || "Female") as "Male" | "Female",
+            available: parseBooleanField(row.Available),
             dateAcquired: new Date().toISOString(),
           }));
 
@@ -126,7 +151,6 @@ const CSVUpload: React.FC<CSVUploadProps> = ({ onUploadSuccess }) => {
           setLoading(false);
         },
       });
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (_err) {
       setError("Failed to read file");
       setLoading(false);
