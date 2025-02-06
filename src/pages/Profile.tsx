@@ -39,6 +39,7 @@ import { db } from "../../firebaseConfig";
 import CashAppBadge from "../assets/cashapp-badge.svg";
 import { useAuth } from "../context/AuthContext";
 import { Clone, Seed } from "../types";
+// import GeminiTest from "../components/GeminiTest";
 
 interface UserProfile {
   email: string;
@@ -194,58 +195,118 @@ function Profile() {
   }
 
   return (
-    <Box sx={{ maxWidth: 1400, marginBottom: "24px", margin: "auto", px: 2 }}>
-      {/* User Info */}
+    <>
+      {/* <GeminiTest /> */}
+      <Box sx={{ maxWidth: 1400, marginBottom: "24px", margin: "auto", px: 2 }}>
+        {/* User Info */}
 
-      <Accordion
-        defaultExpanded
-        sx={{
-          maxWidth: 420,
-          borderRadius: 2,
-          marginBottom: 2,
-          "&:before": {
-            display: "none", // Removes the default divider
-          },
-          "& .MuiAccordionSummary-root": {
-            minHeight: "48px",
-            padding: 1,
-          },
-        }}
-      >
-        <AccordionSummary
-          expandIcon={
-            <Tooltip title="Expand/Collapse">
-              <ExpandMoreIcon />
-            </Tooltip>
-          }
+        <Accordion
+          defaultExpanded
           sx={{
-            flexDirection: "row",
-            "& .MuiAccordionSummary-content": {
-              margin: 0,
+            maxWidth: 420,
+            borderRadius: 2,
+            marginBottom: 2,
+            "&:before": {
+              display: "none", // Removes the default divider
+            },
+            "& .MuiAccordionSummary-root": {
+              minHeight: "48px",
+              padding: 1,
             },
           }}
         >
-          <Stack direction="row" alignItems="center" spacing={1.5}>
-            <Avatar
-              src={userProfile?.photoURL || ""}
-              alt={userProfile?.username || "User"}
-              sx={{
-                width: 36,
-                height: 36,
-                border: "2px solid rgba(255, 255, 255, 0.1)",
-              }}
-            />
-            <Typography variant="h6" fontWeight={800}>
-              {userProfile?.username}
-            </Typography>
-          </Stack>
-        </AccordionSummary>
+          <AccordionSummary
+            expandIcon={
+              <Tooltip title="Expand/Collapse">
+                <ExpandMoreIcon />
+              </Tooltip>
+            }
+            sx={{
+              flexDirection: "row",
+              "& .MuiAccordionSummary-content": {
+                margin: 0,
+              },
+            }}
+          >
+            <Stack direction="row" alignItems="center" spacing={1.5}>
+              <Avatar
+                src={userProfile?.photoURL || ""}
+                alt={userProfile?.username || "User"}
+                sx={{
+                  width: 36,
+                  height: 36,
+                  border: "2px solid rgba(255, 255, 255, 0.1)",
+                }}
+              />
+              <Typography variant="h6" fontWeight={800}>
+                {userProfile?.username}
+              </Typography>
+            </Stack>
+          </AccordionSummary>
 
-        <AccordionDetails sx={{ pt: 0, pb: 2 }}>
-          {/* Payment Methods */}
-          {userProfile?.paymentMethods &&
-            userProfile?.paymentMethods?.length > 0 && (
-              <Box>
+          <AccordionDetails sx={{ pt: 0, pb: 2 }}>
+            {/* Payment Methods */}
+            {userProfile?.paymentMethods &&
+              userProfile?.paymentMethods?.length > 0 && (
+                <Box>
+                  <Typography
+                    variant="caption"
+                    fontWeight={800}
+                    sx={{
+                      display: "block",
+                    }}
+                  >
+                    Accepted Payment Methods:
+                  </Typography>
+                  <Box sx={{ padding: 1 }}>
+                    <Stack direction="row" gap={0.5}>
+                      {userProfile.paymentMethods.map((method) => {
+                        const paymentMethod = paymentMethods.find(
+                          (item) => item.name === method
+                        );
+                        return (
+                          <Tooltip title={method} key={method}>
+                            <Box
+                              sx={{
+                                width: 32,
+                                height: 32,
+                                display: "flex",
+                                justifyContent: "center",
+                                alignItems: "center",
+                                bgcolor: "rgba(255, 255, 255, 0.05)",
+                                borderRadius: 1.5,
+                                padding: 0.5,
+                                transition: "background-color 0.2s",
+                                "&:hover": {
+                                  bgcolor: "rgba(255, 255, 255, 0.1)",
+                                },
+                              }}
+                            >
+                              {paymentMethod?.logo ? (
+                                <img
+                                  src={paymentMethod.logo}
+                                  alt={method}
+                                  style={{
+                                    width: "100%",
+                                    height: "100%",
+                                    objectFit: "contain",
+                                  }}
+                                />
+                              ) : (
+                                paymentMethod?.icon
+                              )}
+                            </Box>
+                          </Tooltip>
+                        );
+                      })}
+                    </Stack>
+                  </Box>
+                </Box>
+              )}
+
+            {/* Contact Info */}
+            {userProfile?.contactInfo && (
+              <Box sx={{ mt: 2 }}>
                 <Typography
                   variant="caption"
                   fontWeight={800}
@@ -253,477 +314,426 @@ function Profile() {
                     display: "block",
                   }}
                 >
-                  Accepted Payment Methods:
+                  Contact Info:
                 </Typography>
-                <Box sx={{ padding: 1 }}>
-                  <Stack direction="row" gap={0.5}>
-                    {userProfile.paymentMethods.map((method) => {
-                      const paymentMethod = paymentMethods.find(
-                        (item) => item.name === method
-                      );
-                      return (
-                        <Tooltip title={method} key={method}>
-                          <Box
-                            sx={{
-                              width: 32,
-                              height: 32,
-                              display: "flex",
-                              justifyContent: "center",
-                              alignItems: "center",
-                              bgcolor: "rgba(255, 255, 255, 0.05)",
-                              borderRadius: 1.5,
-                              padding: 0.5,
-                              transition: "background-color 0.2s",
-                              "&:hover": {
-                                bgcolor: "rgba(255, 255, 255, 0.1)",
-                              },
-                            }}
-                          >
-                            {paymentMethod?.logo ? (
-                              <img
-                                src={paymentMethod.logo}
-                                alt={method}
-                                style={{
-                                  width: "100%",
-                                  height: "100%",
-                                  objectFit: "contain",
-                                }}
-                              />
-                            ) : (
-                              paymentMethod?.icon
-                            )}
-                          </Box>
-                        </Tooltip>
-                      );
-                    })}
-                  </Stack>
+                <Box sx={{ px: 1 }}>
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    fontWeight={500}
+                  >
+                    {userProfile.contactInfo}
+                  </Typography>
                 </Box>
               </Box>
             )}
+          </AccordionDetails>
+        </Accordion>
 
-          {/* Contact Info */}
-          {userProfile?.contactInfo && (
-            <Box sx={{ mt: 2 }}>
-              <Typography
-                variant="caption"
-                fontWeight={800}
-                sx={{
-                  display: "block",
-                }}
-              >
-                Contact Info:
-              </Typography>
-              <Box sx={{ px: 1 }}>
-                <Typography
-                  variant="subtitle2"
-                  color="text.secondary"
-                  fontWeight={500}
-                >
-                  {userProfile.contactInfo}
-                </Typography>
-              </Box>
-            </Box>
-          )}
-        </AccordionDetails>
-      </Accordion>
-
-      {/* Seeds Section */}
-      <Accordion
-        square={false}
-        defaultExpanded
-        sx={{
-          mb: 2,
-          borderRadius: 2,
-          boxShadow: "0px 1px 3px rgba(0, 0, 0, 0.2)", // Matches Card's shadow
-          overflow: "hidden",
-          transition: "all 0.3s ease", // Smooth animation
-        }}
-      >
-        <AccordionSummary
+        {/* Seeds Section */}
+        <Accordion
+          square={false}
+          defaultExpanded
           sx={{
-            display: "flex",
-            flexDirection: "row",
-            alignItems: "center",
+            mb: 2,
+            borderRadius: 2,
+            boxShadow: "0px 1px 3px rgba(0, 0, 0, 0.2)", // Matches Card's shadow
+            overflow: "hidden",
+            transition: "all 0.3s ease", // Smooth animation
           }}
-          expandIcon={
-            <Tooltip title="Expand/Collapse">
-              <ExpandMoreIcon />
-            </Tooltip>
-          }
         >
-          <Typography variant="h6">Seeds Collection</Typography>
-        </AccordionSummary>
+          <AccordionSummary
+            sx={{
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+            }}
+            expandIcon={
+              <Tooltip title="Expand/Collapse">
+                <ExpandMoreIcon />
+              </Tooltip>
+            }
+          >
+            <Typography variant="h6">Seeds Collection</Typography>
+          </AccordionSummary>
 
-        <AccordionDetails>
-          {/* Search Input */}
-          <Tooltip title="Search by Breeder or Strain">
-            <TextField
-              sx={{ flexGrow: 1, mb: 2 }}
-              size="small"
-              variant="outlined"
-              placeholder="Seeds Search"
-              value={seedSearchQuery}
-              onChange={(e) => setSeedSearchQuery(e.target.value)}
-            />
-          </Tooltip>
+          <AccordionDetails>
+            {/* Search Input */}
+            <Tooltip title="Search by Breeder or Strain">
+              <TextField
+                sx={{ flexGrow: 1, mb: 2 }}
+                size="small"
+                variant="outlined"
+                placeholder="Seeds Search"
+                value={seedSearchQuery}
+                onChange={(e) => setSeedSearchQuery(e.target.value)}
+              />
+            </Tooltip>
 
-          {profileSeeds.length === 0 ? ( // Check if no seeds are added
-            <Typography color="text.secondary">No seeds added yet.</Typography>
-          ) : filteredSeeds.length === 0 ? ( // Check if search yields no results
-            <Typography color="text.secondary">
-              No seeds match your search.
-            </Typography>
-          ) : (
-            <Grid container spacing={1}>
-              {filteredSeeds.map((seed) => (
-                <Grid
-                  item
-                  xs={12}
-                  sm={6}
-                  md={4}
-                  lg={3}
-                  key={seed.id}
-                  id={`seed-${seed.id}`}
-                >
-                  <Card
-                    className={
-                      highlightedId === `seed-${seed.id}`
-                        ? "highlight-animate"
-                        : ""
-                    }
-                    variant="outlined"
-                    sx={{
-                      height: 150, // Fixed height
-                      display: "flex",
-                      flexDirection: "column",
-                    }}
+            {profileSeeds.length === 0 ? ( // Check if no seeds are added
+              <Typography color="text.secondary">
+                No seeds added yet.
+              </Typography>
+            ) : filteredSeeds.length === 0 ? ( // Check if search yields no results
+              <Typography color="text.secondary">
+                No seeds match your search.
+              </Typography>
+            ) : (
+              <Grid container spacing={1}>
+                {filteredSeeds.map((seed) => (
+                  <Grid
+                    item
+                    xs={12}
+                    sm={6}
+                    md={4}
+                    lg={3}
+                    key={seed.id}
+                    id={`seed-${seed.id}`}
                   >
-                    <CardHeader
+                    <Card
+                      className={
+                        highlightedId === `seed-${seed.id}`
+                          ? "highlight-animate"
+                          : ""
+                      }
+                      variant="outlined"
                       sx={{
-                        py: 1,
-                        pb: 0,
-                        "& .MuiCardHeader-content": {
-                          overflow: "hidden",
-                          minWidth: 0, // Enables truncation in flex container
-                        },
-                        "& .MuiCardHeader-action": {
-                          marginTop: 0, // Align with title
-                          marginRight: 0, // Remove default margin
-                        },
+                        height: 150, // Fixed height
+                        display: "flex",
+                        flexDirection: "column",
                       }}
-                      title={
-                        <Box
-                          display="flex"
-                          alignItems="center"
-                          gap={1}
-                          minWidth={0}
-                        >
-                          <Tooltip
-                            title={`${seed.feminized === true ? "♀" : ""} ${
-                              seed.strain
-                            }`}
+                    >
+                      <CardHeader
+                        sx={{
+                          py: 1,
+                          pb: 0,
+                          "& .MuiCardHeader-content": {
+                            overflow: "hidden",
+                            minWidth: 0, // Enables truncation in flex container
+                          },
+                          "& .MuiCardHeader-action": {
+                            marginTop: 0, // Align with title
+                            marginRight: 0, // Remove default margin
+                          },
+                        }}
+                        title={
+                          <Box
+                            display="flex"
+                            alignItems="center"
+                            gap={1}
+                            minWidth={0}
                           >
-                            <Typography
-                              variant="subtitle1"
-                              component="span"
-                              sx={{
-                                whiteSpace: "nowrap",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                minWidth: 0,
-                              }}
-                            >
-                              {`${seed.feminized === true ? "♀" : ""} ${
+                            <Tooltip
+                              title={`${seed.feminized === true ? "♀" : ""} ${
                                 seed.strain
                               }`}
-                            </Typography>
-                          </Tooltip>
-                          {seed.open && (
-                            <Tooltip title="Open Pack">
-                              <BrokenImage
-                                color="warning"
-                                fontSize="small"
-                                sx={{ flexShrink: 0 }}
-                              />
-                            </Tooltip>
-                          )}
-                        </Box>
-                      }
-                      action={
-                        <Box display="flex" gap={1} ml={1}>
-                          {seed.isMultiple && (
-                            <Tooltip title="Number of packs available">
-                              <Box
+                            >
+                              <Typography
+                                variant="subtitle1"
+                                component="span"
                                 sx={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  bgcolor: "rgba(255, 255, 255, 0.1)",
-                                  borderRadius: 1,
-                                  px: 0.75,
-                                  py: 0.25,
-                                  fontSize: "0.75rem",
+                                  whiteSpace: "nowrap",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  minWidth: 0,
                                 }}
                               >
-                                x{seed.quantity}
-                              </Box>
+                                {`${seed.feminized === true ? "♀" : ""} ${
+                                  seed.strain
+                                }`}
+                              </Typography>
                             </Tooltip>
-                          )}
-                          {seed.lineage && (
-                            <Tooltip
-                              title={seed.lineage || "No lineage information"}
-                            >
-                              <AccountTree color="action" fontSize="small" />
-                            </Tooltip>
-                          )}
+                            {seed.open && (
+                              <Tooltip title="Open Pack">
+                                <BrokenImage
+                                  color="warning"
+                                  fontSize="small"
+                                  sx={{ flexShrink: 0 }}
+                                />
+                              </Tooltip>
+                            )}
+                          </Box>
+                        }
+                        action={
+                          <Box display="flex" gap={1} ml={1}>
+                            {seed.isMultiple && (
+                              <Tooltip title="Number of packs available">
+                                <Box
+                                  sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    bgcolor: "rgba(255, 255, 255, 0.1)",
+                                    borderRadius: 1,
+                                    px: 0.75,
+                                    py: 0.25,
+                                    fontSize: "0.75rem",
+                                  }}
+                                >
+                                  x{seed.quantity}
+                                </Box>
+                              </Tooltip>
+                            )}
+                            {seed.lineage && (
+                              <Tooltip
+                                title={seed.lineage || "No lineage information"}
+                              >
+                                <AccountTree color="action" fontSize="small" />
+                              </Tooltip>
+                            )}
 
-                          {seed.available ? (
-                            <Tooltip title="Available">
-                              <CheckCircleIcon
-                                color="success"
-                                fontSize="small"
-                              />
-                            </Tooltip>
-                          ) : (
-                            <Tooltip title="Unavailable">
-                              <CancelIcon color="error" fontSize="small" />
-                            </Tooltip>
-                          )}
-                        </Box>
-                      }
-                    />
-                    <CardContent
-                      sx={{
-                        py: 0.5, // Reduced padding
-                        flex: 1,
-                      }}
-                    >
-                      <Stack spacing={0.5}>
-                        {/* Seed Details */}
-                        <Typography variant="body2">
-                          <strong>Breeder:</strong> {seed.breeder}
-                        </Typography>
-                        <Typography variant="body2">
-                          <strong>Seeds:</strong> {seed.numSeeds}
-                        </Typography>
-                        {seed.generation && (
+                            {seed.available ? (
+                              <Tooltip title="Available">
+                                <CheckCircleIcon
+                                  color="success"
+                                  fontSize="small"
+                                />
+                              </Tooltip>
+                            ) : (
+                              <Tooltip title="Unavailable">
+                                <CancelIcon color="error" fontSize="small" />
+                              </Tooltip>
+                            )}
+                          </Box>
+                        }
+                      />
+                      <CardContent
+                        sx={{
+                          py: 0.5, // Reduced padding
+                          flex: 1,
+                        }}
+                      >
+                        <Stack spacing={0.5}>
+                          {/* Seed Details */}
                           <Typography variant="body2">
-                            <strong>Generation:</strong> {seed.generation}
+                            <strong>Breeder:</strong> {seed.breeder}
                           </Typography>
-                        )}
-                      </Stack>
-                    </CardContent>
-                    <CardActions
+                          <Typography variant="body2">
+                            <strong>Seeds:</strong> {seed.numSeeds}
+                          </Typography>
+                          {seed.generation && (
+                            <Typography variant="body2">
+                              <strong>Generation:</strong> {seed.generation}
+                            </Typography>
+                          )}
+                        </Stack>
+                      </CardContent>
+                      <CardActions
+                        sx={{
+                          justifyContent: "flex-end",
+                          py: 0.5,
+                          px: 2,
+                          mt: "auto",
+                        }}
+                      >
+                        {/* Date Added */}
+                        <Typography color="text.secondary" variant="caption">
+                          Added:{" "}
+                          {new Date(seed.dateAcquired).toLocaleDateString()}
+                        </Typography>
+                      </CardActions>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+            )}
+          </AccordionDetails>
+        </Accordion>
+
+        {/* Clones Section */}
+        <Accordion
+          square={false}
+          defaultExpanded
+          sx={{
+            mb: 4,
+            borderRadius: 2,
+            boxShadow: "0px 1px 3px rgba(0, 0, 0, 0.2)", // Matches Card's shadow
+            overflow: "hidden",
+            transition: "all 0.3s ease", // Smooth animation
+          }}
+        >
+          <AccordionSummary
+            sx={{
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+            }}
+            expandIcon={
+              <Tooltip title="Expand/Collapse">
+                <ExpandMoreIcon />
+              </Tooltip>
+            }
+          >
+            <Typography variant="h6">Clones Collection</Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            {/* Search Input */}
+            <Tooltip title="Search by Breeder or Strain">
+              <TextField
+                sx={{ flexGrow: 1, mb: 2 }}
+                size="small"
+                variant="outlined"
+                placeholder="Clone Search"
+                value={cloneSearchQuery}
+                onChange={(e) => setCloneSearchQuery(e.target.value)}
+              />
+            </Tooltip>
+            {profileClones.length === 0 ? ( // Check if no clones are added
+              <Typography color="text.secondary">
+                No clones added yet.
+              </Typography>
+            ) : filteredClones.length === 0 ? ( // Check if search yields no results
+              <Typography color="text.secondary">
+                No clones match your search.
+              </Typography>
+            ) : (
+              <Grid container spacing={1}>
+                {filteredClones.map((clone) => (
+                  <Grid
+                    item
+                    xs={12}
+                    sm={6}
+                    md={4}
+                    lg={3}
+                    key={clone.id}
+                    id={`clone-${clone.id}`}
+                  >
+                    <Card
+                      className={
+                        highlightedId === `clone-${clone.id}`
+                          ? "highlight-animate"
+                          : ""
+                      }
+                      variant="outlined"
                       sx={{
-                        justifyContent: "flex-end",
-                        py: 0.5,
-                        px: 2,
-                        mt: "auto",
+                        height: 150, // Fixed height
+                        display: "flex",
+                        flexDirection: "column",
                       }}
                     >
-                      {/* Date Added */}
-                      <Typography color="text.secondary" variant="caption">
-                        Added:{" "}
-                        {new Date(seed.dateAcquired).toLocaleDateString()}
-                      </Typography>
-                    </CardActions>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
-          )}
-        </AccordionDetails>
-      </Accordion>
-
-      {/* Clones Section */}
-      <Accordion
-        square={false}
-        defaultExpanded
-        sx={{
-          mb: 4,
-          borderRadius: 2,
-          boxShadow: "0px 1px 3px rgba(0, 0, 0, 0.2)", // Matches Card's shadow
-          overflow: "hidden",
-          transition: "all 0.3s ease", // Smooth animation
-        }}
-      >
-        <AccordionSummary
-          sx={{
-            display: "flex",
-            flexDirection: "row",
-            alignItems: "center",
-          }}
-          expandIcon={
-            <Tooltip title="Expand/Collapse">
-              <ExpandMoreIcon />
-            </Tooltip>
-          }
-        >
-          <Typography variant="h6">Clones Collection</Typography>
-        </AccordionSummary>
-        <AccordionDetails>
-          {/* Search Input */}
-          <Tooltip title="Search by Breeder or Strain">
-            <TextField
-              sx={{ flexGrow: 1, mb: 2 }}
-              size="small"
-              variant="outlined"
-              placeholder="Clone Search"
-              value={cloneSearchQuery}
-              onChange={(e) => setCloneSearchQuery(e.target.value)}
-            />
-          </Tooltip>
-          {profileClones.length === 0 ? ( // Check if no clones are added
-            <Typography color="text.secondary">No clones added yet.</Typography>
-          ) : filteredClones.length === 0 ? ( // Check if search yields no results
-            <Typography color="text.secondary">
-              No clones match your search.
-            </Typography>
-          ) : (
-            <Grid container spacing={1}>
-              {filteredClones.map((clone) => (
-                <Grid
-                  item
-                  xs={12}
-                  sm={6}
-                  md={4}
-                  lg={3}
-                  key={clone.id}
-                  id={`clone-${clone.id}`}
-                >
-                  <Card
-                    className={
-                      highlightedId === `clone-${clone.id}`
-                        ? "highlight-animate"
-                        : ""
-                    }
-                    variant="outlined"
-                    sx={{
-                      height: 150, // Fixed height
-                      display: "flex",
-                      flexDirection: "column",
-                    }}
-                  >
-                    <CardHeader
-                      sx={{
-                        py: 1,
-                        pb: 0,
-                        "& .MuiCardHeader-content": {
-                          overflow: "hidden",
-                          minWidth: 0, // Enables truncation in flex container
-                        },
-                        "& .MuiCardHeader-action": {
-                          marginTop: 0, // Align with title
-                          marginRight: 0, // Remove default margin
-                        },
-                      }}
-                      title={
-                        <Box
-                          display="flex"
-                          alignItems="center"
-                          gap={1}
-                          minWidth={0}
-                        >
-                          <Tooltip
-                            title={`${clone.sex === "Female" ? "♀" : ""} ${
-                              clone.strain
-                            }`}
+                      <CardHeader
+                        sx={{
+                          py: 1,
+                          pb: 0,
+                          "& .MuiCardHeader-content": {
+                            overflow: "hidden",
+                            minWidth: 0, // Enables truncation in flex container
+                          },
+                          "& .MuiCardHeader-action": {
+                            marginTop: 0, // Align with title
+                            marginRight: 0, // Remove default margin
+                          },
+                        }}
+                        title={
+                          <Box
+                            display="flex"
+                            alignItems="center"
+                            gap={1}
+                            minWidth={0}
                           >
-                            <Typography
-                              variant="subtitle1"
-                              component="span"
-                              sx={{
-                                whiteSpace: "nowrap",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                minWidth: 0,
-                              }}
-                            >
-                              {`${clone.sex === "Female" ? "♀" : ""} ${
+                            <Tooltip
+                              title={`${clone.sex === "Female" ? "♀" : ""} ${
                                 clone.strain
                               }`}
-                            </Typography>
-                          </Tooltip>
-                          {clone.breederCut && (
-                            <Tooltip title="Breeder Cut">
-                              <Verified
-                                color="action"
-                                fontSize="small"
-                                sx={{ flexShrink: 0 }}
-                              />
-                            </Tooltip>
-                          )}
-                        </Box>
-                      }
-                      action={
-                        <Box display="flex" gap={1}>
-                          {clone.lineage && (
-                            <Tooltip
-                              title={clone.lineage || "No lineage information"}
                             >
-                              <AccountTree color="action" fontSize="small" />
+                              <Typography
+                                variant="subtitle1"
+                                component="span"
+                                sx={{
+                                  whiteSpace: "nowrap",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  minWidth: 0,
+                                }}
+                              >
+                                {`${clone.sex === "Female" ? "♀" : ""} ${
+                                  clone.strain
+                                }`}
+                              </Typography>
                             </Tooltip>
-                          )}
+                            {clone.breederCut && (
+                              <Tooltip title="Breeder Cut">
+                                <Verified
+                                  color="action"
+                                  fontSize="small"
+                                  sx={{ flexShrink: 0 }}
+                                />
+                              </Tooltip>
+                            )}
+                          </Box>
+                        }
+                        action={
+                          <Box display="flex" gap={1}>
+                            {clone.lineage && (
+                              <Tooltip
+                                title={
+                                  clone.lineage || "No lineage information"
+                                }
+                              >
+                                <AccountTree color="action" fontSize="small" />
+                              </Tooltip>
+                            )}
 
-                          {clone.available ? (
-                            <Tooltip title="Available">
-                              <CheckCircleIcon
-                                color="success"
-                                fontSize="small"
-                              />
-                            </Tooltip>
-                          ) : (
-                            <Tooltip title="Unavailable">
-                              <CancelIcon color="error" fontSize="small" />
-                            </Tooltip>
+                            {clone.available ? (
+                              <Tooltip title="Available">
+                                <CheckCircleIcon
+                                  color="success"
+                                  fontSize="small"
+                                />
+                              </Tooltip>
+                            ) : (
+                              <Tooltip title="Unavailable">
+                                <CancelIcon color="error" fontSize="small" />
+                              </Tooltip>
+                            )}
+                          </Box>
+                        }
+                      />
+                      <CardContent
+                        sx={{
+                          py: 0.5, // Reduced padding
+                          flex: 1,
+                        }}
+                      >
+                        <Stack spacing={0.5}>
+                          {/* Clone Details */}
+                          <Typography variant="body2">
+                            <strong>Breeder:</strong> {clone.breeder}
+                          </Typography>
+                          {clone.cutName && (
+                            <Typography variant="body2">
+                              <strong>Cut Name:</strong> {clone.cutName}
+                            </Typography>
                           )}
-                        </Box>
-                      }
-                    />
-                    <CardContent
-                      sx={{
-                        py: 0.5, // Reduced padding
-                        flex: 1,
-                      }}
-                    >
-                      <Stack spacing={0.5}>
-                        {/* Clone Details */}
-                        <Typography variant="body2">
-                          <strong>Breeder:</strong> {clone.breeder}
+                          {clone.generation && (
+                            <Typography variant="body2">
+                              <strong>Generation:</strong> {clone.generation}
+                            </Typography>
+                          )}
+                        </Stack>
+                      </CardContent>
+                      <CardActions
+                        sx={{
+                          justifyContent: "flex-end",
+                          py: 0.5,
+                          px: 2,
+                          mt: "auto",
+                        }}
+                      >
+                        {/* Date Added */}
+                        <Typography color="text.secondary" variant="caption">
+                          Added:{" "}
+                          {new Date(clone.dateAcquired).toLocaleDateString()}
                         </Typography>
-                        {clone.cutName && (
-                          <Typography variant="body2">
-                            <strong>Cut Name:</strong> {clone.cutName}
-                          </Typography>
-                        )}
-                        {clone.generation && (
-                          <Typography variant="body2">
-                            <strong>Generation:</strong> {clone.generation}
-                          </Typography>
-                        )}
-                      </Stack>
-                    </CardContent>
-                    <CardActions
-                      sx={{
-                        justifyContent: "flex-end",
-                        py: 0.5,
-                        px: 2,
-                        mt: "auto",
-                      }}
-                    >
-                      {/* Date Added */}
-                      <Typography color="text.secondary" variant="caption">
-                        Added:{" "}
-                        {new Date(clone.dateAcquired).toLocaleDateString()}
-                      </Typography>
-                    </CardActions>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
-          )}
-        </AccordionDetails>
-      </Accordion>
-    </Box>
+                      </CardActions>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+            )}
+          </AccordionDetails>
+        </Accordion>
+      </Box>
+    </>
   );
 }
 

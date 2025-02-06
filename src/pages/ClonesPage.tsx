@@ -22,6 +22,7 @@ import {
   AccordionSummary,
   Accordion,
   AccordionDetails,
+  Divider,
 } from "@mui/material";
 import { DataGrid, GridColDef, GridEditBooleanCell } from "@mui/x-data-grid";
 import { useCloneContext } from "../context/CloneContext";
@@ -31,6 +32,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import EditCloneModal from "../components/EditCloneModal";
+import CSVUpload from "../components/CSVUpload";
 
 const ClonesPage: React.FC = () => {
   const { clones, addClone, deleteClone, updateClone, setClones } =
@@ -55,6 +57,17 @@ const ClonesPage: React.FC = () => {
   // Confirmation dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [cloneToDelete, setCloneToDelete] = React.useState<Clone | null>(null);
+
+  const handleCSVUpload = async (clones: Partial<Clone>[]) => {
+    try {
+      // Add each clone from the CSV
+      for (const clone of clones) {
+        await addClone(clone as Clone);
+      }
+    } catch (error) {
+      console.error("Failed to add clones from CSV:", error);
+    }
+  };
 
   // Return unique breeder names from the seeds array
   const uniqueBreeders = Array.from(
@@ -87,7 +100,7 @@ const ClonesPage: React.FC = () => {
       setCloneStrain("");
       setCutName("");
       setFilalGeneration("");
-      setIsMale("Male");
+      setIsMale("Female");
       setIsBreederCut(false);
       setIsAvailable(false);
       setLineage("");
@@ -177,7 +190,7 @@ const ClonesPage: React.FC = () => {
       width: 65,
       flex: 0,
       renderCell: (params) => {
-        const sexValue = params.value; // likely "Female" or "Male"
+        const sexValue = params.value;
         if (sexValue === "Female") return "♀";
         if (sexValue === "Male") return "♂";
         return ""; // fallback if unknown
@@ -191,9 +204,8 @@ const ClonesPage: React.FC = () => {
       editable: true,
       width: 95,
       flex: 0,
-      // Show Verified icon if breederCut === true, otherwise show nothing
       renderCell: (params) => {
-        const hasBreederCut = params.value; // boolean
+        const hasBreederCut = params.value;
         if (hasBreederCut) {
           // If breederCut === true, show Verified icon
           return (
@@ -291,16 +303,32 @@ const ClonesPage: React.FC = () => {
           fontFamily: "Roboto, sans-serif",
           fontWeight: 600,
           textAlign: "center",
-          marginBottom: "2rem",
+          marginBottom: "2",
         }}
       >
         Manage Clones
       </Typography>
 
+      {/* CSV Upload Form */}
+
+      <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
+        <CSVUpload onUploadSuccess={handleCSVUpload} />
+      </Box>
+      <Divider sx={{ mb: 2 }} />
       {/* Add Clone Form */}
       <Box sx={{ display: "flex", justifyContent: "center", mb: 2, p: 2 }}>
         <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
           <Stack spacing={1}>
+            <TextField
+              required
+              placeholder="Candy Fumez"
+              label="Strain"
+              value={cloneStrain}
+              onChange={(e) => setCloneStrain(e.target.value)}
+              error={strainError}
+              helperText={strainError ? "Strain is required" : ""}
+              fullWidth
+            />
             <Autocomplete
               options={uniqueBreeders}
               freeSolo
@@ -321,16 +349,6 @@ const ClonesPage: React.FC = () => {
                   fullWidth
                 />
               )}
-            />
-            <TextField
-              required
-              placeholder="Candy Fumez"
-              label="Strain"
-              value={cloneStrain}
-              onChange={(e) => setCloneStrain(e.target.value)}
-              error={strainError}
-              helperText={strainError ? "Strain is required" : ""}
-              fullWidth
             />
             <FormControlLabel
               control={
@@ -374,7 +392,7 @@ const ClonesPage: React.FC = () => {
                     <TextField
                       sx={{ mb: 1 }}
                       placeholder="Harry Palms Cut"
-                      label="Cut Name"
+                      label="Tag"
                       value={cutName}
                       onChange={(e) => setCutName(e.target.value)}
                       fullWidth
