@@ -6,7 +6,7 @@ import React, {
   useState,
 } from "react";
 import { Seed } from "../types";
-import { app } from "../../firebaseConfig";
+import { app, logAnalyticsEvent } from "../../firebaseConfig";
 import {
   getFirestore,
   collection,
@@ -80,6 +80,11 @@ export const SeedProvider: React.FC<{ children: React.ReactNode }> = ({
       console.log("Attempting Firestore write (addDoc)");
       const docRef = await addDoc(seedsCollectionRef, seedData); // Let Firestore generate ID
       console.log("Firestore write successful (addDoc)");
+      logAnalyticsEvent("add_seed", {
+        breeder: seed.breeder,
+        strain: seed.strain,
+        feminized: seed.feminized,
+      });
 
       // Optimistic Update: Add to local state immediately, using Firestore ID
       setSeeds((prevSeeds) => [
@@ -95,28 +100,6 @@ export const SeedProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  // const updateSeed = async (id: string, updatedSeed: Partial<Seed>) => {
-  //   console.log("updateSeed called");
-  //   try {
-  //     const seedDocRef = doc(db, "seeds", id);
-
-  //     // Optimistic Update: Update local state immediately
-  //     setSeeds((prevSeeds) =>
-  //       prevSeeds.map((s) => (s.id === id ? { ...s, ...updatedSeed } : s))
-  //     );
-
-  //     await updateDoc(seedDocRef, updatedSeed);
-  //   } catch (error) {
-  //     console.error("Error updating document: ", error);
-
-  //     // Rollback: Revert to the original state on error
-  //     // (You might need to store the original seed data temporarily for a more accurate rollback)
-  //     await fetchSeeds();
-
-  //     throw error;
-  //   }
-  // };
-
   const updateSeed = async (id: string, updatedSeed: Partial<Seed>) => {
     console.log("updateSeed called with ID:", id);
     console.log("Updated Seed Data:", updatedSeed);
@@ -125,6 +108,9 @@ export const SeedProvider: React.FC<{ children: React.ReactNode }> = ({
       const seedDocRef = doc(db, "seeds", id);
       await updateDoc(seedDocRef, updatedSeed); // Update Firestore
       console.log("Firestore update successful for ID:", id);
+      logAnalyticsEvent("update_seed", {
+        updatedSeed,
+      });
     } catch (error) {
       console.error("Error updating document:", error);
       throw error;
@@ -140,6 +126,9 @@ export const SeedProvider: React.FC<{ children: React.ReactNode }> = ({
       console.log("Attempting Firestore delete with ID:", id); // Log ID right before deleteDoc
       await deleteDoc(doc(db, "seeds", id));
       console.log("Firestore delete successful"); // Log success
+      logAnalyticsEvent("delete_seed", {
+        id,
+      });
     } catch (error) {
       console.error("Error deleting document: ", error);
 

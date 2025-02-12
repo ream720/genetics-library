@@ -13,6 +13,13 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
 } from "@mui/material";
 import { CloudUpload, Error } from "@mui/icons-material";
 import Papa, { ParseResult } from "papaparse";
@@ -43,6 +50,14 @@ const CSVUpload: React.FC<CSVUploadProps> = ({ onUploadSuccess }) => {
     []
   );
   const [showValidationDialog, setShowValidationDialog] = useState(false);
+  const [showPreviewDialog, setShowPreviewDialog] = useState(false);
+  const [previewData, setPreviewData] = useState<Partial<Clone>[]>([]);
+
+  console.log("Component State:", {
+    showPreviewDialog,
+    showValidationDialog,
+    previewDataLength: previewData.length,
+  });
 
   const parseBooleanField = (value: any): boolean => {
     if (typeof value === "boolean") return value;
@@ -53,15 +68,6 @@ const CSVUpload: React.FC<CSVUploadProps> = ({ onUploadSuccess }) => {
     }
     return false;
   };
-
-  // const parseBooleanField = (value: any): boolean => {
-  //   if (typeof value === "boolean") return value;
-  //   if (typeof value === "string") {
-  //     const upperValue = value.trim().toUpperCase();
-  //     return upperValue === "TRUE";
-  //   }
-  //   return false;
-  // };
 
   const validateCloneData = (data: CSVRow): string[] => {
     const errors: string[] = [];
@@ -97,12 +103,14 @@ const CSVUpload: React.FC<CSVUploadProps> = ({ onUploadSuccess }) => {
   const handleFileUpload = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
+    console.log("File Upload Started");
     const file = event.target.files?.[0];
     if (!file) return;
 
     setLoading(true);
     setError(null);
     setValidationErrors([]);
+    setPreviewData([]);
 
     try {
       const text = await file.text();
@@ -143,7 +151,8 @@ const CSVUpload: React.FC<CSVUploadProps> = ({ onUploadSuccess }) => {
             dateAcquired: new Date().toISOString(),
           }));
 
-          onUploadSuccess(clones);
+          setPreviewData(clones);
+          setShowPreviewDialog(true);
           setLoading(false);
         },
         error: (error: Error) => {
@@ -158,6 +167,12 @@ const CSVUpload: React.FC<CSVUploadProps> = ({ onUploadSuccess }) => {
 
     // Reset file input
     event.target.value = "";
+  };
+
+  const handleConfirmUpload = () => {
+    onUploadSuccess(previewData);
+    setShowPreviewDialog(false);
+    setPreviewData([]);
   };
 
   return (
@@ -219,6 +234,60 @@ const CSVUpload: React.FC<CSVUploadProps> = ({ onUploadSuccess }) => {
             variant="contained"
           >
             Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+      {/* Preview Dialog */}
+      <Dialog
+        open={showPreviewDialog}
+        onClose={() => setShowPreviewDialog(false)}
+        maxWidth="lg"
+        fullWidth
+      >
+        <DialogTitle>Preview Clone Import</DialogTitle>
+        <DialogContent>
+          <Alert severity="info" sx={{ mb: 2 }}>
+            {`Please review the data before confirming the import. ${
+              previewData.length
+            } ${previewData.length === 1 ? "entry" : "entries"} found.`}
+          </Alert>
+          <TableContainer component={Paper} sx={{ maxHeight: 400 }}>
+            <Table stickyHeader size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>#</TableCell>
+                  <TableCell>Strain</TableCell>
+                  <TableCell>Breeder</TableCell>
+                  <TableCell>Cut Name</TableCell>
+                  <TableCell>Sex</TableCell>
+                  <TableCell>Breeder Cut</TableCell>
+                  <TableCell>Available</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {previewData.map((row, index) => (
+                  <TableRow key={index}>
+                    <TableCell>{index + 1}</TableCell>
+                    <TableCell>{row.strain}</TableCell>
+                    <TableCell>{row.breeder}</TableCell>
+                    <TableCell>{row.cutName}</TableCell>
+                    <TableCell>{row.sex}</TableCell>
+                    <TableCell>{row.breederCut ? "Yes" : "No"}</TableCell>
+                    <TableCell>{row.available ? "Yes" : "No"}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowPreviewDialog(false)}>Cancel</Button>
+          <Button
+            onClick={handleConfirmUpload}
+            variant="contained"
+            color="primary"
+          >
+            Confirm Import
           </Button>
         </DialogActions>
       </Dialog>

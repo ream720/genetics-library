@@ -25,7 +25,12 @@ import {
   createContext,
   useContext,
 } from "react";
-import { auth, db, googleProvider } from "../../firebaseConfig";
+import {
+  auth,
+  db,
+  googleProvider,
+  logAnalyticsEvent,
+} from "../../firebaseConfig";
 import { UsernameAlreadyInUseError } from "../errors/UsernameAlreadyInUserError";
 
 interface ExtendedUser extends User {
@@ -128,6 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithGoogle = async () => {
     const result = await signInWithPopup(auth, googleProvider);
     const userDoc = await getDoc(doc(db, "users", result.user.uid));
+    logAnalyticsEvent("login", { method: "google" });
 
     return {
       requiresProfile: !userDoc.exists() || !userDoc.data()?.username,
@@ -137,6 +143,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Login function
   const login = async (email: string, password: string) => {
     await signInWithEmailAndPassword(auth, email, password);
+    logAnalyticsEvent("login", { method: "email" });
   };
 
   // Logout function

@@ -1,6 +1,6 @@
 // firebaseConfig.ts
 import { initializeApp } from "firebase/app";
-// import { getAnalytics } from "firebase/analytics"; // If you are not using analytics you can remove this line
+import { getAnalytics, logEvent } from "firebase/analytics";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
@@ -16,7 +16,12 @@ const firebaseConfig = {
 
 // Initialize Firebase
 export const app = initializeApp(firebaseConfig);
-// const analytics = getAnalytics(app); // If you are not using analytics you can remove this line
+export const analytics = getAnalytics(app);
+
+// Helper function for logging events
+export const logAnalyticsEvent = (eventName: string, eventParams = {}) => {
+  logEvent(analytics, eventName, eventParams);
+};
 
 // Initialize Authentication
 const googleProvider = new GoogleAuthProvider();

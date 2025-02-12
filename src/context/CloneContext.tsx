@@ -6,7 +6,7 @@ import React, {
   useState,
 } from "react";
 import { Clone } from "../types";
-import { app } from "../../firebaseConfig";
+import { app, logAnalyticsEvent } from "../../firebaseConfig";
 import {
   getFirestore,
   collection,
@@ -79,6 +79,11 @@ export const CloneProvider: React.FC<{ children: React.ReactNode }> = ({
 
       console.log("Attempting Firestore write (addDoc)");
       const docRef = await addDoc(clonesCollectionRef, cloneData); // Let Firestore generate ID
+      logAnalyticsEvent("add_clone", {
+        breeder: clone.breeder,
+        strain: clone.strain,
+        sex: clone.sex,
+      });
       console.log("Firestore write successful (addDoc)");
 
       // Optimistic Update: Add to local state immediately, using Firestore ID
@@ -105,6 +110,9 @@ export const CloneProvider: React.FC<{ children: React.ReactNode }> = ({
       );
 
       await updateDoc(cloneDocRef, updatedClone);
+      logAnalyticsEvent("update_clone", {
+        updatedClone,
+      });
     } catch (error) {
       console.error("Error updating document: ", error);
 
@@ -121,6 +129,9 @@ export const CloneProvider: React.FC<{ children: React.ReactNode }> = ({
       setClones((prevClones) => prevClones.filter((c) => c.id !== id));
 
       await deleteDoc(doc(db, "clones", id));
+      logAnalyticsEvent("delete_clone", {
+        id,
+      });
     } catch (error) {
       console.error("Error deleting document: ", error);
 

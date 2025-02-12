@@ -25,7 +25,7 @@ import {
   doc,
   getDoc,
 } from "firebase/firestore";
-import { app } from "../../firebaseConfig";
+import { app, logAnalyticsEvent } from "../../firebaseConfig";
 import { Link } from "react-router-dom";
 import { Seed, Clone } from "../types";
 
@@ -63,6 +63,10 @@ function SearchPage() {
   };
 
   const handleSearch = async () => {
+    logAnalyticsEvent("search", {
+      search_term: searchQuery,
+      active_tab: activeTab,
+    });
     if (!searchQuery.trim()) return;
 
     setLoading(true);
