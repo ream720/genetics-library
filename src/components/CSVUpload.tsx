@@ -20,10 +20,13 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
-import { CloudUpload, Error } from "@mui/icons-material";
+import { CloudUpload, Error, HelpOutline } from "@mui/icons-material";
 import Papa, { ParseResult } from "papaparse";
 import { Clone } from "../types";
+import CSVHelpModal from "./CSVHelpModal";
 
 interface CSVUploadProps {
   onUploadSuccess: (clones: Partial<Clone>[]) => void;
@@ -52,6 +55,7 @@ const CSVUpload: React.FC<CSVUploadProps> = ({ onUploadSuccess }) => {
   const [showValidationDialog, setShowValidationDialog] = useState(false);
   const [showPreviewDialog, setShowPreviewDialog] = useState(false);
   const [previewData, setPreviewData] = useState<Partial<Clone>[]>([]);
+  const [showHelpModal, setShowHelpModal] = useState(false);
 
   console.log("Component State:", {
     showPreviewDialog,
@@ -186,15 +190,24 @@ const CSVUpload: React.FC<CSVUploadProps> = ({ onUploadSuccess }) => {
         onChange={handleFileUpload}
       />
       <label htmlFor="csv-upload-button">
-        <Button
-          variant="outlined"
-          component="span"
-          startIcon={<CloudUpload />}
-          disabled={loading}
-        >
-          Upload CSV
-          {loading && <CircularProgress size={24} sx={{ ml: 1 }} />}
-        </Button>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <label htmlFor="csv-upload-button">
+            <Button
+              variant="outlined"
+              component="span"
+              startIcon={<CloudUpload />}
+              disabled={loading}
+            >
+              Upload CSV
+              {loading && <CircularProgress size={24} sx={{ ml: 1 }} />}
+            </Button>
+          </label>
+          <Tooltip title="CSV Format Help">
+            <IconButton onClick={() => setShowHelpModal(true)} size="small">
+              <HelpOutline color="primary" />
+            </IconButton>
+          </Tooltip>
+        </Box>
       </label>
 
       {error && (
@@ -292,6 +305,10 @@ const CSVUpload: React.FC<CSVUploadProps> = ({ onUploadSuccess }) => {
           </Button>
         </DialogActions>
       </Dialog>
+      <CSVHelpModal
+        open={showHelpModal}
+        onClose={() => setShowHelpModal(false)}
+      />
     </Box>
   );
 };
