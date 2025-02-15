@@ -12,7 +12,6 @@ import {
   TableHead,
   TableRow,
   Paper,
-  Alert,
 } from "@mui/material";
 import { Clone } from "../types";
 
@@ -43,7 +42,7 @@ const CSVPreviewModal: React.FC<CSVPreviewModalProps> = ({
     onClose();
   };
 
-  const getDisplayValue = (value: any): string => {
+  const getDisplayValue = (value: unknown): string => {
     if (typeof value === "boolean") {
       return value ? "Yes" : "No";
     }

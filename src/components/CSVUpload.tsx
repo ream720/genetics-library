@@ -59,7 +59,7 @@ const CSVUpload: React.FC<CSVUploadProps> = ({ onUploadSuccess }) => {
     previewDataLength: previewData.length,
   });
 
-  const parseBooleanField = (value: any): boolean => {
+  const parseBooleanField = (value: unknown): boolean => {
     if (typeof value === "boolean") return value;
     if (typeof value === "string") {
       const upperValue = value.trim().toUpperCase();
@@ -160,6 +160,7 @@ const CSVUpload: React.FC<CSVUploadProps> = ({ onUploadSuccess }) => {
           setLoading(false);
         },
       });
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (_err) {
       setError("Failed to read file");
       setLoading(false);

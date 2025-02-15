@@ -197,7 +197,14 @@ function Profile() {
   return (
     <>
       {/* <GeminiTest /> */}
-      <Box sx={{ maxWidth: 1400, marginBottom: "24px", margin: "auto", px: 2 }}>
+      <Box
+        sx={{
+          maxWidth: 1400,
+          paddingBottom: "36px",
+          margin: "auto",
+          px: 2,
+        }}
+      >
         {/* User Info */}
 
         <Accordion
