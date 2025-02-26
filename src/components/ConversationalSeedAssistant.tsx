@@ -272,23 +272,6 @@ export default function ConversationalSeedAssistant() {
                     <Typography sx={{ whiteSpace: "pre-wrap" }}>
                       {msg.content}
                     </Typography>
-
-                    {msg.seedData && (
-                      <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-                        {/* Only show button in assistant message when no preview is shown */}
-                        {!showSeedPreview && (
-                          <Button
-                            size="small"
-                            color="warning"
-                            variant="contained"
-                            onClick={() => handleAddToCatalog(msg.seedData!)}
-                            sx={{ fontWeight: "bold" }}
-                          >
-                            Add to Catalog
-                          </Button>
-                        )}
-                      </Stack>
-                    )}
                   </Paper>
                 ))}
               </Stack>
