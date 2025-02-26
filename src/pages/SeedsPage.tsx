@@ -15,9 +15,10 @@ import {
   DialogContentText,
   DialogTitle,
   Autocomplete,
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
+  Divider,
+  Tabs,
+  Tab,
+  Paper,
 } from "@mui/material";
 import {
   DataGrid,
@@ -29,13 +30,44 @@ import {
 import { useSeedContext } from "../context/SeedContext";
 import { Seed } from "../types";
 import { Edit, Delete, AddCircleOutline } from "@mui/icons-material";
+
+import { FaMagic } from "react-icons/fa";
+import EditIcon from "@mui/icons-material/Edit";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import EditSeedModal from "../components/EditSeedModal";
+import ConversationalSeedAssistant from "../components/ConversationalSeedAssistant";
+
+// Interface for the tab values
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+// Custom TabPanel component for switching between modes
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`seed-input-tabpanel-${index}`}
+      aria-labelledby={`seed-input-tab-${index}`}
+      {...other}
+      style={{ width: "100%" }}
+    >
+      {value === index && <Box sx={{ p: 2 }}>{children}</Box>}
+    </div>
+  );
+}
 
 const SeedsPage: React.FC = () => {
   const { seeds, addSeed, deleteSeed, updateSeed, setSeeds } = useSeedContext();
+
+  // Add state for tab selection (0 = AI Assistant, 1 = Manual Entry)
+  const [inputMode, setInputMode] = React.useState(0);
 
   // Form states
   const [seedBreeder, setSeedBreeder] = React.useState("");
@@ -64,6 +96,11 @@ const SeedsPage: React.FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [seedToDelete, setSeedToDelete] = React.useState<Seed | null>(null);
 
+  // Handler for tab changes
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+    setInputMode(newValue);
+  };
+
   // Return unique breeder names from the seeds array
   const uniqueBreeders = Array.from(
     new Set(seeds.map((s) => s.breeder))
@@ -84,9 +121,9 @@ const SeedsPage: React.FC = () => {
   // Handle confirming the delete action
   const handleConfirmDelete = () => {
     if (seedToDelete) {
-      deleteSeed(seedToDelete.id!); // Call deleteSeed with the selected seed ID
+      deleteSeed(seedToDelete.id!);
     }
-    handleCloseDeleteDialog(); // Close the dialog
+    handleCloseDeleteDialog();
   };
 
   // Handle adding a new seed
@@ -128,38 +165,27 @@ const SeedsPage: React.FC = () => {
 
   // Handle row update
   const processRowUpdate = async (newRow: Seed, oldRow: Seed) => {
-    console.log("processRowUpdate called:");
-    console.log("New Row Data:", newRow);
-    console.log("Old Row Data:", oldRow);
-
     try {
       let hasChanges = false;
       Object.keys(newRow).forEach((key) => {
         if (newRow[key as keyof Seed] !== oldRow[key as keyof Seed]) {
-          console.log(
-            `Field changed: ${key}, Old Value: ${
-              oldRow[key as keyof Seed]
-            }, New Value: ${newRow[key as keyof Seed]}`
-          );
           hasChanges = true;
         }
       });
 
       if (!hasChanges) {
-        console.warn("No changes detected. Skipping Firestore update.");
         setRowModesModel({
           ...rowModesModel,
-          [newRow.id!]: { mode: GridRowModes.View }, // Ensure mode resets
+          [newRow.id!]: { mode: GridRowModes.View },
         });
         return oldRow;
       }
 
       // Update Firestore
       await updateSeed(newRow.id!, newRow);
-      console.log("Firestore update successful:", newRow);
 
       // Optimistic Update: Update the `seeds` state
-      setSeeds((prevSeeds) =>
+      setSeeds((prevSeeds: Seed[]) =>
         prevSeeds.map((seed) => (seed.id === newRow.id ? newRow : seed))
       );
 
@@ -192,7 +218,7 @@ const SeedsPage: React.FC = () => {
   const handleSaveEdit = async (updatedSeed: Seed) => {
     try {
       await updateSeed(updatedSeed.id!, updatedSeed);
-      setSeeds((prevSeeds) =>
+      setSeeds((prevSeeds: Seed[]) =>
         prevSeeds.map((seed) =>
           seed.id === updatedSeed.id ? updatedSeed : seed
         )
@@ -275,7 +301,6 @@ const SeedsPage: React.FC = () => {
         );
       },
       renderEditCell: (params) => {
-        // EDIT mode → show a built‐in boolean checkbox
         return <GridEditBooleanCell {...params} />;
       },
     },
@@ -369,7 +394,7 @@ const SeedsPage: React.FC = () => {
   ];
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ px: 3, pb: 3 }}>
       <Typography
         variant="h4"
         gutterBottom
@@ -377,64 +402,112 @@ const SeedsPage: React.FC = () => {
           fontFamily: "Roboto, sans-serif",
           fontWeight: 600,
           textAlign: "center",
-          marginBottom: "2rem",
+          marginBottom: 3,
         }}
       >
         Manage Seeds
       </Typography>
 
-      {/* Form Section */}
-      <Box sx={{ display: "flex", justifyContent: "center", mb: 2, p: 2 }}>
-        <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-          <Stack spacing={2}>
-            <Autocomplete
-              options={uniqueBreeders}
-              freeSolo
-              inputValue={seedBreeder}
-              onInputChange={(_event, newInputValue) => {
-                setSeedBreeder(newInputValue);
-              }}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  required
-                  placeholder="Archive Seed Bank"
-                  label="Breeder"
-                  value={seedBreeder}
-                  onChange={(e) => setSeedBreeder(e.target.value)}
-                  error={breederError}
-                  helperText={breederError ? "Breeder is required" : ""}
-                  fullWidth
-                />
-              )}
-            />
-            <TextField
-              required
-              placeholder="Dark Rainbow"
-              label="Strain"
-              value={seedStrain}
-              error={strainError}
-              helperText={strainError ? "Strain is required" : ""}
-              onChange={(e) => setSeedStrain(e.target.value)}
-              fullWidth
-            />
-            <TextField
-              label="# of Seeds"
-              placeholder="12"
-              type="number"
-              value={numSeeds}
-              onChange={(e) => setNumSeeds(Number(e.target.value))}
-              fullWidth
-            />
-          </Stack>
+      {/* Mode Selection Tabs */}
+      <Paper sx={{ mb: 3 }}>
+        <Tabs
+          value={inputMode}
+          onChange={handleTabChange}
+          variant="fullWidth"
+          textColor="primary"
+          indicatorColor="primary"
+          aria-label="seed input method tabs"
+        >
+          <Tab
+            icon={<FaMagic size={20} />}
+            label="AI Assistant"
+            iconPosition="start"
+            sx={{ fontWeight: "bold" }}
+          />
+          <Tab
+            icon={<EditIcon />}
+            label="Manual Entry"
+            iconPosition="start"
+            sx={{ fontWeight: "bold" }}
+          />
+        </Tabs>
+      </Paper>
 
-          {/* Column 3 */}
-          <Stack spacing={1}>
-            <Stack>
+      {/* AI Assistant Panel */}
+      <TabPanel value={inputMode} index={0}>
+        <Box sx={{ display: "flex", justifyContent: "center" }}>
+          <ConversationalSeedAssistant />
+        </Box>
+      </TabPanel>
+
+      {/* Manual Entry Panel */}
+      <TabPanel value={inputMode} index={1}>
+        <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
+          <Stack
+            spacing={2}
+            direction={{ xs: "column", sm: "row" }}
+            alignItems="flex-start"
+          >
+            <Stack spacing={2} sx={{ minWidth: 300 }}>
+              <Autocomplete
+                options={uniqueBreeders}
+                freeSolo
+                inputValue={seedBreeder}
+                onInputChange={(_event, newInputValue) => {
+                  setSeedBreeder(newInputValue);
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    required
+                    placeholder="Archive Seed Bank"
+                    label="Breeder"
+                    value={seedBreeder}
+                    onChange={(e) => setSeedBreeder(e.target.value)}
+                    error={breederError}
+                    helperText={breederError ? "Breeder is required" : ""}
+                    fullWidth
+                  />
+                )}
+              />
+              <TextField
+                required
+                placeholder="Dark Rainbow"
+                label="Strain"
+                value={seedStrain}
+                error={strainError}
+                helperText={strainError ? "Strain is required" : ""}
+                onChange={(e) => setSeedStrain(e.target.value)}
+                fullWidth
+              />
+              <TextField
+                label="# of Seeds"
+                placeholder="12"
+                type="number"
+                value={numSeeds}
+                onChange={(e) => setNumSeeds(Number(e.target.value))}
+                fullWidth
+              />
+              <TextField
+                label="Lineage"
+                placeholder="GMO x Rainbow Belts F1"
+                value={lineage}
+                onChange={(e) => setLineage(e.target.value)}
+                fullWidth
+              />
+              <TextField
+                placeholder="F1, S1, etc."
+                label="Generation"
+                value={filalGeneration}
+                onChange={(e) => setFilalGeneration(e.target.value)}
+                fullWidth
+              />
+            </Stack>
+
+            <Stack spacing={2} sx={{ minWidth: 200 }}>
               <FormControlLabel
                 control={
                   <Checkbox
-                    size="small"
                     checked={isFeminized}
                     onChange={(e) => setIsFeminized(e.target.checked)}
                   />
@@ -444,7 +517,6 @@ const SeedsPage: React.FC = () => {
               <FormControlLabel
                 control={
                   <Checkbox
-                    size="small"
                     checked={isOpen}
                     onChange={(e) => setIsOpen(e.target.checked)}
                   />
@@ -454,79 +526,56 @@ const SeedsPage: React.FC = () => {
               <FormControlLabel
                 control={
                   <Checkbox
-                    size="small"
                     checked={isAvailable}
                     onChange={(e) => setIsAvailable(e.target.checked)}
                   />
                 }
                 label="Available?"
               />
-              <Box paddingTop={1} maxWidth={300}>
-                <Accordion>
-                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                    <Typography>Optional Info</Typography>
-                  </AccordionSummary>
-                  <AccordionDetails>
-                    <TextField
-                      sx={{ mb: 1 }}
-                      label="Lineage"
-                      placeholder="GMO x Rainbow Belts F1"
-                      value={lineage}
-                      onChange={(e) => setLineage(e.target.value)}
-                      fullWidth
-                    />
-                    <TextField
-                      placeholder="F1, S1, etc."
-                      label="Generation"
-                      value={filalGeneration}
-                      onChange={(e) => setFilalGeneration(e.target.value)}
-                      fullWidth
-                    />
-                    <FormControlLabel
-                      sx={{ mt: 1 }}
-                      control={
-                        <Checkbox
-                          size="small"
-                          checked={isMultiple}
-                          onChange={(e) => setIsMultiple(e.target.checked)}
-                        />
-                      }
-                      label="Multiple Packs?"
-                    />
-                    {isMultiple && (
-                      <TextField
-                        label="Quantity"
-                        type="number"
-                        value={quantity === 0 ? "" : quantity}
-                        onChange={(e) => {
-                          const value =
-                            e.target.value === ""
-                              ? 0
-                              : Math.max(0, parseInt(e.target.value) || 0);
-                          setQuantity(value);
-                        }}
-                        // Remove InputProps to allow zero values
-                        fullWidth
-                      />
-                    )}
-                  </AccordionDetails>
-                </Accordion>
-              </Box>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={isMultiple}
+                    onChange={(e) => setIsMultiple(e.target.checked)}
+                  />
+                }
+                label="Multiple Packs?"
+              />
+              {isMultiple && (
+                <Stack pl={1}>
+                  <TextField
+                    sx={{ maxWidth: 100 }}
+                    label="Quantity"
+                    type="number"
+                    value={quantity === 0 ? "" : quantity}
+                    onChange={(e) => {
+                      const value =
+                        e.target.value === ""
+                          ? 0
+                          : Math.max(0, parseInt(e.target.value) || 0);
+                      setQuantity(value);
+                    }}
+                  />
+                </Stack>
+              )}
             </Stack>
-          </Stack>
 
-          <Stack>
-            <Tooltip title="Add Seed">
-              <IconButton
-                sx={{ mt: { xs: 0, md: 3 }, color: "primary.main" }}
-                onClick={handleAddSeed}
-              >
-                <AddCircleOutline fontSize="large" />
-              </IconButton>
-            </Tooltip>
+            <Box sx={{ pt: 2 }}>
+              <Tooltip title="Add Seed">
+                <IconButton
+                  sx={{ color: "primary.main" }}
+                  onClick={handleAddSeed}
+                  size="large"
+                >
+                  <AddCircleOutline fontSize="large" />
+                </IconButton>
+              </Tooltip>
+            </Box>
           </Stack>
-        </Stack>
-      </Box>
+        </Box>
+      </TabPanel>
+
+      <Divider sx={{ margin: 2 }} />
 
       {/* Data Grid Section */}
       <Box sx={{ height: 600, width: "100%", overflowX: "auto" }}>
@@ -536,7 +585,7 @@ const SeedsPage: React.FC = () => {
             id: seed.id,
           }))}
           columns={columns}
-          processRowUpdate={processRowUpdate} // Ensure this is passed correctly
+          processRowUpdate={processRowUpdate}
           onProcessRowUpdateError={(error) =>
             console.error("Error during row update:", error)
           }
@@ -545,14 +594,14 @@ const SeedsPage: React.FC = () => {
           initialState={{
             pagination: {
               paginationModel: {
-                pageSize: 10, // Default page size
+                pageSize: 10,
               },
             },
           }}
-          pageSizeOptions={[10, 20, 50]} // Page size options
-          disableRowSelectionOnClick // Prevent row selection on click
+          pageSizeOptions={[10, 20, 50]}
+          disableRowSelectionOnClick
           onCellEditStart={(_params, event) => {
-            event.defaultMuiPrevented = true; // Disable default double-click to edit behavior
+            event.defaultMuiPrevented = true;
           }}
         />
       </Box>
@@ -583,6 +632,8 @@ const SeedsPage: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Edit Seed Modal */}
       <EditSeedModal
         open={editModalOpen}
         onClose={() => {

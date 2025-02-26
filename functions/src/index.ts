@@ -2,9 +2,37 @@
 import { onCall } from "firebase-functions/v2/https";
 import * as nodemailer from "nodemailer";
 import { defineSecret } from "firebase-functions/params";
+import { createSeedAssistantFlows } from "./flows/seedAssistant.js";
 
 // Define email password as a secret parameter
 const emailPassword = defineSecret("EMAIL_PASSWORD");
+const googleAiKey = defineSecret("GOOGLE_AI_API_KEY");
+
+export const analyzeSeed = onCall(
+  {
+    enforceAppCheck: false,
+    secrets: [googleAiKey],
+  },
+  async (request) => {
+    const { message, previousContext } = request.data;
+
+    try {
+      // Initialize flows with the runtime API key
+      const { analyzeSeedFlow } = createSeedAssistantFlows(googleAiKey.value());
+
+      const result = await analyzeSeedFlow({
+        message,
+        previousContext,
+      });
+      return result;
+    } catch (error) {
+      console.error("Seed analysis error:", error);
+      throw new Error(
+        error instanceof Error ? error.message : "Failed to analyze seed"
+      );
+    }
+  }
+);
 
 export const sendSupportEmail = onCall(
   {
