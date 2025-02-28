@@ -166,9 +166,51 @@ const SeedsPage: React.FC = () => {
   // Handle row update
   const processRowUpdate = async (newRow: Seed, oldRow: Seed) => {
     try {
+      // Create an object to hold only the changed fields
+      const changedFields: Partial<Seed> = {};
       let hasChanges = false;
-      Object.keys(newRow).forEach((key) => {
-        if (newRow[key as keyof Seed] !== oldRow[key as keyof Seed]) {
+
+      // Only check fields that exist in the Seed type
+      const seedKeys: Array<keyof Seed> = [
+        "breeder",
+        "strain",
+        "lineage",
+        "generation",
+        "numSeeds",
+        "feminized",
+        "open",
+        "available",
+        "dateAcquired",
+        "isMultiple",
+        "quantity",
+        "id",
+        "userId",
+      ];
+
+      seedKeys.forEach((key) => {
+        if (newRow[key] !== oldRow[key]) {
+          // Type-safe assignment using indexed access
+          switch (key) {
+            case "breeder":
+            case "strain":
+            case "lineage":
+            case "generation":
+            case "dateAcquired":
+            case "id":
+            case "userId":
+              changedFields[key] = String(newRow[key]);
+              break;
+            case "numSeeds":
+            case "quantity":
+              changedFields[key] = Number(newRow[key]);
+              break;
+            case "feminized":
+            case "open":
+            case "available":
+            case "isMultiple":
+              changedFields[key] = Boolean(newRow[key]);
+              break;
+          }
           hasChanges = true;
         }
       });
@@ -181,12 +223,14 @@ const SeedsPage: React.FC = () => {
         return oldRow;
       }
 
-      // Update Firestore
-      await updateSeed(newRow.id!, newRow);
+      // Update Firestore with only the changed fields
+      await updateSeed(newRow.id!, changedFields);
 
       // Optimistic Update: Update the `seeds` state
       setSeeds((prevSeeds: Seed[]) =>
-        prevSeeds.map((seed) => (seed.id === newRow.id ? newRow : seed))
+        prevSeeds.map((seed) =>
+          seed.id === newRow.id ? { ...seed, ...changedFields } : seed
+        )
       );
 
       // Switch the row back to view mode
@@ -313,7 +357,10 @@ const SeedsPage: React.FC = () => {
       width: 100,
       flex: 0,
       renderCell: (params) => {
-        const isAvailable = params.value;
+        // Type guard to ensure we're working with a boolean
+        const isAvailable =
+          typeof params.value === "boolean" ? params.value : false;
+
         return (
           <Box
             sx={{

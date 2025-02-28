@@ -101,18 +101,29 @@ export const SeedProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const updateSeed = async (id: string, updatedSeed: Partial<Seed>) => {
-    console.log("updateSeed called with ID:", id);
-    console.log("Updated Seed Data:", updatedSeed);
-
     try {
+      // Optimistic Update: Update local state immediately
+      setSeeds((prevSeeds) => {
+        const updatedSeeds = prevSeeds.map((s) =>
+          s.id === id ? { ...s, ...updatedSeed } : s
+        );
+
+        return updatedSeeds;
+      });
+
+      // Update Firestore
+
       const seedDocRef = doc(db, "seeds", id);
-      await updateDoc(seedDocRef, updatedSeed); // Update Firestore
-      console.log("Firestore update successful for ID:", id);
+      await updateDoc(seedDocRef, updatedSeed);
+
       logAnalyticsEvent("update_seed", {
         updatedSeed,
       });
     } catch (error) {
       console.error("Error updating document:", error);
+      console.log("Rolling back due to error...");
+      // Rollback: Re-fetch the seeds to revert to original state on error
+      await fetchSeeds();
       throw error;
     }
   };
