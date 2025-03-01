@@ -26,6 +26,7 @@ import {
   Cancel as CancelIcon,
   BrokenImage,
   AddCircleOutline,
+  RestartAlt,
 } from "@mui/icons-material";
 import { analyzeSeedFunc } from "../lib/firebase";
 import { SeedAssistantResponse } from "../schemas/seedSchemas";
@@ -55,15 +56,16 @@ const emptySeed: Seed = {
   dateAcquired: new Date().toISOString(),
 };
 
+// Initial welcome message
+const initialMessage: ChatMessage = {
+  role: "assistant",
+  content:
+    "Hi! I can help catalog your seeds. Tell me about a seed pack you'd like to add to your collection.",
+};
+
 export default function ConversationalSeedAssistant() {
   const { addSeed } = useSeedContext();
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      role: "assistant",
-      content:
-        "Hi! I can help catalog your seeds. Tell me about a seed pack you'd like to add to your collection.",
-    },
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>([initialMessage]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [previewSeed, setPreviewSeed] = useState<Seed>(emptySeed);
@@ -206,9 +208,8 @@ export default function ConversationalSeedAssistant() {
         severity: "success",
       });
 
-      // Reset the preview after adding
-      setPreviewSeed(emptySeed);
-      setShowSeedPreview(false);
+      // Reset the conversation after adding the seed
+      resetConversation();
     } catch (err) {
       console.error("Failed to add seed:", err);
       setSnackbar({
@@ -217,6 +218,20 @@ export default function ConversationalSeedAssistant() {
         severity: "error",
       });
     }
+  };
+
+  // New function to reset the conversation
+  const resetConversation = () => {
+    // Reset to initial state
+    setMessages([
+      {
+        role: "assistant",
+        content:
+          "Seed added! Tell me about another seed pack you'd like to add.",
+      },
+    ]);
+    setPreviewSeed(emptySeed);
+    setShowSeedPreview(false);
   };
 
   return (
@@ -228,9 +243,25 @@ export default function ConversationalSeedAssistant() {
       }}
     >
       <CardContent>
-        <Typography variant="h6" gutterBottom>
-          Seed Assistant Chat
-        </Typography>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 2,
+          }}
+        >
+          <Typography variant="h6">Seed Assistant Chat</Typography>
+          <Tooltip title="Reset conversation">
+            <IconButton
+              onClick={resetConversation}
+              size="small"
+              color="primary"
+            >
+              <RestartAlt />
+            </IconButton>
+          </Tooltip>
+        </Box>
 
         <Stack spacing={2}>
           {/* Chat Messages Area */}

@@ -15,7 +15,6 @@ import {
   DialogContentText,
   DialogTitle,
   Autocomplete,
-  Divider,
   Tabs,
   Tab,
   Paper,
@@ -456,7 +455,7 @@ const SeedsPage: React.FC = () => {
       </Typography>
 
       {/* Mode Selection Tabs */}
-      <Paper sx={{ mb: 3 }}>
+      <Paper sx={{ mb: 1, maxWidth: "1400px", mx: "auto" }}>
         <Tabs
           value={inputMode}
           onChange={handleTabChange}
@@ -621,8 +620,6 @@ const SeedsPage: React.FC = () => {
           </Stack>
         </Box>
       </TabPanel>
-
-      <Divider sx={{ margin: 2 }} />
 
       {/* Data Grid Section */}
       <Box sx={{ height: 600, width: "100%", overflowX: "auto" }}>
