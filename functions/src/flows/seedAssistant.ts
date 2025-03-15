@@ -1,4 +1,4 @@
-import { gemini15Flash } from "@genkit-ai/googleai";
+import { gemini20Flash } from "@genkit-ai/googleai";
 import { z } from "zod";
 import { initializeGenkit } from "../lib/genkit.js";
 import {
@@ -28,7 +28,7 @@ export function createSeedAssistantFlows(apiKey: string) {
           // Only pass previousContext if it exists and is non-null
           ...(previousContext && { previousContext }),
         },
-        { model: gemini15Flash }
+        { model: gemini20Flash }
       );
 
       if (!output) {
@@ -75,7 +75,7 @@ export function createSeedAssistantFlows(apiKey: string) {
       const seedAnalysisPrompt = ai.prompt("seed-analysis");
       const response = await seedAnalysisPrompt.stream(
         { message, previousContext },
-        { model: gemini15Flash }
+        { model: gemini20Flash }
       );
 
       for await (const chunk of response.stream) {
