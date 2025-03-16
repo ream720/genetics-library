@@ -297,7 +297,7 @@ const AppWithRouter: React.FC = () => {
         </Box>
 
         {/* -- MAIN CONTENT -- */}
-        <Box sx={{ mt: 2 }}>
+        <Box sx={{ flex: 1, mt: 2 }}>
           <Routes>
             <Route
               path="/"
