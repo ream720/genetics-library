@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { lightTheme, darkTheme } from "./theme";
 import {
+  BrowserRouter as Router,
   Routes,
   Route,
   useLocation,
@@ -24,13 +25,14 @@ import {
   Link,
 } from "@mui/material";
 
-
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import SeedsPage from "./pages/SeedsPage";
 import PaymentsPage from "./pages/PaymentsPage";
+import { SeedProvider } from "./context/SeedContext";
 import ClonesPage from "./pages/ClonesPage";
-import { useAuth } from "./context/AuthContext";
+import { CloneProvider } from "./context/CloneContext";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import Login from "./components/Login";
 import Signup from "./components/Signup";
 import ForgotPassword from "./components/ForgotPassword";
@@ -119,13 +121,9 @@ const AppWithRouter: React.FC = () => {
   return (
     <ThemeProvider theme={isDarkMode ? darkTheme : lightTheme}>
       <CssBaseline />
-      {/* Main container: full viewport height, column layout */}
+
       <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          minHeight: "100vh",
-        }}
+        sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}
       >
         {/* Sticky header container */}
         <Box
@@ -136,6 +134,7 @@ const AppWithRouter: React.FC = () => {
             bgcolor: "background.default",
           }}
         >
+          {/* -- LOGO / TOOLBAR (TOP BAR) -- */}
           <AppBar position="static">
             <Toolbar>
               {/* Left Box: Avatar and Username */}
@@ -143,8 +142,8 @@ const AppWithRouter: React.FC = () => {
                 sx={{
                   display: "flex",
                   alignItems: "center",
-                  gap: 1,
-                  width: 100,
+                  gap: 1, // Space between items
+                  width: 100, // Match the right box width
                   overflow: "hidden",
                 }}
               >
@@ -160,10 +159,10 @@ const AppWithRouter: React.FC = () => {
                       variant="caption"
                       color="inherit"
                       sx={{
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        maxWidth: 60,
+                        whiteSpace: "nowrap", // Prevent text from wrapping to a new line
+                        overflow: "hidden", // Hide overflowed text
+                        textOverflow: "ellipsis", // Show ellipsis for overflowed text
+                        maxWidth: 60, // Restrict the maximum width of the text
                       }}
                     >
                       {currentUser.username || "Guest"}
@@ -219,7 +218,7 @@ const AppWithRouter: React.FC = () => {
             </Toolbar>
           </AppBar>
 
-          {/* Tabs Bar */}
+          {/* -- TABS BAR (SECOND BAR) -- */}
           <AppBar position="static" color="default" sx={{ mt: 0.5 }}>
             <Tabs
               value={getActiveTabValue()}
@@ -227,9 +226,16 @@ const AppWithRouter: React.FC = () => {
               textColor="inherit"
               variant="fullWidth"
             >
+              {/* Dashboard Tab: icon + text */}
               <Tab
                 icon={
-                  <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                    }}
+                  >
                     <DashboardIcon />
                     <Typography variant="caption" sx={{ fontSize: "0.7rem" }}>
                       Dashboard
@@ -239,9 +245,17 @@ const AppWithRouter: React.FC = () => {
                 value="/"
                 aria-label="Dashboard"
               />
+
+              {/* Search Tab: icon + text */}
               <Tab
                 icon={
-                  <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                    }}
+                  >
                     <SearchIcon />
                     <Typography variant="caption" sx={{ fontSize: "0.7rem" }}>
                       Search
@@ -251,10 +265,18 @@ const AppWithRouter: React.FC = () => {
                 value="/search"
                 aria-label="Search"
               />
+
+              {/* Profile Tab: only if logged in */}
               {currentUser && (
                 <Tab
                   icon={
-                    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                      }}
+                    >
                       <AccountCircleIcon />
                       <Typography variant="caption" sx={{ fontSize: "0.7rem" }}>
                         Profile
@@ -265,13 +287,17 @@ const AppWithRouter: React.FC = () => {
                   aria-label="Profile"
                 />
               )}
-              {!currentUser && <Tab label="Login" icon={<LoginIcon />} value="/login" />}
+
+              {/* Login Tab: only if not logged in */}
+              {!currentUser && (
+                <Tab label="Login" icon={<LoginIcon />} value="/login" />
+              )}
             </Tabs>
           </AppBar>
         </Box>
 
-        {/* Main content area: flex = 1 to push footer down */}
-        <Box sx={{ flex: 1, mt: 2 }}>
+        {/* -- MAIN CONTENT -- */}
+        <Box sx={{ mt: 2 }}>
           <Routes>
             <Route
               path="/"
@@ -347,17 +373,20 @@ const AppWithRouter: React.FC = () => {
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           </Routes>
         </Box>
-
         {/* Footer content */}
         <Box component="footer" sx={{ py: 2 }}>
           <Stack>
-          <Link component={RouterLink} to="/terms-of-service" align="center">
-    Terms of Service
-  </Link>
-  <Link component={RouterLink} to="/privacy-policy" align="center">
-    Privacy Policy
-  </Link>
-            <Typography variant="body2" align="center" sx={{ mt: 1, color: "text.secondary" }}>
+            <Link component={RouterLink} to="/terms-of-service" align="center">
+              Terms of Service
+            </Link>
+            <Link component={RouterLink} to="/privacy-policy" align="center">
+              Privacy Policy
+            </Link>
+            <Typography
+              variant="body2"
+              align="center"
+              sx={{ mt: 1, color: "text.secondary" }}
+            >
               &copy; 2025 Genetics Library. All rights reserved.
             </Typography>
           </Stack>
@@ -367,4 +396,19 @@ const AppWithRouter: React.FC = () => {
   );
 };
 
-export default AppWithRouter;
+// Main App component
+const App: React.FC = () => {
+  return (
+    <Router>
+      <AuthProvider>
+        <SeedProvider>
+          <CloneProvider>
+            <AppWithRouter />
+          </CloneProvider>
+        </SeedProvider>
+      </AuthProvider>
+    </Router>
+  );
+};
+
+export default App;
