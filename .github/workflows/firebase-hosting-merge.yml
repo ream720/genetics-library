@@ -33,6 +33,6 @@ jobs:
 
       # Deploy to Firebase
       - name: Deploy to Firebase
-        run: firebase deploy --only hosting,functions
+        run: firebase deploy --only hosting,functions --force
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
