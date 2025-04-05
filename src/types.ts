@@ -27,3 +27,23 @@ export interface Clone {
   dateAcquired: string; // Date the clone was acquired
   userId?: string;
 }
+
+// Update the CultivarInfo interface to make date fields optional
+export interface CultivarInfo {
+  id?: string;
+  userId: string;
+  itemType: "seed" | "clone";
+  itemId?: string;
+  strain: string;
+  breeder: string;
+  growingMethod: string;
+  potSize: string;
+  nutrients: string;
+  feedSchedule: string;
+  notes: string;
+  // Make these completely optional
+  startDate?: string;
+  harvestDate?: string;
+  createdAt: string;
+  updatedAt: string;
+}

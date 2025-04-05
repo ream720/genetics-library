@@ -3,6 +3,9 @@ import {
   AttachMoney,
   BrokenImage,
   CurrencyBitcoin,
+  EditNote,
+  Info,
+  Notes,
   Verified,
 } from "@mui/icons-material";
 import CancelIcon from "@mui/icons-material/Cancel";
@@ -20,10 +23,15 @@ import {
   CardHeader,
   CircularProgress,
   Grid,
+  IconButton,
   Stack,
   TextField,
   Tooltip,
   Typography,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  Divider,
 } from "@mui/material";
 import {
   collection,
@@ -34,12 +42,12 @@ import {
   where,
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { useLocation, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { db } from "../../firebaseConfig";
 import CashAppBadge from "../assets/cashapp-badge.svg";
 import { useAuth } from "../context/AuthContext";
-import { Clone, Seed } from "../types";
-// import GeminiTest from "../components/GeminiTest";
+import { Clone, CultivarInfo, Seed } from "../types";
+import CloseIcon from "@mui/icons-material/Close";
 
 interface UserProfile {
   email: string;
@@ -71,6 +79,12 @@ function Profile() {
   const [seedSearchQuery, setSeedSearchQuery] = useState<string>("");
   const [cloneSearchQuery, setCloneSearchQuery] = useState<string>("");
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const [selectedCultivarInfo, setSelectedCultivarInfo] =
+    useState<CultivarInfo | null>(null);
+  const [infoDialogOpen, setInfoDialogOpen] = useState(false);
+  const navigate = useNavigate();
+  const [cultivarInfos, setCultivarInfos] = useState<CultivarInfo[]>([]);
+  const isOwner = !userId || userId === currentUser?.uid;
 
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
@@ -156,6 +170,42 @@ function Profile() {
     fetchUserData();
   }, [currentUser, userId]);
 
+  // Add effect to fetch cultivar infos
+  useEffect(() => {
+    const fetchCultivarInfos = async () => {
+      if (loading || !userProfile) return;
+
+      try {
+        const userToFetch = userId || currentUser?.uid;
+        if (!userToFetch) return;
+
+        // Add a console.log to debug
+        console.log("Fetching cultivar info for user:", userToFetch);
+
+        const q = query(
+          collection(db, "cultivarInfo"),
+          where("userId", "==", userToFetch)
+        );
+
+        const querySnapshot = await getDocs(q);
+        const infos = querySnapshot.docs.map(
+          (doc) =>
+            ({
+              id: doc.id,
+              ...doc.data(),
+            } as CultivarInfo)
+        );
+
+        console.log("Found cultivar infos:", infos.length);
+        setCultivarInfos(infos);
+      } catch (error) {
+        console.error("Error fetching cultivar info:", error);
+      }
+    };
+
+    fetchCultivarInfos();
+  }, [userProfile, loading, currentUser, userId]);
+
   const filteredSeeds = profileSeeds.filter(
     (seed) =>
       seed.strain.toLowerCase().includes(seedSearchQuery.toLowerCase()) ||
@@ -167,6 +217,31 @@ function Profile() {
       clone.strain.toLowerCase().includes(cloneSearchQuery.toLowerCase()) ||
       clone.breeder.toLowerCase().includes(cloneSearchQuery.toLowerCase())
   );
+
+  // Display to cultivar info
+  const goToCultivarInfo = (itemType: "seed" | "clone", itemId: string) => {
+    const existingInfo = cultivarInfos.find(
+      (info) => info.itemType === itemType && info.itemId === itemId
+    );
+
+    if (existingInfo && existingInfo.id) {
+      if (isOwner) {
+        // Owner can edit - navigate to the edit page
+        navigate(`/cultivar-info?existingId=${existingInfo.id}`);
+      } else {
+        // Non-owner views in modal
+        setSelectedCultivarInfo(existingInfo);
+        setInfoDialogOpen(true);
+      }
+    } else if (isOwner) {
+      // Only owner can add new info
+      navigate(`/cultivar-info?itemType=${itemType}&itemId=${itemId}`);
+    }
+  };
+
+  console.log("Profile render - userId:", userId);
+  console.log("Profile render - currentUser:", currentUser?.uid);
+  console.log("Profile render - isOwner:", isOwner);
 
   if (loading) {
     return (
@@ -193,6 +268,102 @@ function Profile() {
       </Box>
     );
   }
+
+  const CultivarInfoDialog = () => {
+    if (!selectedCultivarInfo) return null;
+
+    // Find the corresponding item
+    const item =
+      selectedCultivarInfo.itemType === "seed"
+        ? profileSeeds.find((seed) => seed.id === selectedCultivarInfo.itemId)
+        : profileClones.find(
+            (clone) => clone.id === selectedCultivarInfo.itemId
+          );
+
+    if (!item) return null;
+
+    return (
+      <Dialog
+        open={infoDialogOpen}
+        onClose={() => setInfoDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            pb: 1,
+          }}
+        >
+          <Typography variant="h6">Cultivar Information</Typography>
+          <IconButton onClick={() => setInfoDialogOpen(false)} size="small">
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ pt: 1 }}>
+            <Typography variant="subtitle1" sx={{ mb: 2 }}>
+              {selectedCultivarInfo.itemType === "seed" ? "Seed" : "Clone"}:{" "}
+              <strong>{item.strain}</strong> by {item.breeder}
+            </Typography>
+
+            <Divider sx={{ mb: 3 }} />
+
+            <Grid container spacing={3}>
+              {selectedCultivarInfo.growingMethod && (
+                <Grid item xs={12} md={6}>
+                  <Typography variant="subtitle2">Growing Method</Typography>
+                  <Typography variant="body1">
+                    {selectedCultivarInfo.growingMethod}
+                  </Typography>
+                </Grid>
+              )}
+
+              {selectedCultivarInfo.potSize && (
+                <Grid item xs={12} md={6}>
+                  <Typography variant="subtitle2">Pot Size</Typography>
+                  <Typography variant="body1">
+                    {selectedCultivarInfo.potSize}
+                  </Typography>
+                </Grid>
+              )}
+
+              {selectedCultivarInfo.nutrients && (
+                <Grid item xs={12}>
+                  <Typography variant="subtitle2">Nutrients</Typography>
+                  <Typography variant="body1">
+                    {selectedCultivarInfo.nutrients}
+                  </Typography>
+                </Grid>
+              )}
+
+              {selectedCultivarInfo.feedSchedule && (
+                <Grid item xs={12}>
+                  <Typography variant="subtitle2">Feed Schedule</Typography>
+                  <Typography variant="body1">
+                    {selectedCultivarInfo.feedSchedule}
+                  </Typography>
+                </Grid>
+              )}
+
+              {selectedCultivarInfo.notes && (
+                <Grid item xs={12}>
+                  <Typography variant="subtitle2">Notes</Typography>
+                  <Typography variant="body1">
+                    {selectedCultivarInfo.notes}
+                  </Typography>
+                </Grid>
+              )}
+            </Grid>
+          </Box>
+        </DialogContent>
+      </Dialog>
+    );
+  };
+
+  console.log("Cultivar infos:", cultivarInfos);
 
   return (
     <>
@@ -526,12 +697,46 @@ function Profile() {
                       </CardContent>
                       <CardActions
                         sx={{
-                          justifyContent: "flex-end",
+                          justifyContent: "space-between",
                           py: 0.5,
                           px: 2,
                           mt: "auto",
                         }}
                       >
+                        {/* Add Cultivar Info button */}
+                        {cultivarInfos.some(
+                          (info) =>
+                            info.itemType === "seed" && info.itemId === seed.id
+                        ) ? (
+                          <Tooltip
+                            title={
+                              isOwner
+                                ? "Edit Cultivar Info"
+                                : "View Cultivar Info"
+                            }
+                          >
+                            <IconButton
+                              size="small"
+                              onClick={() => goToCultivarInfo("seed", seed.id!)}
+                            >
+                              <Notes fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        ) : (
+                          isOwner && (
+                            <Tooltip title="Add Cultivar Info">
+                              <IconButton
+                                size="small"
+                                onClick={() =>
+                                  goToCultivarInfo("seed", seed.id!)
+                                }
+                              >
+                                <EditNote fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          )
+                        )}
+
                         {/* Date Added */}
                         <Typography color="text.secondary" variant="caption">
                           Added:{" "}
@@ -720,12 +925,50 @@ function Profile() {
                       </CardContent>
                       <CardActions
                         sx={{
-                          justifyContent: "flex-end",
+                          justifyContent: "space-between",
                           py: 0.5,
                           px: 2,
                           mt: "auto",
                         }}
                       >
+                        {/* Add Cultivar Info button */}
+                        {cultivarInfos.some(
+                          (info) =>
+                            info.itemType === "clone" &&
+                            info.itemId === clone.id
+                        ) ? (
+                          <Tooltip
+                            title={
+                              isOwner
+                                ? "Edit Cultivar Info"
+                                : "View Cultivar Info"
+                            }
+                          >
+                            <IconButton
+                              size="small"
+                              color="primary"
+                              onClick={() =>
+                                goToCultivarInfo("clone", clone.id!)
+                              }
+                            >
+                              <Info fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        ) : (
+                          isOwner && (
+                            <Tooltip title="Add Cultivar Info">
+                              <IconButton
+                                size="small"
+                                onClick={() =>
+                                  goToCultivarInfo("clone", clone.id!)
+                                }
+                              >
+                                <Info fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          )
+                        )}
+
                         {/* Date Added */}
                         <Typography color="text.secondary" variant="caption">
                           Added:{" "}
@@ -740,6 +983,7 @@ function Profile() {
           </AccordionDetails>
         </Accordion>
       </Box>
+      <CultivarInfoDialog />
     </>
   );
 }

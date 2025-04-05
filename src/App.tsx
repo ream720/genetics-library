@@ -52,6 +52,7 @@ import DashboardIcon from "@mui/icons-material/Dashboard";
 import LoginIcon from "@mui/icons-material/Login";
 import TermsOfService from "./legal/TermsOfService";
 import PrivacyPolicy from "./legal/PrivacyPolicy";
+import CultivarInfoPage from "./pages/CultivarInfoPage";
 
 interface PrivateRouteProps {
   children: React.ReactNode;
@@ -363,6 +364,14 @@ const AppWithRouter: React.FC = () => {
               element={
                 <PrivateRoute>
                   <ContactInfo />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/cultivar-info"
+              element={
+                <PrivateRoute>
+                  <CultivarInfoPage />
                 </PrivateRoute>
               }
             />

@@ -1,4 +1,11 @@
-import { Info, Grass, Payments, ContactMail, Email } from "@mui/icons-material";
+import {
+  Info,
+  Grass,
+  Payments,
+  ContactMail,
+  Email,
+  SpaOutlined,
+} from "@mui/icons-material";
 import {
   Button,
   Typography,
@@ -128,6 +135,14 @@ function Dashboard() {
                   onClick={() => navigate("/clones")}
                 >
                   Clones
+                </Button>
+                <Button
+                  startIcon={<SpaOutlined />}
+                  variant="contained"
+                  size="small"
+                  onClick={() => navigate("/cultivar-info")}
+                >
+                  Add Cultivar Info
                 </Button>
               </Stack>
             </CardContent>
