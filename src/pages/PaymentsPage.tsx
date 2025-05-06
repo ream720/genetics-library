@@ -1,14 +1,10 @@
 import React, { useState, useEffect } from "react";
 import {
-  Container,
   Typography,
   FormControlLabel,
   Checkbox,
-  Card,
-  CardContent,
   Button,
   Stack,
-  CardActions,
   Box,
 } from "@mui/material";
 import CashAppBadge from "../assets/cashapp-badge.svg";
@@ -70,77 +66,89 @@ const PaymentsPage: React.FC<PaymentsPageProps> = ({ onSave, currentUser }) => {
 
   const handleSave = () => {
     onSave(selectedMethods);
-    navigate("/");
+    navigate("/dashboard");
   };
 
   return (
-    <Container maxWidth="sm">
-      <Card>
-        <CardContent>
-          <Typography variant="h6" gutterBottom>
-            Select Payment Platforms
-          </Typography>
-
-          {paymentMethods.map((method) => (
-            <Stack
-              key={method.name}
-              direction="row"
-              alignItems="center"
-              spacing={2}
-              sx={{ mb: 1 }}
-            >
-              <Box
-                sx={{
-                  width: 40,
-                  height: 40,
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  border: "1px solid #ccc",
-                  borderRadius: "35%",
-                  padding: 1,
-                }}
-              >
-                {method.logo ? (
-                  <img
-                    src={method.logo}
-                    alt={`${method.name} Logo`}
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "contain",
-                    }}
-                  />
-                ) : (
-                  method.icon
-                )}
-              </Box>
-
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={selectedMethods.includes(method.name)}
-                    onChange={() => handleCheckboxChange(method.name)}
-                  />
-                }
-                label={method.name}
-                sx={{ flexGrow: 1 }}
-              />
-            </Stack>
-          ))}
-        </CardContent>
-        <CardActions>
-          <Button
-            variant="contained"
-            color="primary"
-            fullWidth
-            onClick={handleSave}
+    <Box
+      sx={{
+        maxWidth: 400,
+        margin: "0 auto",
+        mt: 5,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 2,
+      }}
+    >
+      <Box sx={{ textAlign: "center", mb: 1 }}>
+        <Typography variant="h5" sx={{ mb: 0.5 }}>
+          Select Payment Platforms
+        </Typography>
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{ maxWidth: 320, mx: "auto" }}
+        >
+          Choose the payment methods you accept for your collections.
+        </Typography>
+      </Box>
+      {paymentMethods.map((method) => (
+        <Stack
+          key={method.name}
+          direction="row"
+          alignItems="center"
+          spacing={2}
+          sx={{ mb: 1, width: "100%" }}
+        >
+          <Box
+            sx={{
+              width: 40,
+              height: 40,
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              border: "1px solid #ccc",
+              borderRadius: "35%",
+              padding: 1,
+            }}
           >
-            Save
-          </Button>
-        </CardActions>
-      </Card>
-    </Container>
+            {method.logo ? (
+              <img
+                src={method.logo}
+                alt={`${method.name} Logo`}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
+                }}
+              />
+            ) : (
+              method.icon
+            )}
+          </Box>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={selectedMethods.includes(method.name)}
+                onChange={() => handleCheckboxChange(method.name)}
+              />
+            }
+            label={method.name}
+            sx={{ flexGrow: 1 }}
+          />
+        </Stack>
+      ))}
+      <Button
+        variant="contained"
+        color="primary"
+        fullWidth
+        onClick={handleSave}
+        sx={{ mt: 2 }}
+      >
+        Save
+      </Button>
+    </Box>
   );
 };
 

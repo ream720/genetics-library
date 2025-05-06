@@ -1,9 +1,17 @@
 import { useEffect, useState } from "react";
-import { Box, TextField, Button, Typography } from "@mui/material";
+import {
+  Box,
+  TextField,
+  Button,
+  Typography,
+  IconButton,
+  Tooltip,
+} from "@mui/material";
 import { useAuth } from "../context/AuthContext";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
 import { useNavigate } from "react-router-dom";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 
 function ContactInfo() {
   const [contactInfo, setContactInfo] = useState<string>("");
@@ -37,7 +45,7 @@ function ContactInfo() {
   const handleButtonClick = async () => {
     try {
       await saveContactInfo(contactInfo.trim()); // Trim the value but allow empty string
-      navigate("/");
+      navigate("/dashboard");
     } catch (error) {
       alert("Failed to save contact info - try again.");
       console.error("Error saving contact info:", error);
@@ -67,9 +75,19 @@ function ContactInfo() {
         gap: 2,
       }}
     >
-      <Typography variant="h5" sx={{ mb: 2 }}>
-        Set Contact Info
-      </Typography>
+      <Box sx={{ textAlign: "center", mb: 1 }}>
+        <Typography variant="h5" sx={{ mb: 0.5 }}>
+          Set Contact Info
+        </Typography>
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{ maxWidth: 320, mx: "auto" }}
+        >
+          Provide the contact details others can use to reach you about your
+          collections.
+        </Typography>
+      </Box>
       {loading ? (
         <Typography>Loading...</Typography>
       ) : (
@@ -82,14 +100,24 @@ function ContactInfo() {
             onChange={(e) => setContactInfo(e.target.value)}
             placeholder="Enter your contact information"
           />
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleButtonClick}
-            disabled={loading}
-          >
-            Set Contact Info
-          </Button>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleButtonClick}
+              disabled={loading}
+            >
+              Set Contact Info
+            </Button>
+            <Tooltip
+              title='To delete your contact info, clear it from the box and click "Set Contact Info".'
+              arrow
+            >
+              <IconButton size="small">
+                <InfoOutlinedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </Box>
         </>
       )}
     </Box>
