@@ -38,6 +38,7 @@ import Signup from "./components/Signup";
 import ForgotPassword from "./components/ForgotPassword";
 import useIdleTimer from "./hooks/useIdleTimer";
 import SearchPage from "./pages/SearchPage";
+import Landing from "./pages/Landing";
 import ContactInfo from "./pages/ContactInfo";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
@@ -81,13 +82,10 @@ const AppWithRouter: React.FC = () => {
 
   // Decide which tab is active based on path
   const getActiveTabValue = () => {
-    if (location.pathname === "/") return "/";
+    if (location.pathname === "/dashboard") return "/dashboard";
     if (location.pathname.startsWith("/search")) return "/search";
     if (!currentUser && location.pathname.startsWith("/login")) return "/login";
     if (location.pathname === "/profile") return "/profile";
-    // Don’t return "/profile" for /profile/:userId
-    // so the tab won't be highlighted.
-    if (location.pathname.startsWith("/profile/")) return false;
     return false;
   };
 
@@ -176,15 +174,27 @@ const AppWithRouter: React.FC = () => {
               <Box
                 sx={{ flexGrow: 1, display: "flex", justifyContent: "center" }}
               >
-                <Typography
-                  variant="h4"
+                <Link
+                  component={RouterLink}
+                  to="/"
                   sx={{
-                    fontFamily: "'Great Vibes', cursive",
-                    textAlign: "center",
+                    textDecoration: "none",
+                    color: "inherit",
+                    "&:hover": {
+                      textDecoration: "none",
+                    },
                   }}
                 >
-                  Genetics Library
-                </Typography>
+                  <Typography
+                    variant="h4"
+                    sx={{
+                      fontFamily: "'Great Vibes', cursive",
+                      textAlign: "center",
+                    }}
+                  >
+                    Genetics Library
+                  </Typography>
+                </Link>
               </Box>
 
               {/* Right Box: Icon Buttons */}
@@ -243,7 +253,7 @@ const AppWithRouter: React.FC = () => {
                     </Typography>
                   </Box>
                 }
-                value="/"
+                value="/dashboard"
                 aria-label="Dashboard"
               />
 
@@ -300,14 +310,7 @@ const AppWithRouter: React.FC = () => {
         {/* -- MAIN CONTENT -- */}
         <Box sx={{ flex: 1, mt: 2 }}>
           <Routes>
-            <Route
-              path="/"
-              element={
-                <PrivateRoute>
-                  <Dashboard />
-                </PrivateRoute>
-              }
-            />
+            <Route path="/" element={<Landing />} />
             <Route
               path="/profile"
               element={
@@ -321,6 +324,14 @@ const AppWithRouter: React.FC = () => {
               element={
                 <PrivateRoute>
                   <Profile />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/dashboard"
+              element={
+                <PrivateRoute>
+                  <Dashboard />
                 </PrivateRoute>
               }
             />
