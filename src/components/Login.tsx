@@ -43,7 +43,7 @@ function Login() {
 
   useEffect(() => {
     if (currentUser?.username) {
-      navigate(location.state?.from?.pathname || "/");
+      navigate(location.state?.from?.pathname || "/dashboard");
     }
   }, [currentUser, navigate, location.state?.from]);
 

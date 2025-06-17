@@ -28,7 +28,7 @@ function Signup() {
           usernameRef.current.value
         );
 
-        navigate("/");
+        navigate("/dashboard");
       }
     } catch (err: unknown) {
       // We now discriminate the 'err' type with instanceof checks
