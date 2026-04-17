@@ -26,3 +26,5 @@ functions/.env.genetics-library
 *.njsproj
 *.sln
 *.sw?
+
+/engineering/*

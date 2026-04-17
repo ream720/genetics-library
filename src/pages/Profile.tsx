@@ -7,6 +7,7 @@ import {
   Info,
   Notes,
   Verified,
+  Share,
 } from "@mui/icons-material";
 import CancelIcon from "@mui/icons-material/Cancel";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -32,6 +33,8 @@ import {
   DialogContent,
   DialogTitle,
   Divider,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import {
   collection,
@@ -85,6 +88,8 @@ function Profile() {
   const navigate = useNavigate();
   const [cultivarInfos, setCultivarInfos] = useState<CultivarInfo[]>([]);
   const isOwner = !userId || userId === currentUser?.uid;
+  const [shareSnackbarOpen, setShareSnackbarOpen] = useState(false);
+  const [shareSnackbarMessage, setShareSnackbarMessage] = useState("");
 
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
@@ -237,6 +242,15 @@ function Profile() {
       // Only owner can add new info
       navigate(`/cultivar-info?itemType=${itemType}&itemId=${itemId}`);
     }
+  };
+
+  // Add this function to handle sharing
+  const handleShare = (itemType: "seed" | "clone", itemId: string) => {
+    const shareUrl = `${window.location.origin}/profile/${userId}?itemType=${itemType}&itemId=${itemId}`;
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      setShareSnackbarMessage("Link copied to clipboard!");
+      setShareSnackbarOpen(true);
+    });
   };
 
   console.log("Profile render - userId:", userId);
@@ -742,6 +756,14 @@ function Profile() {
                           Added:{" "}
                           {new Date(seed.dateAcquired).toLocaleDateString()}
                         </Typography>
+                        <Tooltip title="Share">
+                          <IconButton
+                            size="small"
+                            onClick={() => handleShare("seed", seed.id!)}
+                          >
+                            <Share fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
                       </CardActions>
                     </Card>
                   </Grid>
@@ -897,6 +919,15 @@ function Profile() {
                                 <CancelIcon color="error" fontSize="small" />
                               </Tooltip>
                             )}
+
+                            <Tooltip title="Share">
+                              <IconButton
+                                size="small"
+                                onClick={() => handleShare("clone", clone.id!)}
+                              >
+                                <Share fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
                           </Box>
                         }
                       />
@@ -984,6 +1015,20 @@ function Profile() {
         </Accordion>
       </Box>
       <CultivarInfoDialog />
+      <Snackbar
+        open={shareSnackbarOpen}
+        autoHideDuration={3000}
+        onClose={() => setShareSnackbarOpen(false)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setShareSnackbarOpen(false)}
+          severity="success"
+          sx={{ width: "100%" }}
+        >
+          {shareSnackbarMessage}
+        </Alert>
+      </Snackbar>
     </>
   );
 }

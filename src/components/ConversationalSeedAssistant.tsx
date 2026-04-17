@@ -27,6 +27,8 @@ import {
   BrokenImage,
   AddCircleOutline,
   RestartAlt,
+  PhotoCamera,
+  Image,
 } from "@mui/icons-material";
 import { analyzeSeedFunc } from "../lib/firebase";
 import { SeedAssistantResponse } from "../schemas/seedSchemas";
@@ -38,6 +40,7 @@ interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   seedData?: SeedAssistantResponse;
+  imageUrl?: string; // Add image URL for display
 }
 
 // Default empty seed for the preview card
@@ -60,7 +63,7 @@ const emptySeed: Seed = {
 const initialMessage: ChatMessage = {
   role: "assistant",
   content:
-    "Hi! I can help catalog your seeds. Tell me about a seed pack you'd like to add to your collection.",
+    "Hi! I can help catalog your seeds. Tell me about a seed pack you'd like to add to your collection, or upload a photo of the seed pack.",
 };
 
 export default function ConversationalSeedAssistant() {
@@ -70,6 +73,8 @@ export default function ConversationalSeedAssistant() {
   const [loading, setLoading] = useState(false);
   const [previewSeed, setPreviewSeed] = useState<Seed>(emptySeed);
   const [showSeedPreview, setShowSeedPreview] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -82,6 +87,7 @@ export default function ConversationalSeedAssistant() {
 
   // Reference to the chat messages container for auto-scrolling
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Use theme for consistent spacing and breakpoints
   const theme = useTheme();
@@ -100,14 +106,67 @@ export default function ConversationalSeedAssistant() {
     }
   }, [messages]);
 
+  // Convert image to base64
+  const convertImageToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        // Remove the data URL prefix to get just the base64 data
+        const base64 = result.split(",")[1];
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      setSnackbar({
+        open: true,
+        message: "Please select an image file",
+        severity: "error",
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setSnackbar({
+        open: true,
+        message: "Image size must be less than 5MB",
+        severity: "error",
+      });
+      return;
+    }
+
+    setSelectedImage(file);
+
+    // Create preview URL
+    const previewUrl = URL.createObjectURL(file);
+    setImagePreview(previewUrl);
+
+    console.log("Selected image:", {
+      name: file.name,
+      type: file.type,
+      size: file.size,
+    });
+  };
+
   const handleSubmit = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() && !selectedImage) return;
     setLoading(true);
 
     // Add user message with explicit type
     const userMessage: ChatMessage = {
       role: "user",
-      content: input,
+      content: input || "Analyze this seed pack image",
+      imageUrl: imagePreview || undefined,
     };
 
     const newMessages = [...messages, userMessage];
@@ -120,10 +179,26 @@ export default function ConversationalSeedAssistant() {
         messages: newMessages.slice(-4), // Last 4 messages for context
       });
 
-      const response = await analyzeSeedFunc({
-        message: input,
+      // Prepare request data
+      const requestData: any = {
+        message: input || "Analyze this seed pack image",
         previousContext: context,
-      });
+      };
+
+      // Add image data if an image was selected
+      if (selectedImage) {
+        const base64Data = await convertImageToBase64(selectedImage);
+        requestData.imageData = base64Data;
+        requestData.imageMimeType = selectedImage.type;
+
+        console.log("Base64 image length:", base64Data.length);
+        console.log("Image MIME type:", selectedImage.type);
+        // Optionally, log the first 100 chars to confirm it's not empty/corrupted
+        console.log("Base64 image preview:", base64Data.slice(0, 100));
+      }
+
+      console.log("Sending requestData to analyzeSeedFunc:", requestData);
+      const response = await analyzeSeedFunc(requestData);
 
       // Update the preview seed with the extracted data
       if (response.data.seed.breeder || response.data.seed.strain) {
@@ -165,6 +240,13 @@ export default function ConversationalSeedAssistant() {
       };
 
       setMessages([...newMessages, assistantResponseMessage]);
+
+      // Clear the selected image after processing
+      setSelectedImage(null);
+      setImagePreview(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     } catch (err) {
       console.error("Error processing message:", err);
 
@@ -172,7 +254,7 @@ export default function ConversationalSeedAssistant() {
       const errorMessage: ChatMessage = {
         role: "assistant",
         content:
-          "Sorry, I had trouble processing that. Could you try rephrasing?",
+          "Sorry, I had trouble processing that. Could you try rephrasing or uploading a clearer image?",
       };
 
       setMessages([...newMessages, errorMessage]);
@@ -227,11 +309,16 @@ export default function ConversationalSeedAssistant() {
       {
         role: "assistant",
         content:
-          "Seed added! Tell me about another seed pack you'd like to add.",
+          "Seed added! Tell me about another seed pack you'd like to add, or upload a photo.",
       },
     ]);
     setPreviewSeed(emptySeed);
     setShowSeedPreview(false);
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   return (
@@ -300,6 +387,19 @@ export default function ConversationalSeedAssistant() {
                       position: "relative",
                     }}
                   >
+                    {msg.imageUrl && (
+                      <Box sx={{ mb: 1 }}>
+                        <img
+                          src={msg.imageUrl}
+                          alt="Seed pack"
+                          style={{
+                            maxWidth: "100%",
+                            maxHeight: "200px",
+                            borderRadius: "4px",
+                          }}
+                        />
+                      </Box>
+                    )}
                     <Typography sx={{ whiteSpace: "pre-wrap" }}>
                       {msg.content}
                     </Typography>
@@ -311,7 +411,54 @@ export default function ConversationalSeedAssistant() {
 
           <Divider />
 
+          {/* Image Preview */}
+          {imagePreview && (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <img
+                src={imagePreview}
+                alt="Preview"
+                style={{
+                  width: "60px",
+                  height: "60px",
+                  objectFit: "cover",
+                  borderRadius: "4px",
+                }}
+              />
+              <Typography variant="body2" color="text.secondary">
+                Image ready to analyze
+              </Typography>
+              <IconButton
+                size="small"
+                onClick={() => {
+                  setSelectedImage(null);
+                  setImagePreview(null);
+                  if (fileInputRef.current) {
+                    fileInputRef.current.value = "";
+                  }
+                }}
+              >
+                <CancelIcon fontSize="small" />
+              </IconButton>
+            </Box>
+          )}
+
           <Stack direction="row" spacing={1}>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageSelect}
+              style={{ display: "none" }}
+              ref={fileInputRef}
+            />
+            <Tooltip title="Upload image">
+              <IconButton
+                onClick={() => fileInputRef.current?.click()}
+                disabled={loading}
+                color="primary"
+              >
+                <PhotoCamera />
+              </IconButton>
+            </Tooltip>
             <TextField
               fullWidth
               value={input}
@@ -319,14 +466,14 @@ export default function ConversationalSeedAssistant() {
               onKeyPress={(e) =>
                 e.key === "Enter" && !loading && handleSubmit()
               }
-              placeholder="Describe your seeds..."
+              placeholder="Describe your seeds or upload an image..."
               disabled={loading}
               size="small"
             />
             <Button
               variant="contained"
               onClick={handleSubmit}
-              disabled={!input.trim() || loading}
+              disabled={(!input.trim() && !selectedImage) || loading}
               sx={{ minWidth: isMobile ? 60 : 100 }}
             >
               {loading ? (

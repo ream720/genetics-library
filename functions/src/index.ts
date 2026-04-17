@@ -14,7 +14,15 @@ export const analyzeSeed = onCall(
     secrets: [googleAiKey],
   },
   async (request) => {
-    const { message, previousContext } = request.data;
+    const { message, previousContext, imageData, imageMimeType } = request.data;
+
+    console.log("analyzeSeed called with:", {
+      message,
+      hasPreviousContext: !!previousContext,
+      hasImageData: !!imageData,
+      imageDataLength: imageData?.length,
+      imageMimeType,
+    });
 
     try {
       // Initialize flows with the runtime API key
@@ -23,6 +31,8 @@ export const analyzeSeed = onCall(
       const result = await analyzeSeedFlow({
         message,
         previousContext,
+        imageData,
+        imageMimeType,
       });
       return result;
     } catch (error) {

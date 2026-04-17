@@ -6,6 +6,8 @@ import type { SeedAssistantResponse } from "../schemas/seedSchemas";
 interface AnalyzeSeedRequest {
   message: string;
   previousContext?: string;
+  imageData?: string; // Base64 encoded image
+  imageMimeType?: string; // MIME type of the image
 }
 
 const functions = getFunctions();
