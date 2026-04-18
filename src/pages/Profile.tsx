@@ -79,6 +79,7 @@ function Profile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { userId } = useParams<{ userId: string }>();
+  const profileUserId = userId ?? currentUser?.uid;
   const [seedSearchQuery, setSeedSearchQuery] = useState<string>("");
   const [cloneSearchQuery, setCloneSearchQuery] = useState<string>("");
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
@@ -117,7 +118,7 @@ function Profile() {
       setLoading(true);
       setError(null);
 
-      const userToFetch = userId || currentUser?.uid;
+      const userToFetch = profileUserId;
 
       if (!userToFetch) {
         setLoading(false);
@@ -173,7 +174,7 @@ function Profile() {
     };
 
     fetchUserData();
-  }, [currentUser, userId]);
+  }, [profileUserId]);
 
   // Add effect to fetch cultivar infos
   useEffect(() => {
@@ -181,7 +182,7 @@ function Profile() {
       if (loading || !userProfile) return;
 
       try {
-        const userToFetch = userId || currentUser?.uid;
+        const userToFetch = profileUserId;
         if (!userToFetch) return;
 
         // Add a console.log to debug
@@ -209,7 +210,7 @@ function Profile() {
     };
 
     fetchCultivarInfos();
-  }, [userProfile, loading, currentUser, userId]);
+  }, [userProfile, loading, profileUserId]);
 
   const filteredSeeds = profileSeeds.filter(
     (seed) =>
@@ -246,11 +247,28 @@ function Profile() {
 
   // Add this function to handle sharing
   const handleShare = (itemType: "seed" | "clone", itemId: string) => {
-    const shareUrl = `${window.location.origin}/profile/${userId}?itemType=${itemType}&itemId=${itemId}`;
-    navigator.clipboard.writeText(shareUrl).then(() => {
-      setShareSnackbarMessage("Link copied to clipboard!");
+    if (!profileUserId) {
+      setShareSnackbarMessage("Unable to create share link.");
       setShareSnackbarOpen(true);
-    });
+      return;
+    }
+
+    const shareUrl = `${window.location.origin}/profile/${encodeURIComponent(
+      profileUserId
+    )}?itemType=${encodeURIComponent(itemType)}&itemId=${encodeURIComponent(
+      itemId
+    )}`;
+
+    navigator.clipboard
+      .writeText(shareUrl)
+      .then(() => {
+        setShareSnackbarMessage("Link copied to clipboard!");
+        setShareSnackbarOpen(true);
+      })
+      .catch(() => {
+        setShareSnackbarMessage("Unable to copy link.");
+        setShareSnackbarOpen(true);
+      });
   };
 
   console.log("Profile render - userId:", userId);
