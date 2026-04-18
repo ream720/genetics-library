@@ -3,17 +3,34 @@ on:
   push:
     branches:
       - main
+permissions:
+  contents: read
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: genetics-library
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            functions/package-lock.json
+
       # Install dependencies for both main app and functions
       - name: Install Dependencies
         run: |
-          npm install
-          cd functions && npm install
+          npm ci
+          npm ci --prefix functions
 
       # Build main app
       - name: Build App
@@ -29,10 +46,8 @@ jobs:
 
       # Install Firebase CLI
       - name: Install Firebase CLI
-        run: npm install -g firebase-tools
+        run: npm install -g firebase-tools@14.6.0
 
       # Deploy to Firebase
       - name: Deploy to Firebase
-        run: firebase deploy --only hosting,functions --force
-        env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: firebase deploy --project genetics-library --only hosting,functions --force --non-interactive
