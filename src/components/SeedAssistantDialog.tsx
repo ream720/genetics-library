@@ -14,7 +14,12 @@ import {
 import type { SeedAssistantResponse } from "../schemas/seedSchemas";
 import type { Seed } from "../types";
 import { v4 as uuidv4 } from "uuid";
-import { analyzeSeedFunc } from "../lib/firebase";
+import {
+  AI_ASSISTANT_MAX_CONTEXT_MESSAGE_CHARS,
+  AI_ASSISTANT_MAX_MESSAGE_CHARS,
+  analyzeSeedFunc,
+  getCallableErrorMessage,
+} from "../lib/firebase";
 
 const convertToSeed = (seedData: SeedAssistantResponse["seed"]): Seed => ({
   id: uuidv4(),
@@ -37,6 +42,23 @@ interface SeedAssistantDialogProps {
   onSeedExtracted: (seed: Seed) => void;
 }
 
+function buildPreviousContext(response: SeedAssistantResponse | null) {
+  if (!response) {
+    return undefined;
+  }
+
+  return JSON.stringify({
+    messages: [
+      {
+        role: "assistant",
+        content: `Extracted ${response.seed.strain || "seed data"} from ${
+          response.seed.breeder || "unknown breeder"
+        }`.slice(0, AI_ASSISTANT_MAX_CONTEXT_MESSAGE_CHARS),
+      },
+    ],
+  });
+}
+
 export default function SeedAssistantDialog({
   open,
   onClose,
@@ -55,24 +77,27 @@ export default function SeedAssistantDialog({
   }, [onClose]);
 
   const handleSubmit = useCallback(async () => {
-    if (!input.trim()) return;
+    const trimmedInput = input.trim();
+    if (!trimmedInput) return;
+
+    if (trimmedInput.length > AI_ASSISTANT_MAX_MESSAGE_CHARS) {
+      setError(`Message must be ${AI_ASSISTANT_MAX_MESSAGE_CHARS} characters or less.`);
+      return;
+    }
 
     setLoading(true);
     try {
+      const previousContext = buildPreviousContext(response);
       const { data } = await analyzeSeedFunc({
-        message: input,
-        previousContext: response ? JSON.stringify(response) : "",
+        message: trimmedInput,
+        ...(previousContext ? { previousContext } : {}),
       });
 
       const responseData = data as SeedAssistantResponse;
       setResponse(responseData);
-      setInput(""); // Reset input after successful submission
+      setInput("");
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to analyze seed information"
-      );
+      setError(getCallableErrorMessage(err, "Failed to analyze seed information"));
     } finally {
       setLoading(false);
     }
@@ -131,6 +156,7 @@ export default function SeedAssistantDialog({
           onChange={(e) => setInput(e.target.value)}
           placeholder="E.g., I have a pack of Archive's Rainbow Belts F2, it's a sealed pack with 12 regular seeds..."
           disabled={loading}
+          inputProps={{ maxLength: AI_ASSISTANT_MAX_MESSAGE_CHARS }}
         />
       </DialogContent>
 

@@ -28,9 +28,14 @@ import {
   AddCircleOutline,
   RestartAlt,
   PhotoCamera,
-  Image,
 } from "@mui/icons-material";
-import { analyzeSeedFunc } from "../lib/firebase";
+import {
+  AI_ASSISTANT_MAX_CONTEXT_MESSAGE_CHARS,
+  AI_ASSISTANT_MAX_CONTEXT_MESSAGES,
+  AI_ASSISTANT_MAX_MESSAGE_CHARS,
+  analyzeSeedFunc,
+  getCallableErrorMessage,
+} from "../lib/firebase";
 import { SeedAssistantResponse } from "../schemas/seedSchemas";
 import { useSeedContext } from "../context/SeedContext";
 import { Seed } from "../types";
@@ -66,11 +71,21 @@ const initialMessage: ChatMessage = {
     "Hi! I can help catalog your seeds. Tell me about a seed pack you'd like to add to your collection, or upload a photo of the seed pack.",
 };
 
+const ALLOWED_IMAGE_MIME_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+]);
+const MAX_COMPRESSED_IMAGE_BYTES = 2 * 1024 * 1024;
+const MAX_IMAGE_LONG_EDGE = 1600;
+const IMAGE_JPEG_QUALITY = 0.75;
+
 export default function ConversationalSeedAssistant() {
   const { addSeed } = useSeedContext();
   const [messages, setMessages] = useState<ChatMessage[]>([initialMessage]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [compressingImage, setCompressingImage] = useState(false);
   const [previewSeed, setPreviewSeed] = useState<Seed>(emptySeed);
   const [showSeedPreview, setShowSeedPreview] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -88,6 +103,7 @@ export default function ConversationalSeedAssistant() {
   // Reference to the chat messages container for auto-scrolling
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const imagePreviewUrlRef = useRef<string | null>(null);
 
   // Use theme for consistent spacing and breakpoints
   const theme = useTheme();
@@ -106,98 +122,233 @@ export default function ConversationalSeedAssistant() {
     }
   }, [messages]);
 
-  // Convert image to base64
+  useEffect(() => {
+    return () => {
+      if (imagePreviewUrlRef.current) {
+        URL.revokeObjectURL(imagePreviewUrlRef.current);
+      }
+    };
+  }, []);
+
+  const getErrorMessage = (err: unknown, fallback: string) => {
+    return err instanceof Error && err.message ? err.message : fallback;
+  };
+
+  const clearSelectedImage = () => {
+    if (imagePreviewUrlRef.current) {
+      URL.revokeObjectURL(imagePreviewUrlRef.current);
+      imagePreviewUrlRef.current = null;
+    }
+
+    setSelectedImage(null);
+    setImagePreview(null);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const setCompressedSelectedImage = (file: File) => {
+    if (imagePreviewUrlRef.current) {
+      URL.revokeObjectURL(imagePreviewUrlRef.current);
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    imagePreviewUrlRef.current = previewUrl;
+    setSelectedImage(file);
+    setImagePreview(previewUrl);
+  };
+
   const convertImageToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => {
-        const result = reader.result as string;
-        // Remove the data URL prefix to get just the base64 data
+        const result = reader.result;
+        if (typeof result !== "string") {
+          reject(new Error("Unable to read image data."));
+          return;
+        }
+
         const base64 = result.split(",")[1];
+        if (!base64) {
+          reject(new Error("Unable to read image data."));
+          return;
+        }
+
         resolve(base64);
       };
-      reader.onerror = reject;
+      reader.onerror = () => reject(new Error("Unable to read image data."));
       reader.readAsDataURL(file);
     });
   };
 
-  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const loadImageElement = (file: File): Promise<HTMLImageElement> => {
+    return new Promise((resolve, reject) => {
+      const objectUrl = URL.createObjectURL(file);
+      const image = new window.Image();
 
-    // Validate file type
-    if (!file.type.startsWith("image/")) {
-      setSnackbar({
-        open: true,
-        message: "Please select an image file",
-        severity: "error",
-      });
-      return;
-    }
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setSnackbar({
-        open: true,
-        message: "Image size must be less than 5MB",
-        severity: "error",
-      });
-      return;
-    }
-
-    setSelectedImage(file);
-
-    // Create preview URL
-    const previewUrl = URL.createObjectURL(file);
-    setImagePreview(previewUrl);
-
-    console.log("Selected image:", {
-      name: file.name,
-      type: file.type,
-      size: file.size,
+      image.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        resolve(image);
+      };
+      image.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error("Unable to read the selected image."));
+      };
+      image.src = objectUrl;
     });
   };
 
-  const handleSubmit = async () => {
-    if (!input.trim() && !selectedImage) return;
-    setLoading(true);
+  const getCompressedFileName = (file: File) => {
+    const baseName = file.name.replace(/\.[^/.]+$/, "") || "seed-pack";
+    return `${baseName}.jpg`;
+  };
 
-    // Add user message with explicit type
-    const userMessage: ChatMessage = {
-      role: "user",
-      content: input || "Analyze this seed pack image",
-      imageUrl: imagePreview || undefined,
-    };
+  const compressImageFile = async (file: File): Promise<File> => {
+    const image = await loadImageElement(file);
+    const sourceWidth = image.naturalWidth || image.width;
+    const sourceHeight = image.naturalHeight || image.height;
 
-    const newMessages = [...messages, userMessage];
-    setMessages(newMessages);
-    setInput("");
+    if (!sourceWidth || !sourceHeight) {
+      throw new Error("Unable to read the selected image dimensions.");
+    }
+
+    const scale = Math.min(
+      1,
+      MAX_IMAGE_LONG_EDGE / Math.max(sourceWidth, sourceHeight)
+    );
+    const targetWidth = Math.max(1, Math.round(sourceWidth * scale));
+    const targetHeight = Math.max(1, Math.round(sourceHeight * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+
+    const context = canvas.getContext("2d");
+    if (!context) {
+      throw new Error("Unable to prepare image compression.");
+    }
+
+    context.drawImage(image, 0, 0, targetWidth, targetHeight);
+
+    const blob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(
+        (result) => {
+          if (result) {
+            resolve(result);
+          } else {
+            reject(new Error("Unable to compress image."));
+          }
+        },
+        "image/jpeg",
+        IMAGE_JPEG_QUALITY
+      );
+    });
+
+    if (blob.size > MAX_COMPRESSED_IMAGE_BYTES) {
+      throw new Error(
+        "Image is still larger than 2 MB after compression. Try a smaller crop."
+      );
+    }
+
+    return new File([blob], getCompressedFileName(file), {
+      type: "image/jpeg",
+      lastModified: Date.now(),
+    });
+  };
+
+  const handleImageSelect = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!ALLOWED_IMAGE_MIME_TYPES.has(file.type)) {
+      clearSelectedImage();
+      setSnackbar({
+        open: true,
+        message: "Please select a JPEG, PNG, or WebP image.",
+        severity: "error",
+      });
+      return;
+    }
+
+    setCompressingImage(true);
 
     try {
-      // Get context from previous messages
-      const context = JSON.stringify({
-        messages: newMessages.slice(-4), // Last 4 messages for context
+      const compressedFile = await compressImageFile(file);
+      setCompressedSelectedImage(compressedFile);
+    } catch (err) {
+      clearSelectedImage();
+      setSnackbar({
+        open: true,
+        message: getErrorMessage(err, "Unable to prepare image."),
+        severity: "error",
       });
+    } finally {
+      setCompressingImage(false);
+    }
+  };
 
-      // Prepare request data
-      const requestData: any = {
-        message: input || "Analyze this seed pack image",
-        previousContext: context,
-      };
+  const handleSubmit = async () => {
+    if ((!input.trim() && !selectedImage) || loading || compressingImage) return;
 
-      // Add image data if an image was selected
-      if (selectedImage) {
-        const base64Data = await convertImageToBase64(selectedImage);
-        requestData.imageData = base64Data;
-        requestData.imageMimeType = selectedImage.type;
+    setLoading(true);
 
-        console.log("Base64 image length:", base64Data.length);
-        console.log("Image MIME type:", selectedImage.type);
-        // Optionally, log the first 100 chars to confirm it's not empty/corrupted
-        console.log("Base64 image preview:", base64Data.slice(0, 100));
+    const submittedMessage = input.trim() || "Analyze this seed pack image";
+    if (submittedMessage.length > AI_ASSISTANT_MAX_MESSAGE_CHARS) {
+      setSnackbar({
+        open: true,
+        message: `Message must be ${AI_ASSISTANT_MAX_MESSAGE_CHARS} characters or less.`,
+        severity: "error",
+      });
+      setLoading(false);
+      return;
+    }
+
+    const imageToSubmit = selectedImage;
+    let newMessages = messages;
+
+    try {
+      let base64Data: string | undefined;
+      let submittedImageUrl: string | undefined;
+
+      if (imageToSubmit) {
+        base64Data = await convertImageToBase64(imageToSubmit);
+        submittedImageUrl = `data:${imageToSubmit.type};base64,${base64Data}`;
       }
 
-      console.log("Sending requestData to analyzeSeedFunc:", requestData);
+      const userMessage: ChatMessage = {
+        role: "user",
+        content: submittedMessage,
+        imageUrl: submittedImageUrl,
+      };
+
+      newMessages = [...messages, userMessage];
+      setMessages(newMessages);
+      setInput("");
+
+      const contextMessages = newMessages
+        .slice(-AI_ASSISTANT_MAX_CONTEXT_MESSAGES)
+        .map((message) => ({
+          role: message.role,
+          content: message.content.slice(0, AI_ASSISTANT_MAX_CONTEXT_MESSAGE_CHARS),
+        }));
+
+      const requestData: {
+        message: string;
+        previousContext: string;
+        imageData?: string;
+        imageMimeType?: string;
+      } = {
+        message: submittedMessage,
+        previousContext: JSON.stringify({ messages: contextMessages }),
+      };
+
+      if (imageToSubmit && base64Data) {
+        requestData.imageData = base64Data;
+        requestData.imageMimeType = imageToSubmit.type;
+      }
+
       const response = await analyzeSeedFunc(requestData);
 
       // Update the preview seed with the extracted data
@@ -228,7 +379,7 @@ export default function ConversationalSeedAssistant() {
       if (response.data.missingInfo.length > 0) {
         assistantMessage += "\nI still need some details:\n";
         response.data.suggestedQuestions.forEach((question) => {
-          assistantMessage += "• " + question + "\n";
+          assistantMessage += "- " + question + "\n";
         });
       }
 
@@ -240,21 +391,14 @@ export default function ConversationalSeedAssistant() {
       };
 
       setMessages([...newMessages, assistantResponseMessage]);
-
-      // Clear the selected image after processing
-      setSelectedImage(null);
-      setImagePreview(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
+      clearSelectedImage();
     } catch (err) {
-      console.error("Error processing message:", err);
-
-      // Create a properly typed error message
       const errorMessage: ChatMessage = {
         role: "assistant",
-        content:
-          "Sorry, I had trouble processing that. Could you try rephrasing or uploading a clearer image?",
+        content: getCallableErrorMessage(
+          err,
+          "Sorry, I had trouble processing that. Could you try rephrasing or uploading a clearer image?"
+        ),
       };
 
       setMessages([...newMessages, errorMessage]);
@@ -314,11 +458,7 @@ export default function ConversationalSeedAssistant() {
     ]);
     setPreviewSeed(emptySeed);
     setShowSeedPreview(false);
-    setSelectedImage(null);
-    setImagePreview(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+    clearSelectedImage();
   };
 
   return (
@@ -425,17 +565,11 @@ export default function ConversationalSeedAssistant() {
                 }}
               />
               <Typography variant="body2" color="text.secondary">
-                Image ready to analyze
+                Image compressed and ready to analyze
               </Typography>
               <IconButton
                 size="small"
-                onClick={() => {
-                  setSelectedImage(null);
-                  setImagePreview(null);
-                  if (fileInputRef.current) {
-                    fileInputRef.current.value = "";
-                  }
-                }}
+                onClick={clearSelectedImage}
               >
                 <CancelIcon fontSize="small" />
               </IconButton>
@@ -445,7 +579,7 @@ export default function ConversationalSeedAssistant() {
           <Stack direction="row" spacing={1}>
             <input
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp"
               onChange={handleImageSelect}
               style={{ display: "none" }}
               ref={fileInputRef}
@@ -453,7 +587,7 @@ export default function ConversationalSeedAssistant() {
             <Tooltip title="Upload image">
               <IconButton
                 onClick={() => fileInputRef.current?.click()}
-                disabled={loading}
+                disabled={loading || compressingImage}
                 color="primary"
               >
                 <PhotoCamera />
@@ -463,17 +597,21 @@ export default function ConversationalSeedAssistant() {
               fullWidth
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyPress={(e) =>
-                e.key === "Enter" && !loading && handleSubmit()
+              onKeyDown={(e) =>
+                e.key === "Enter" &&
+                !loading &&
+                !compressingImage &&
+                handleSubmit()
               }
               placeholder="Describe your seeds or upload an image..."
-              disabled={loading}
+              disabled={loading || compressingImage}
+              inputProps={{ maxLength: AI_ASSISTANT_MAX_MESSAGE_CHARS }}
               size="small"
             />
             <Button
               variant="contained"
               onClick={handleSubmit}
-              disabled={(!input.trim() && !selectedImage) || loading}
+              disabled={(!input.trim() && !selectedImage) || loading || compressingImage}
               sx={{ minWidth: isMobile ? 60 : 100 }}
             >
               {loading ? (

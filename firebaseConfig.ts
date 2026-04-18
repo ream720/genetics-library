@@ -1,6 +1,10 @@
 // firebaseConfig.ts
 import { initializeApp } from "firebase/app";
 import { getAnalytics, logEvent } from "firebase/analytics";
+import {
+  initializeAppCheck,
+  ReCaptchaEnterpriseProvider,
+} from "firebase/app-check";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
@@ -14,8 +18,29 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_APP_FIREBASE_MEASUREMENT_ID,
 };
 
+type AppCheckDebugGlobal = typeof globalThis & {
+  FIREBASE_APPCHECK_DEBUG_TOKEN?: boolean | string;
+};
+
 // Initialize Firebase
 export const app = initializeApp(firebaseConfig);
+
+const appCheckSiteKey = import.meta.env
+  .VITE_APP_CHECK_RECAPTCHA_ENTERPRISE_SITE_KEY;
+const appCheckDebugToken = import.meta.env.VITE_FIREBASE_APPCHECK_DEBUG_TOKEN;
+
+if (appCheckSiteKey) {
+  if (import.meta.env.DEV && appCheckDebugToken) {
+    (globalThis as AppCheckDebugGlobal).FIREBASE_APPCHECK_DEBUG_TOKEN =
+      appCheckDebugToken === "true" ? true : appCheckDebugToken;
+  }
+
+  initializeAppCheck(app, {
+    provider: new ReCaptchaEnterpriseProvider(appCheckSiteKey),
+    isTokenAutoRefreshEnabled: true,
+  });
+}
+
 export const analytics = getAnalytics(app);
 
 // Helper function for logging events

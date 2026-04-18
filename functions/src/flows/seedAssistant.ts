@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { initializeGenkit, seedAssistantModel } from "../lib/genkit.js";
+import {
+  initializeGenkit,
+  SEED_ASSISTANT_MAX_OUTPUT_TOKENS,
+  seedAssistantModel,
+} from "../lib/genkit.js";
 import {
   SeedAssistantResponseSchema,
   type SeedAssistantResponse,
@@ -95,6 +99,9 @@ export function createSeedAssistantFlows(apiKey: string) {
 
       const { output } = await seedAnalysisPrompt(promptInput, {
         model: seedAssistantModel,
+        config: {
+          maxOutputTokens: SEED_ASSISTANT_MAX_OUTPUT_TOKENS,
+        },
         output: {
           format: "json",
           schema: SeedAssistantResponseSchema,
@@ -157,6 +164,9 @@ export function createSeedAssistantFlows(apiKey: string) {
 
       const response = await seedAnalysisPrompt.stream(promptInput, {
         model: seedAssistantModel,
+        config: {
+          maxOutputTokens: SEED_ASSISTANT_MAX_OUTPUT_TOKENS,
+        },
         output: {
           format: "json",
           schema: SeedAssistantResponseSchema,
