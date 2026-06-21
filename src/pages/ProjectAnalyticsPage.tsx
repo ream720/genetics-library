@@ -1,12 +1,9 @@
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import {
   Alert,
   Box,
-  Button,
   Card,
   CardContent,
   Chip,
-  Container,
   MenuItem,
   Stack,
   Table,
@@ -41,6 +38,7 @@ import {
   WashRunType,
   MaterialType,
 } from "../types/v2";
+import { PageContainer, PageHeader } from "../components/ui";
 
 interface MetricCardProps {
   label: string;
@@ -1251,34 +1249,37 @@ const ProjectAnalyticsPage: React.FC = () => {
   const projectIsComplete = project?.status === "complete";
 
   return (
-    <Container maxWidth="xl" sx={{ py: 3 }}>
+    <PageContainer maxWidth="xl">
       <Stack spacing={3}>
-        <Button
-          startIcon={<ArrowBackIcon />}
-          onClick={() =>
+        <PageHeader
+          eyebrow={isProjectScoped ? "Project analytics" : "Personal analytics"}
+          title={
+            project?.name ??
+            (isProjectScoped
+              ? "Project analytics"
+              : "Analytics dashboard")
+          }
+          description={
+            project
+              ? `Started ${formatProjectDate(project.startDate)}${
+                  project.completedAt
+                    ? ` · Completed ${formatProjectDate(
+                        project.completedAt.slice(0, 10)
+                      )}`
+                    : ""
+                }`
+              : "Compare completed project results without combining them into a single score."
+          }
+          backLabel={projectId ? "Back to project" : "Back to projects"}
+          onBack={() =>
             navigate(
               projectId
                 ? PROJECT_ROUTES.detail(projectId)
                 : PROJECT_ROUTES.list
             )
           }
-          sx={{ alignSelf: "flex-start" }}
-        >
-          {projectId ? "Back to Project" : "Back to Projects"}
-        </Button>
-
-        <Card>
-          <CardContent>
-            <Stack spacing={2}>
+          actions={
               <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                <Chip
-                  color="primary"
-                  label={
-                    isProjectScoped
-                      ? "Project analytics"
-                      : "Personal analytics"
-                  }
-                />
                 <Chip label="Completed projects only" variant="outlined" />
                 {project && (
                   <Chip
@@ -1287,27 +1288,8 @@ const ProjectAnalyticsPage: React.FC = () => {
                   />
                 )}
               </Stack>
-              <Box>
-                <Typography variant="h4">
-                  {project?.name ??
-                    (isProjectScoped
-                      ? "Project Analytics"
-                      : "Project Analytics Dashboard")}
-                </Typography>
-                {project && (
-                  <Typography color="text.secondary">
-                    Started {formatProjectDate(project.startDate)}
-                    {project.completedAt
-                      ? ` - Completed ${formatProjectDate(
-                          project.completedAt.slice(0, 10)
-                        )}`
-                      : ""}
-                  </Typography>
-                )}
-              </Box>
-            </Stack>
-          </CardContent>
-        </Card>
+          }
+        />
 
         {loading ? (
           <Typography color="text.secondary">Loading analytics...</Typography>
@@ -1327,7 +1309,7 @@ const ProjectAnalyticsPage: React.FC = () => {
           <Alert severity="info">No analytics data is available.</Alert>
         )}
       </Stack>
-    </Container>
+    </PageContainer>
   );
 };
 

@@ -1,33 +1,38 @@
 import {
-  Info,
-  Grass,
-  Payments,
-  ContactMail,
-  Email,
-  FolderOutlined,
-} from "@mui/icons-material";
-import {
-  Button,
-  Typography,
-  Container,
-  Card,
-  CardContent,
-  Box,
-  Stack,
   Alert,
-  Modal,
-  TextField,
+  Box,
+  Button,
   Snackbar,
+  Stack,
+  TextField,
+  Typography,
 } from "@mui/material";
-import ProfileSection from "../components/ProfileSection";
+import GrassOutlinedIcon from "@mui/icons-material/GrassOutlined";
+import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
+import PaymentsOutlinedIcon from "@mui/icons-material/PaymentsOutlined";
+import ContactMailOutlinedIcon from "@mui/icons-material/ContactMailOutlined";
+import SupportAgentOutlinedIcon from "@mui/icons-material/SupportAgentOutlined";
+import CollectionsBookmarkOutlinedIcon from "@mui/icons-material/CollectionsBookmarkOutlined";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import Icon from "@mdi/react";
 import { mdiSeed } from "@mdi/js";
+import ProfileSection from "../components/ProfileSection";
+import { useCloneContext } from "../context/CloneContext";
+import { useSeedContext } from "../context/SeedContext";
+import {
+  ActionCard,
+  PageContainer,
+  PageHeader,
+  ResponsiveDialog,
+  SectionCard,
+} from "../components/ui";
 
-function Dashboard() {
+const Dashboard = () => {
   const navigate = useNavigate();
+  const { seeds } = useSeedContext();
+  const { clones } = useCloneContext();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [submitStatus, setSubmitStatus] = useState<
@@ -43,21 +48,14 @@ function Dashboard() {
     severity: "success",
   });
 
-  const handleContactSupport = () => setIsModalOpen(true);
-
   const handleClose = () => {
     setIsModalOpen(false);
     setMessage("");
     setSubmitStatus("idle");
   };
 
-  const handleSnackbarClose = () => {
-    setSnackbar((prev) => ({ ...prev, open: false }));
-  };
-
-  // Update the handleSubmit function
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     setSubmitStatus("idle");
 
     try {
@@ -67,12 +65,11 @@ function Dashboard() {
       setSubmitStatus("success");
       setSnackbar({
         open: true,
-        message: "Message sent successfully!",
+        message: "Message sent successfully.",
         severity: "success",
       });
-      setTimeout(handleClose, 1000);
-    } catch (error: unknown) {
-      // Only log errors in development
+      window.setTimeout(handleClose, 800);
+    } catch (error) {
       if (process.env.NODE_ENV === "development") {
         console.error("Support email error:", error);
       }
@@ -80,196 +77,171 @@ function Dashboard() {
       setSnackbar({
         open: true,
         message:
-          "Failed to send message. Please try again or contact us on Instagram @genetics_library",
+          "Message could not be sent. Try again or contact @genetics_library.",
         severity: "error",
       });
     }
   };
 
   return (
-    <Container maxWidth="md" sx={{ py: 3 }}>
-      <Card sx={{ p: 3 }}>
-        {/* Header */}
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h4" sx={{ mb: 2 }}>
-            Dashboard
-          </Typography>
-          <Stack direction="row" spacing={1} alignItems="center">
-            <Info fontSize="small" />
-            <Typography variant="subtitle2">
-              Manage your genetics, projects, and account options here.
-            </Typography>
-          </Stack>
-        </Box>
+    <PageContainer maxWidth="lg">
+      <Stack spacing={{ xs: 3, sm: 4 }}>
+        <PageHeader
+          eyebrow="Private workspace"
+          title="Your genetics workspace"
+          description="Manage your collection, continue active projects, and keep account tools within reach."
+        />
 
-        <Stack spacing={3}>
-          {/* Manage Collections Section */}
-          <Card raised sx={{ bgcolor: "background.paper" }}>
-            <CardContent sx={{ p: 3 }}>
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="h6" gutterBottom>
-                  Your Collections
-                </Typography>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ mb: 3, maxWidth: "600px" }}
-                >
-                  Organize your seeds and clones, then track their results in
-                  Projects.
-                </Typography>
-              </Box>
-              <Stack direction="row" spacing={2} justifyContent="flex-start">
-                <Button
-                  startIcon={<Icon path={mdiSeed} size={0.7} />}
-                  variant="contained"
-                  size="small"
-                  onClick={() => navigate("/seeds")}
-                >
-                  Seeds
-                </Button>
-                <Button
-                  startIcon={<Grass />}
-                  variant="contained"
-                  size="small"
-                  onClick={() => navigate("/clones")}
-                >
-                  Clones
-                </Button>
-                <Button
-                  startIcon={<FolderOutlined />}
-                  variant="contained"
-                  size="small"
-                  onClick={() => navigate("/projects")}
-                >
-                  Projects
-                </Button>
-              </Stack>
-            </CardContent>
-          </Card>
-          {/* Premium Options Section */}
-          <Card raised sx={{ bgcolor: "background.paper" }}>
-            <CardContent sx={{ p: 3 }}>
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="h6" gutterBottom>
-                  Premium Options
-                </Typography>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ mb: 3, maxWidth: "600px" }}
-                >
-                  Update your accepted payment methods, and your preferred
-                  contact method.
-                </Typography>
-              </Box>
-              <Stack direction="row" spacing={2} justifyContent="flex-start">
-                <Button
-                  startIcon={<Payments />}
-                  variant="contained"
-                  size="small"
-                  onClick={() => navigate("/payments")}
-                >
-                  Payment Platforms
-                </Button>
-                <Button
-                  startIcon={<ContactMail />}
-                  variant="contained"
-                  size="small"
-                  onClick={() => navigate("/contact-info")}
-                >
-                  Contact Info
-                </Button>
-              </Stack>
-            </CardContent>
-          </Card>
-          {/* Contact Support Section */}
-          <Card raised sx={{ bgcolor: "background.paper" }}>
-            <CardContent sx={{ p: 3 }}>
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="h6" gutterBottom>
-                  Support
-                </Typography>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ mb: 3, maxWidth: "600px" }}
-                >
-                  Send us a message with any issues you're experiencing. Let us
-                  know if you have any feedback, such as new features you'd like
-                  to see.
-                </Typography>
-              </Box>
-              <Stack direction="row" spacing={2} justifyContent="flex-start">
-                <Button
-                  startIcon={<Email />}
-                  variant="contained"
-                  size="small"
-                  onClick={handleContactSupport}
-                >
-                  Send Message
-                </Button>
-              </Stack>
-            </CardContent>
-          </Card>
-          <ProfileSection />
-        </Stack>
-      </Card>
-      <Modal
-        open={isModalOpen}
-        onClose={handleClose}
-        aria-labelledby="contact-support-modal"
-      >
         <Box
-          component="form"
-          onSubmit={handleSubmit}
           sx={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: { xs: "90%", sm: 400 },
-            bgcolor: "background.paper",
-            borderRadius: 1,
-            boxShadow: 24,
-            p: 4,
+            display: "grid",
+            gridTemplateColumns: {
+              xs: "1fr",
+              sm: "repeat(2, minmax(0, 1fr))",
+              xl: "repeat(3, minmax(0, 1fr))",
+            },
+            gap: 2,
           }}
         >
-          <Typography variant="h6" component="h2" gutterBottom>
-            Contact Support
-          </Typography>
-
-          <TextField
-            fullWidth
-            multiline
-            rows={4}
-            label="Message"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            sx={{ mb: 2 }}
+          <ActionCard
+            title="Seeds"
+            description="Browse and manage seed packs in your private collection."
+            icon={<Icon path={mdiSeed} size={0.9} />}
+            meta={
+              <Typography variant="caption" color="text.secondary">
+                {seeds.length} {seeds.length === 1 ? "entry" : "entries"}
+              </Typography>
+            }
+            onClick={() => navigate("/seeds")}
           />
+          <ActionCard
+            title="Clones"
+            description="Track clone-only genetics and promoted Pheno Hunt keepers."
+            icon={<GrassOutlinedIcon />}
+            meta={
+              <Typography variant="caption" color="text.secondary">
+                {clones.length} {clones.length === 1 ? "entry" : "entries"}
+              </Typography>
+            }
+            onClick={() => navigate("/clones")}
+          />
+          <ActionCard
+            title="Projects"
+            description="Continue Pheno Hunt and Wash/Process work from one place."
+            icon={<FolderOutlinedIcon />}
+            meta={
+              <Typography variant="caption" color="secondary.main">
+                Open project workspace
+              </Typography>
+            }
+            onClick={() => navigate("/projects")}
+          />
+        </Box>
 
-          <Stack direction="row" spacing={2} justifyContent="flex-end">
+        <SectionCard
+          title="Collection workflow"
+          description="Your library records source genetics. Projects capture what happens next."
+        >
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={2}
+            alignItems={{ sm: "center" }}
+          >
+            <CollectionsBookmarkOutlinedIcon color="primary" />
+            <Typography color="text.secondary">
+              Add seeds and clones to build your source library, then select
+              them when creating a private project. Project snapshots remain
+              intact even if the original library entry changes later.
+            </Typography>
+          </Stack>
+        </SectionCard>
+
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" },
+            gap: 2,
+          }}
+        >
+          <SectionCard
+            title="Account details"
+            description="Manage profile contact and payment preferences."
+          >
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+              <Button
+                startIcon={<PaymentsOutlinedIcon />}
+                variant="outlined"
+                onClick={() => navigate("/payments")}
+              >
+                Payment platforms
+              </Button>
+              <Button
+                startIcon={<ContactMailOutlinedIcon />}
+                variant="outlined"
+                onClick={() => navigate("/contact-info")}
+              >
+                Contact info
+              </Button>
+            </Stack>
+          </SectionCard>
+
+          <SectionCard
+            title="Support"
+            description="Report a problem or share feedback with the Genetics Library team."
+          >
+            <Button
+              startIcon={<SupportAgentOutlinedIcon />}
+              variant="outlined"
+              onClick={() => setIsModalOpen(true)}
+            >
+              Send a message
+            </Button>
+          </SectionCard>
+        </Box>
+
+        <ProfileSection />
+      </Stack>
+
+      <ResponsiveDialog
+        open={isModalOpen}
+        onClose={handleClose}
+        title="Contact support"
+        actions={
+          <>
             <Button onClick={handleClose}>Cancel</Button>
             <Button
               variant="contained"
-              type="submit"
+              onClick={handleSubmit}
               disabled={!message.trim() || submitStatus === "success"}
             >
-              Send Message
+              {submitStatus === "success" ? "Sent" : "Send message"}
             </Button>
-          </Stack>
+          </>
+        }
+      >
+        <Box component="form" onSubmit={handleSubmit} sx={{ pt: 1 }}>
+          <TextField
+            fullWidth
+            multiline
+            minRows={5}
+            label="How can we help?"
+            value={message}
+            onChange={(event) => setMessage(event.target.value)}
+            autoFocus
+          />
         </Box>
-      </Modal>
+      </ResponsiveDialog>
 
       <Snackbar
         open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={handleSnackbarClose}
+        autoHideDuration={4500}
+        onClose={() => setSnackbar((current) => ({ ...current, open: false }))}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
         <Alert
-          onClose={handleSnackbarClose}
+          onClose={() =>
+            setSnackbar((current) => ({ ...current, open: false }))
+          }
           severity={snackbar.severity}
           variant="filled"
           sx={{ width: "100%" }}
@@ -277,8 +249,8 @@ function Dashboard() {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Container>
+    </PageContainer>
   );
-}
+};
 
 export default Dashboard;

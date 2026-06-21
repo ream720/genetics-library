@@ -44,6 +44,7 @@ import { db } from "../../firebaseConfig";
 import CashAppBadge from "../assets/cashapp-badge.svg";
 import { useAuth } from "../context/AuthContext";
 import { Clone, Seed } from "../types";
+import { PageContainer } from "../components/ui";
 
 interface UserProfile {
   email: string;
@@ -233,14 +234,7 @@ function Profile() {
   return (
     <>
       {/* <GeminiTest /> */}
-      <Box
-        sx={{
-          maxWidth: 1400,
-          paddingBottom: "36px",
-          margin: "auto",
-          px: 2,
-        }}
-      >
+      <PageContainer maxWidth="xl" sx={{ paddingBottom: "36px" }}>
         {/* User Info */}
 
         <Accordion
@@ -807,7 +801,7 @@ function Profile() {
             )}
           </AccordionDetails>
         </Accordion>
-      </Box>
+      </PageContainer>
       <Snackbar
         open={shareSnackbarOpen}
         autoHideDuration={3000}

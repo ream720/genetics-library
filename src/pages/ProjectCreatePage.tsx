@@ -9,7 +9,6 @@ import {
   CardContent,
   Chip,
   Checkbox,
-  Container,
   FormControlLabel,
   MenuItem,
   Stack,
@@ -17,7 +16,6 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -38,6 +36,7 @@ import {
   ProjectType,
 } from "../types/v2";
 import { createProject } from "../services/projects";
+import { PageContainer, PageHeader, SectionCard } from "../components/ui";
 
 const ProjectCreatePage: React.FC = () => {
   const navigate = useNavigate();
@@ -199,29 +198,18 @@ const ProjectCreatePage: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="md" sx={{ py: 3 }}>
+    <PageContainer maxWidth="md">
       <Stack spacing={3}>
-        <Button
-          startIcon={<ArrowBackIcon />}
-          onClick={() => navigate(PROJECT_ROUTES.list)}
-          sx={{ alignSelf: "flex-start" }}
-        >
-          Back to Projects
-        </Button>
+        <PageHeader
+          eyebrow="New private project"
+          title="Create project"
+          description="Choose a project type, add source genetics, and start with only the details you know today."
+          backLabel="Back to projects"
+          onBack={() => navigate(PROJECT_ROUTES.list)}
+        />
 
-        <Card>
-          <CardContent>
+        <SectionCard>
             <Stack spacing={3}>
-              <Box>
-                <Typography variant="h4" gutterBottom>
-                  Create Project
-                </Typography>
-                <Typography color="text.secondary">
-                  Create a private project using existing Genetics Library
-                  entries or an ad-hoc source.
-                </Typography>
-              </Box>
-
               <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
                 <Chip
                   label="Pheno Hunt"
@@ -282,7 +270,10 @@ const ProjectCreatePage: React.FC = () => {
                 ))}
               </TextField>
 
-              <Card variant="outlined">
+              <Card
+                variant="outlined"
+                sx={(theme) => ({ bgcolor: theme.palette.surface.subtle })}
+              >
                 <CardContent>
                   <Stack spacing={2}>
                     <Box>
@@ -316,18 +307,22 @@ const ProjectCreatePage: React.FC = () => {
                             No seeds match your search.
                           </Typography>
                         ) : (
-                          filteredSeeds.map((seed) => (
-                            <FormControlLabel
-                              key={seed.id}
-                              control={
-                                <Checkbox
-                                  checked={selectedSeedIds.includes(seed.id)}
-                                  onChange={() => toggleSeed(seed.id)}
-                                />
-                              }
-                              label={`${seed.strain} by ${seed.breeder}`}
-                            />
-                          ))
+                          <Stack
+                            sx={{ maxHeight: 280, overflowY: "auto", pr: 1 }}
+                          >
+                            {filteredSeeds.map((seed) => (
+                              <FormControlLabel
+                                key={seed.id}
+                                control={
+                                  <Checkbox
+                                    checked={selectedSeedIds.includes(seed.id)}
+                                    onChange={() => toggleSeed(seed.id)}
+                                  />
+                                }
+                                label={`${seed.strain} by ${seed.breeder}`}
+                              />
+                            ))}
+                          </Stack>
                         )}
                       </Box>
                       <Box sx={{ flex: 1 }}>
@@ -353,23 +348,27 @@ const ProjectCreatePage: React.FC = () => {
                             No clones match your search.
                           </Typography>
                         ) : (
-                          filteredClones.map((clone) => (
-                            <FormControlLabel
-                              key={clone.id}
-                              control={
-                                <Checkbox
-                                  checked={
-                                    Boolean(clone.id) &&
-                                    selectedCloneIds.includes(clone.id!)
-                                  }
-                                  onChange={() =>
-                                    clone.id && toggleClone(clone.id)
-                                  }
-                                />
-                              }
-                              label={`${clone.strain} by ${clone.breeder}`}
-                            />
-                          ))
+                          <Stack
+                            sx={{ maxHeight: 280, overflowY: "auto", pr: 1 }}
+                          >
+                            {filteredClones.map((clone) => (
+                              <FormControlLabel
+                                key={clone.id}
+                                control={
+                                  <Checkbox
+                                    checked={
+                                      Boolean(clone.id) &&
+                                      selectedCloneIds.includes(clone.id!)
+                                    }
+                                    onChange={() =>
+                                      clone.id && toggleClone(clone.id)
+                                    }
+                                  />
+                                }
+                                label={`${clone.strain} by ${clone.breeder}`}
+                              />
+                            ))}
+                          </Stack>
                         )}
                       </Box>
                     </Stack>
@@ -461,16 +460,17 @@ const ProjectCreatePage: React.FC = () => {
                 variant="contained"
                 disabled={saving}
                 onClick={handleCreateProject}
+                size="large"
+                sx={{ alignSelf: { sm: "flex-end" } }}
               >
                 {saving
                   ? "Creating..."
                   : `Create ${PROJECT_TYPE_LABELS[projectType]} Project`}
               </Button>
             </Stack>
-          </CardContent>
-        </Card>
+        </SectionCard>
       </Stack>
-    </Container>
+    </PageContainer>
   );
 };
 

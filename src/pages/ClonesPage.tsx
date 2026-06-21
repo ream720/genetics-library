@@ -34,6 +34,7 @@ import CancelIcon from "@mui/icons-material/Cancel";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import EditCloneModal from "../components/EditCloneModal";
 import CSVUpload from "../components/CSVUpload";
+import { PageContainer, PageHeader } from "../components/ui";
 
 const ClonesPage: React.FC = () => {
   const { clones, addClone, deleteClone, updateClone, setClones } =
@@ -306,19 +307,13 @@ const ClonesPage: React.FC = () => {
   ];
 
   return (
-    <Box sx={{ pb: 3, px: 3 }}>
-      <Typography
-        variant="h4"
-        gutterBottom
-        sx={{
-          fontFamily: "Roboto, sans-serif",
-          fontWeight: 600,
-          textAlign: "center",
-          marginBottom: 3,
-        }}
-      >
-        Manage Clones
-      </Typography>
+    <PageContainer maxWidth="xl">
+      <Stack spacing={3}>
+        <PageHeader
+          eyebrow="Genetics library"
+          title="Clones"
+          description={`${clones.length} clone ${clones.length === 1 ? "entry" : "entries"} in your private collection. Add individual records or import a CSV.`}
+        />
 
       {/* CSV Upload Form */}
 
@@ -499,7 +494,8 @@ const ClonesPage: React.FC = () => {
         clone={selectedClone}
         onSave={handleSaveEdit}
       />
-    </Box>
+      </Stack>
+    </PageContainer>
   );
 };
 

@@ -1,7 +1,6 @@
 import React from "react";
 import {
   Box,
-  Typography,
   Button,
   Checkbox,
   Stack,
@@ -36,6 +35,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 import EditSeedModal from "../components/EditSeedModal";
 import ConversationalSeedAssistant from "../components/ConversationalSeedAssistant";
+import { PageContainer, PageHeader } from "../components/ui";
 
 // Interface for the tab values
 interface TabPanelProps {
@@ -440,22 +440,16 @@ const SeedsPage: React.FC = () => {
   ];
 
   return (
-    <Box sx={{ px: 3, pb: 3 }}>
-      <Typography
-        variant="h4"
-        gutterBottom
-        sx={{
-          fontFamily: "Roboto, sans-serif",
-          fontWeight: 600,
-          textAlign: "center",
-          marginBottom: 3,
-        }}
-      >
-        Manage Seeds
-      </Typography>
+    <PageContainer maxWidth="xl">
+      <Stack spacing={3}>
+        <PageHeader
+          eyebrow="Genetics library"
+          title="Seeds"
+          description={`${seeds.length} seed ${seeds.length === 1 ? "entry" : "entries"} in your private collection. Add records manually, with AI assistance, or by CSV.`}
+        />
 
       {/* Mode Selection Tabs */}
-      <Paper sx={{ mb: 1, maxWidth: "1400px", mx: "auto" }}>
+      <Paper sx={{ mb: 1, width: "100%" }}>
         <Tabs
           value={inputMode}
           onChange={handleTabChange}
@@ -687,7 +681,8 @@ const SeedsPage: React.FC = () => {
         seed={selectedSeed}
         onSave={handleSaveEdit}
       />
-    </Box>
+      </Stack>
+    </PageContainer>
   );
 };
 

@@ -1032,36 +1032,70 @@ const PhenoHuntSetup: React.FC<PhenoHuntSetupProps> = ({
                           )}
 
                           {plants.length > 0 ? (
-                            <Stack direction="row" spacing={1} flexWrap="wrap">
-                              {visiblePlants.map((plant) => (
-                                <Chip
-                                  key={plant.id}
-                                  label={[
-                                    `${plant.displayId} - ${
-                                      PLANT_LIFECYCLE_STATE_LABELS[
-                                        plant.lifecycleState
-                                      ]
-                                    }`,
-                                    ...((plant.phenotypeId &&
-                                      phenotypesById[plant.phenotypeId]
-                                        ?.finalLabels.map(
-                                          (label) => FINAL_LABEL_LABELS[label]
-                                        )) ??
-                                      []),
-                                  ].join(" - ")}
-                                  size="small"
-                                  color={
-                                    plant.phenotypeId &&
-                                    phenotypesById[
-                                      plant.phenotypeId
-                                    ]?.finalLabels.includes("keeper")
-                                      ? "success"
-                                      : "default"
-                                  }
-                                  variant="outlined"
-                                  onClick={() => handleOpenPlant(plant)}
-                                />
-                              ))}
+                            <Stack spacing={1}>
+                              <Typography
+                                color="text.secondary"
+                                variant="caption"
+                              >
+                                Showing {visiblePlants.length} of {plants.length}{" "}
+                                plants
+                              </Typography>
+                              <Box
+                                sx={(theme) => ({
+                                  display: "grid",
+                                  gridTemplateColumns: {
+                                    xs: "1fr",
+                                    sm: "repeat(2, minmax(0, 1fr))",
+                                    lg: "repeat(3, minmax(0, 1fr))",
+                                  },
+                                  gap: 1,
+                                  maxHeight: 480,
+                                  overflowY: "auto",
+                                  overscrollBehavior: "contain",
+                                  p: 1,
+                                  borderRadius: 3,
+                                  bgcolor: theme.palette.surface.subtle,
+                                  border: `1px solid ${theme.palette.divider}`,
+                                })}
+                              >
+                                {visiblePlants.map((plant) => (
+                                  <Chip
+                                    key={plant.id}
+                                    label={[
+                                      `${plant.displayId} - ${
+                                        PLANT_LIFECYCLE_STATE_LABELS[
+                                          plant.lifecycleState
+                                        ]
+                                      }`,
+                                      ...((plant.phenotypeId &&
+                                        phenotypesById[plant.phenotypeId]
+                                          ?.finalLabels.map(
+                                            (label) => FINAL_LABEL_LABELS[label]
+                                          )) ??
+                                        []),
+                                    ].join(" - ")}
+                                    color={
+                                      plant.phenotypeId &&
+                                      phenotypesById[
+                                        plant.phenotypeId
+                                      ]?.finalLabels.includes("keeper")
+                                        ? "success"
+                                        : "default"
+                                    }
+                                    variant="outlined"
+                                    onClick={() => handleOpenPlant(plant)}
+                                    sx={{
+                                      width: "100%",
+                                      height: 44,
+                                      justifyContent: "flex-start",
+                                      "& .MuiChip-label": {
+                                        overflow: "hidden",
+                                        textOverflow: "ellipsis",
+                                      },
+                                    }}
+                                  />
+                                ))}
+                              </Box>
                               {visiblePlants.length === 0 && (
                                 <Typography
                                   color="text.secondary"

@@ -7,31 +7,40 @@ import {
   CardContent,
   Chip,
   CircularProgress,
-  Container,
   MenuItem,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
-import InsightsIcon from "@mui/icons-material/Insights";
+import InsightsOutlinedIcon from "@mui/icons-material/InsightsOutlined";
+import FolderOpenOutlinedIcon from "@mui/icons-material/FolderOpenOutlined";
+import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined";
+import ArrowForwardOutlinedIcon from "@mui/icons-material/ArrowForwardOutlined";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { formatProjectDate } from "../lib/v2/date";
 import { PROJECT_ROUTES } from "../lib/v2/projectPaths";
 import {
-  PROJECT_STATUS_LABELS,
   PROJECT_TYPE_LABELS,
   ProjectBase,
   ProjectStatus,
   ProjectType,
 } from "../types/v2";
 import { getUserProjects } from "../services/projects";
+import {
+  EmptyState,
+  FilterBar,
+  PageContainer,
+  PageHeader,
+  SectionCard,
+  StatusChip,
+} from "../components/ui";
 
 type FilterValue<T extends string> = "all" | T;
 
-const ProjectsPage: React.FC = () => {
+const ProjectsPage = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const [projects, setProjects] = useState<ProjectBase[]>([]);
@@ -54,11 +63,10 @@ const ProjectsPage: React.FC = () => {
       setError(null);
 
       try {
-        const userProjects = await getUserProjects(currentUser.uid);
-        setProjects(userProjects);
+        setProjects(await getUserProjects(currentUser.uid));
       } catch (loadError) {
         console.error("Failed to load projects:", loadError);
-        setError("Failed to load projects. Please try again.");
+        setError("Projects could not be loaded. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -73,7 +81,8 @@ const ProjectsPage: React.FC = () => {
     return projects.filter((project) => {
       const matchesSearch =
         !normalizedSearch ||
-        project.name.toLowerCase().includes(normalizedSearch);
+        project.name.toLowerCase().includes(normalizedSearch) ||
+        project.objective.toLowerCase().includes(normalizedSearch);
       const matchesType =
         typeFilter === "all" || project.type === typeFilter;
       const matchesStatus =
@@ -83,184 +92,199 @@ const ProjectsPage: React.FC = () => {
     });
   }, [projects, searchQuery, statusFilter, typeFilter]);
 
-  return (
-    <Container maxWidth="lg" sx={{ py: 3 }}>
-      <Stack spacing={3}>
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: { xs: "column", sm: "row" },
-            justifyContent: "space-between",
-            gap: 2,
-          }}
-        >
-          <Box>
-            <Typography variant="h4" gutterBottom>
-              Projects
-            </Typography>
-            <Typography color="text.secondary">
-              Track private Pheno Hunt and Wash/Process projects from setup
-              through completed analytics.
-            </Typography>
-          </Box>
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-            <Button
-              variant="outlined"
-              startIcon={<InsightsIcon />}
-              onClick={() => navigate(PROJECT_ROUTES.analytics)}
-            >
-              Analytics
-            </Button>
-            <Button
-              variant="contained"
-              startIcon={<AddCircleOutlineIcon />}
-              onClick={() => navigate(PROJECT_ROUTES.new)}
-            >
-              Create Project
-            </Button>
-          </Stack>
-        </Box>
+  const completedCount = projects.filter(
+    (project) => project.status === "complete"
+  ).length;
 
-        <Card>
-          <CardContent>
-            <Stack spacing={2}>
-              <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-                <TextField
-                  label="Search projects"
-                  placeholder="Project name"
-                  fullWidth
-                  value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                />
-                <TextField
-                  label="Type"
-                  value={typeFilter}
-                  onChange={(event) =>
-                    setTypeFilter(event.target.value as FilterValue<ProjectType>)
-                  }
-                  select
-                  sx={{ minWidth: 180 }}
-                >
-                  <MenuItem value="all">All</MenuItem>
-                  {Object.entries(PROJECT_TYPE_LABELS).map(([value, label]) => (
-                    <MenuItem key={value} value={value}>
-                      {label}
-                    </MenuItem>
-                  ))}
-                </TextField>
-                <TextField
-                  label="Status"
-                  value={statusFilter}
-                  onChange={(event) =>
-                    setStatusFilter(
-                      event.target.value as FilterValue<ProjectStatus>
-                    )
-                  }
-                  select
-                  sx={{ minWidth: 180 }}
-                >
-                  <MenuItem value="all">All</MenuItem>
-                  {Object.entries(PROJECT_STATUS_LABELS).map(
-                    ([value, label]) => (
-                      <MenuItem key={value} value={value}>
-                        {label}
-                      </MenuItem>
-                    )
-                  )}
-                </TextField>
+  return (
+    <PageContainer maxWidth="lg">
+      <Stack spacing={{ xs: 3, sm: 4 }}>
+        <PageHeader
+          eyebrow="Private workspace"
+          title="Projects"
+          description={`${projects.length} total · ${completedCount} completed. Track Pheno Hunts and Wash/Process work from setup through results.`}
+          actions={
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+              <Button
+                variant="outlined"
+                startIcon={<InsightsOutlinedIcon />}
+                onClick={() => navigate(PROJECT_ROUTES.analytics)}
+              >
+                Analytics
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={<AddCircleOutlineIcon />}
+                onClick={() => navigate(PROJECT_ROUTES.new)}
+              >
+                Create project
+              </Button>
+            </Stack>
+          }
+        />
+
+        <SectionCard>
+          <Stack spacing={2.5}>
+            <FilterBar>
+              <TextField
+                label="Search projects"
+                placeholder="Name or objective"
+                fullWidth
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+              />
+              <TextField
+                label="Type"
+                value={typeFilter}
+                onChange={(event) =>
+                  setTypeFilter(event.target.value as FilterValue<ProjectType>)
+                }
+                select
+                sx={{ minWidth: { md: 180 } }}
+              >
+                <MenuItem value="all">All project types</MenuItem>
+                <MenuItem value="pheno_hunt">Pheno Hunt</MenuItem>
+                <MenuItem value="wash_process">Wash/Process</MenuItem>
+              </TextField>
+              <TextField
+                label="Status"
+                value={statusFilter}
+                onChange={(event) =>
+                  setStatusFilter(
+                    event.target.value as FilterValue<ProjectStatus>
+                  )
+                }
+                select
+                sx={{ minWidth: { md: 170 } }}
+              >
+                <MenuItem value="all">All statuses</MenuItem>
+                <MenuItem value="planning">Planning</MenuItem>
+                <MenuItem value="in_progress">In Progress</MenuItem>
+                <MenuItem value="complete">Complete</MenuItem>
+              </TextField>
+            </FilterBar>
+
+            {error && <Alert severity="error">{error}</Alert>}
+
+            {loading ? (
+              <Stack alignItems="center" spacing={1.5} sx={{ py: 7 }}>
+                <CircularProgress size={32} />
+                <Typography color="text.secondary">
+                  Loading your projects...
+                </Typography>
               </Stack>
-              {error && <Alert severity="error">{error}</Alert>}
-              {loading ? (
-                <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-                  <CircularProgress />
-                </Box>
-              ) : filteredProjects.length === 0 ? (
-                <Box
-                  sx={{
-                    border: "1px dashed",
-                    borderColor: "divider",
-                    borderRadius: 2,
-                    p: 4,
-                    textAlign: "center",
-                  }}
-                >
-                  <Stack spacing={1} alignItems="center">
-                    <Chip label="Private MVP Projects" color="primary" />
-                    <Typography variant="h6">
-                      {projects.length === 0
-                        ? "No projects yet"
-                        : "No projects match your filters"}
-                    </Typography>
-                    <Typography color="text.secondary" maxWidth={640}>
-                      Create a Pheno Hunt or Wash/Process project to start
-                      tracking private work from setup through completed
-                      analytics.
-                    </Typography>
-                  </Stack>
-                </Box>
-              ) : (
-                <Stack spacing={2}>
-                  {filteredProjects.map((project) => (
-                    <Card key={project.id} variant="outlined">
-                      <CardActionArea
-                        onClick={() =>
-                          project.id &&
-                          navigate(PROJECT_ROUTES.detail(project.id))
-                        }
+            ) : filteredProjects.length === 0 ? (
+              <EmptyState
+                icon={<FolderOpenOutlinedIcon sx={{ fontSize: 38 }} />}
+                title={
+                  projects.length === 0
+                    ? "Start your first project"
+                    : "No projects match these filters"
+                }
+                description={
+                  projects.length === 0
+                    ? "Create a Pheno Hunt or Wash/Process project to begin recording private project data."
+                    : "Adjust the search, type, or status filters to see more projects."
+                }
+                actionLabel={projects.length === 0 ? "Create project" : undefined}
+                onAction={
+                  projects.length === 0
+                    ? () => navigate(PROJECT_ROUTES.new)
+                    : undefined
+                }
+              />
+            ) : (
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: {
+                    xs: "1fr",
+                    md: "repeat(2, minmax(0, 1fr))",
+                  },
+                  gap: 2,
+                }}
+              >
+                {filteredProjects.map((project) => (
+                  <Card key={project.id} sx={{ height: "100%" }}>
+                    <CardActionArea
+                      onClick={() =>
+                        project.id &&
+                        navigate(PROJECT_ROUTES.detail(project.id))
+                      }
+                      sx={{ height: "100%" }}
+                    >
+                      <CardContent
+                        sx={{
+                          height: "100%",
+                          p: 2.5,
+                          display: "flex",
+                          flexDirection: "column",
+                        }}
                       >
-                        <CardContent>
-                          <Stack spacing={1}>
-                            <Stack
-                              direction={{ xs: "column", sm: "row" }}
-                              justifyContent="space-between"
-                              spacing={1}
-                            >
-                              <Typography variant="h6">
+                        <Stack spacing={1.75} sx={{ height: "100%" }}>
+                          <Stack
+                            direction="row"
+                            justifyContent="space-between"
+                            alignItems="flex-start"
+                            spacing={1.5}
+                          >
+                            <Box sx={{ minWidth: 0 }}>
+                              <Typography variant="h6" noWrap>
                                 {project.name}
                               </Typography>
-                              <Stack direction="row" spacing={1}>
-                                <Chip
-                                  label={PROJECT_TYPE_LABELS[project.type]}
-                                  size="small"
-                                />
-                                <Chip
-                                  label={
-                                    PROJECT_STATUS_LABELS[project.status]
-                                  }
-                                  color={
-                                    project.status === "complete"
-                                      ? "success"
-                                      : "primary"
-                                  }
-                                  size="small"
-                                  variant={
-                                    project.status === "planning"
-                                      ? "outlined"
-                                      : "filled"
-                                  }
-                                />
-                              </Stack>
-                            </Stack>
-                            <Typography color="text.secondary">
-                              {project.objective || "No objective provided."}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              Started {formatProjectDate(project.startDate)} ·
-                              Updated{" "}
-                              {new Date(project.updatedAt).toLocaleDateString()}
-                            </Typography>
+                              <Chip
+                                label={PROJECT_TYPE_LABELS[project.type]}
+                                size="small"
+                                variant="outlined"
+                                sx={{ mt: 1 }}
+                              />
+                            </Box>
+                            <StatusChip status={project.status} />
                           </Stack>
-                        </CardContent>
-                      </CardActionArea>
-                    </Card>
-                  ))}
-                </Stack>
-              )}
-            </Stack>
-          </CardContent>
-        </Card>
+                          <Typography
+                            color="text.secondary"
+                            variant="body2"
+                            sx={{
+                              display: "-webkit-box",
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: "vertical",
+                              overflow: "hidden",
+                              minHeight: "2.8em",
+                            }}
+                          >
+                            {project.objective || "No objective provided."}
+                          </Typography>
+                          <Stack
+                            direction="row"
+                            alignItems="center"
+                            spacing={0.75}
+                            sx={{ mt: "auto" }}
+                          >
+                            <CalendarTodayOutlinedIcon
+                              sx={{ fontSize: 16, color: "text.secondary" }}
+                            />
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              sx={{ flex: 1 }}
+                            >
+                              Started {formatProjectDate(project.startDate)}
+                            </Typography>
+                            <ArrowForwardOutlinedIcon
+                              sx={{ fontSize: 20, color: "primary.main" }}
+                            />
+                          </Stack>
+                        </Stack>
+                      </CardContent>
+                    </CardActionArea>
+                  </Card>
+                ))}
+              </Box>
+            )}
+          </Stack>
+        </SectionCard>
       </Stack>
-    </Container>
+    </PageContainer>
   );
 };
 

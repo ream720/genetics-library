@@ -13,8 +13,8 @@ import {
   Tabs,
   Tab,
   Paper,
-  Container,
   Snackbar,
+  Stack,
 } from "@mui/material";
 import {
   getFirestore,
@@ -28,6 +28,7 @@ import {
 import { app, logAnalyticsEvent } from "../../firebaseConfig";
 import { Link } from "react-router-dom";
 import { Seed, Clone } from "../types";
+import { PageContainer, PageHeader, SectionCard } from "../components/ui";
 
 const db = getFirestore(app);
 
@@ -285,9 +286,15 @@ function SearchPage() {
   };
 
   return (
-    <Container maxWidth="md">
-      <Box sx={{ p: 1 }}>
-        <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+    <PageContainer maxWidth="md">
+      <Stack spacing={3}>
+        <PageHeader
+          eyebrow="Community database"
+          title="Search"
+          description="Find users and public seed or clone entries by username, strain, breeder, or lineage."
+        />
+        <SectionCard>
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
           <TextField
             size="medium"
             label="Search Users, Seeds, or Clones"
@@ -295,7 +302,6 @@ function SearchPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyPress={(e) => e.key === "Enter" && handleSearch()}
             fullWidth
-            sx={{ mr: 1 }}
           />
           <Button
             size="medium"
@@ -305,7 +311,7 @@ function SearchPage() {
           >
             Search
           </Button>
-        </Box>
+        </Stack>
 
         {loading && (
           <Box sx={{ display: "flex", justifyContent: "center", mt: 1 }}>
@@ -374,8 +380,9 @@ function SearchPage() {
           onClose={() => setShowSnackbar(false)}
           message={snackbarMessage}
         />
-      </Box>
-    </Container>
+        </SectionCard>
+      </Stack>
+    </PageContainer>
   );
 }
 

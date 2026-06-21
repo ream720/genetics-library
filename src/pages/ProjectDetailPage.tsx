@@ -4,18 +4,12 @@ import {
   Button,
   Card,
   CardContent,
-  Container,
-  Dialog,
-  DialogActions,
-  DialogContent,
   DialogContentText,
-  DialogTitle,
   MenuItem,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import DeleteIcon from "@mui/icons-material/Delete";
 import InsightsIcon from "@mui/icons-material/Insights";
 import NoteAddIcon from "@mui/icons-material/NoteAdd";
@@ -47,6 +41,13 @@ import {
   createProjectPhotoContextId,
   reassignProjectPhotos,
 } from "../services/projectPhotos";
+import {
+  PageContainer,
+  PageHeader,
+  ResponsiveDialog,
+  SectionCard,
+  StatusChip,
+} from "../components/ui";
 
 interface ProjectDraft {
   name: string;
@@ -285,18 +286,24 @@ const ProjectDetailPage: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: 3 }}>
+    <PageContainer maxWidth="lg">
       <Stack spacing={3}>
-        <Button
-          startIcon={<ArrowBackIcon />}
-          onClick={() => navigateAway(PROJECT_ROUTES.list)}
-          sx={{ alignSelf: "flex-start" }}
-        >
-          Back to Projects
-        </Button>
+        <PageHeader
+          eyebrow={project ? PROJECT_TYPE_LABELS[project.type] : "Private project"}
+          title={project?.name ?? "Project"}
+          description={
+            project
+              ? project.objective
+              : "Loading project details and workflow records."
+          }
+          backLabel="Back to projects"
+          onBack={() => navigateAway(PROJECT_ROUTES.list)}
+          actions={
+            project ? <StatusChip status={project.status} /> : undefined
+          }
+        />
 
-        <Card>
-          <CardContent>
+        <SectionCard>
             <Stack spacing={3}>
               {loading ? (
                 <Typography>Loading project...</Typography>
@@ -304,16 +311,6 @@ const ProjectDetailPage: React.FC = () => {
                 <Alert severity="error">{error}</Alert>
               ) : project && draft ? (
                 <>
-                  <Box>
-                    <Typography variant="h4" gutterBottom>
-                      {project.name}
-                    </Typography>
-                    <Typography color="text.secondary">
-                      {PROJECT_TYPE_LABELS[project.type]} -{" "}
-                      {PROJECT_STATUS_LABELS[project.status]}
-                    </Typography>
-                  </Box>
-
                   <Alert
                     severity={
                       projectIsComplete
@@ -344,60 +341,116 @@ const ProjectDetailPage: React.FC = () => {
                         : `Autosave status: ${autosaveStatus}`}
                   </Alert>
 
-                  <Stack spacing={2}>
-                    <TextField
-                      label="Project name"
-                      value={draft.name}
-                      onChange={(event) =>
-                        handleDraftChange("name", event.target.value)
-                      }
-                      disabled={projectIsComplete}
-                      fullWidth
-                    />
-                    <TextField
-                      label="Description or objective"
-                      value={draft.objective}
-                      onChange={(event) =>
-                        handleDraftChange("objective", event.target.value)
-                      }
-                      disabled={projectIsComplete}
-                      fullWidth
-                      multiline
-                      minRows={3}
-                    />
-                    <TextField
-                      label="Start date"
-                      type="date"
-                      value={draft.startDate}
-                      onChange={(event) =>
-                        handleDraftChange("startDate", event.target.value)
-                      }
-                      disabled={projectIsComplete}
-                      fullWidth
-                      InputLabelProps={{ shrink: true }}
-                    />
-                    <TextField
-                      label="Status"
-                      value={draft.status}
-                      onChange={(event) =>
-                        handleDraftChange(
-                          "status",
-                          event.target.value as ProjectStatus
-                        )
-                      }
-                      disabled={projectIsComplete}
-                      select
-                      fullWidth
+                  {projectIsComplete ? (
+                    <Card
+                      variant="outlined"
+                      sx={(theme) => ({ bgcolor: theme.palette.surface.subtle })}
                     >
-                      {Object.entries(PROJECT_STATUS_LABELS).map(
-                        ([value, label]) => (
-                          <MenuItem key={value} value={value}>
-                            {label}
-                          </MenuItem>
-                        )
-                      )}
-                    </TextField>
-                  </Stack>
+                      <CardContent>
+                        <Box
+                          sx={{
+                            display: "grid",
+                            gridTemplateColumns: {
+                              xs: "1fr",
+                              sm: "repeat(2, minmax(0, 1fr))",
+                            },
+                            gap: 2.5,
+                          }}
+                        >
+                          <Box>
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              fontWeight={700}
+                            >
+                              Project name
+                            </Typography>
+                            <Typography>{draft.name}</Typography>
+                          </Box>
+                          <Box>
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              fontWeight={700}
+                            >
+                              Start date
+                            </Typography>
+                            <Typography>
+                              {formatProjectDate(draft.startDate)}
+                            </Typography>
+                          </Box>
+                          <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              fontWeight={700}
+                            >
+                              Objective
+                            </Typography>
+                            <Typography whiteSpace="pre-wrap">
+                              {draft.objective}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <Stack spacing={2}>
+                      <TextField
+                        label="Project name"
+                        value={draft.name}
+                        onChange={(event) =>
+                          handleDraftChange("name", event.target.value)
+                        }
+                        fullWidth
+                      />
+                      <TextField
+                        label="Description or objective"
+                        value={draft.objective}
+                        onChange={(event) =>
+                          handleDraftChange("objective", event.target.value)
+                        }
+                        fullWidth
+                        multiline
+                        minRows={3}
+                      />
+                      <Stack
+                        direction={{ xs: "column", sm: "row" }}
+                        spacing={2}
+                      >
+                        <TextField
+                          label="Start date"
+                          type="date"
+                          value={draft.startDate}
+                          onChange={(event) =>
+                            handleDraftChange("startDate", event.target.value)
+                          }
+                          fullWidth
+                          InputLabelProps={{ shrink: true }}
+                        />
+                        <TextField
+                          label="Status"
+                          value={draft.status}
+                          onChange={(event) =>
+                            handleDraftChange(
+                              "status",
+                              event.target.value as ProjectStatus
+                            )
+                          }
+                          select
+                          fullWidth
+                        >
+                          {Object.entries(PROJECT_STATUS_LABELS).map(
+                            ([value, label]) => (
+                              <MenuItem key={value} value={value}>
+                                {label}
+                              </MenuItem>
+                            )
+                          )}
+                        </TextField>
+                      </Stack>
+                    </Stack>
+                  )}
 
                   <Card variant="outlined">
                     <CardContent>
@@ -635,52 +688,48 @@ const ProjectDetailPage: React.FC = () => {
                 </Button>
               )}
             </Stack>
-          </CardContent>
-        </Card>
+        </SectionCard>
       </Stack>
 
-      <Dialog
+      <ResponsiveDialog
         open={deleteDialogOpen}
         onClose={closeDeleteDialog}
-        maxWidth="sm"
-        fullWidth
+        title="Delete project"
+        actions={
+          <>
+            <Button onClick={closeDeleteDialog} disabled={deleting}>
+              Cancel
+            </Button>
+            <Button
+              color="error"
+              variant="contained"
+              onClick={handleDeleteProject}
+              disabled={deleting || deleteConfirmation !== project?.name}
+            >
+              {deleting ? "Deleting..." : "Delete permanently"}
+            </Button>
+          </>
+        }
       >
-        <DialogTitle>Delete Project</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            <Alert severity="warning" variant="outlined">
-              This permanently deletes the project, addenda, project photos,
-              Pheno Hunt records, Wash/Process records, and analytics inputs.
-              This cannot be undone.
-            </Alert>
-            <DialogContentText>
-              Type <strong>{project?.name}</strong> to confirm.
-            </DialogContentText>
-          </Stack>
+        <Stack spacing={2} sx={{ mt: 1 }}>
+          <Alert severity="warning" variant="outlined">
+            This permanently deletes the project, addenda, project photos,
+            Pheno Hunt records, Wash/Process records, and analytics inputs.
+            This cannot be undone.
+          </Alert>
+          <DialogContentText>
+            Type <strong>{project?.name}</strong> to confirm.
+          </DialogContentText>
           <TextField
             label="Project name"
             value={deleteConfirmation}
             onChange={(event) => setDeleteConfirmation(event.target.value)}
             fullWidth
             autoFocus
-            sx={{ mt: 2 }}
           />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeDeleteDialog} disabled={deleting}>
-            Cancel
-          </Button>
-          <Button
-            color="error"
-            variant="contained"
-            onClick={handleDeleteProject}
-            disabled={deleting || deleteConfirmation !== project?.name}
-          >
-            {deleting ? "Deleting..." : "Delete"}
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Container>
+        </Stack>
+      </ResponsiveDialog>
+    </PageContainer>
   );
 };
 

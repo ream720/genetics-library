@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import {
-  Typography,
   FormControlLabel,
   Checkbox,
   Button,
@@ -12,6 +11,7 @@ import { CurrencyBitcoin, AttachMoney } from "@mui/icons-material";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
 import { useNavigate } from "react-router-dom";
+import { PageContainer, PageHeader, SectionCard } from "../components/ui";
 
 interface PaymentsPageProps {
   onSave: (methods: string[]) => void;
@@ -70,85 +70,81 @@ const PaymentsPage: React.FC<PaymentsPageProps> = ({ onSave, currentUser }) => {
   };
 
   return (
-    <Box
-      sx={{
-        maxWidth: 400,
-        margin: "0 auto",
-        mt: 5,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: 2,
-      }}
-    >
-      <Box sx={{ textAlign: "center", mb: 1 }}>
-        <Typography variant="h5" sx={{ mb: 0.5 }}>
-          Select Payment Platforms
-        </Typography>
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          sx={{ maxWidth: 320, mx: "auto" }}
-        >
-          Choose the payment methods you accept for your collections.
-        </Typography>
-      </Box>
-      {paymentMethods.map((method) => (
-        <Stack
-          key={method.name}
-          direction="row"
-          alignItems="center"
-          spacing={2}
-          sx={{ mb: 1, width: "100%" }}
-        >
-          <Box
-            sx={{
-              width: 40,
-              height: 40,
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              border: "1px solid #ccc",
-              borderRadius: "35%",
-              padding: 1,
-            }}
-          >
-            {method.logo ? (
-              <img
-                src={method.logo}
-                alt={`${method.name} Logo`}
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "contain",
-                }}
-              />
-            ) : (
-              method.icon
-            )}
-          </Box>
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={selectedMethods.includes(method.name)}
-                onChange={() => handleCheckboxChange(method.name)}
-              />
-            }
-            label={method.name}
-            sx={{ flexGrow: 1 }}
-          />
-        </Stack>
-      ))}
-      <Button
-        variant="contained"
-        color="primary"
-        fullWidth
-        onClick={handleSave}
-        sx={{ mt: 2 }}
-      >
-        Save
-      </Button>
-    </Box>
+    <PageContainer maxWidth="sm">
+      <Stack spacing={3}>
+        <PageHeader
+          eyebrow="Account details"
+          title="Payment platforms"
+          description="Choose the payment methods shown on your public profile."
+          backLabel="Back to dashboard"
+          onBack={() => navigate("/dashboard")}
+        />
+        <SectionCard>
+          <Stack spacing={1.5}>
+            {paymentMethods.map((method) => (
+              <Stack
+                key={method.name}
+                direction="row"
+                alignItems="center"
+                spacing={2}
+                sx={(theme) => ({
+                  minHeight: 58,
+                  px: 1.5,
+                  borderRadius: 3,
+                  bgcolor: theme.palette.surface.subtle,
+                })}
+              >
+                <Box
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    display: "grid",
+                    placeItems: "center",
+                    border: 1,
+                    borderColor: "divider",
+                    borderRadius: 2.5,
+                    p: 0.75,
+                    bgcolor: "background.paper",
+                  }}
+                >
+                  {method.logo ? (
+                    <img
+                      src={method.logo}
+                      alt={`${method.name} logo`}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "contain",
+                      }}
+                    />
+                  ) : (
+                    method.icon
+                  )}
+                </Box>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={selectedMethods.includes(method.name)}
+                      onChange={() => handleCheckboxChange(method.name)}
+                    />
+                  }
+                  label={method.name}
+                  sx={{ flexGrow: 1, m: 0 }}
+                />
+              </Stack>
+            ))}
+            <Button
+              variant="contained"
+              fullWidth
+              onClick={handleSave}
+              sx={{ mt: 1 }}
+            >
+              Save payment platforms
+            </Button>
+          </Stack>
+        </SectionCard>
+      </Stack>
+    </PageContainer>
   );
 };
 
