@@ -47,6 +47,7 @@ interface SearchResult {
   profilePicture?: string;
   isMultiple?: boolean;
   quantity?: number;
+  phenoHunted?: boolean;
 }
 
 function SearchPage() {
@@ -131,6 +132,7 @@ function SearchPage() {
             username: userProfileMap.get(clone.userId ?? "")?.username,
             profilePicture: userProfileMap.get(clone.userId ?? "")
               ?.profilePicture,
+            phenoHunted: clone.phenoHunted,
           })
         ),
       ];
@@ -263,7 +265,9 @@ function SearchPage() {
     if (result.type === "clone") {
       return {
         primary: result.strain,
-        secondary: `${result.breeder} • @${result.username}`,
+        secondary: `${result.breeder}${
+          result.phenoHunted ? " • Pheno Hunted" : ""
+        } • @${result.username}`,
       };
     }
 

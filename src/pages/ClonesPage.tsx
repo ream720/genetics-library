@@ -22,6 +22,7 @@ import {
   AccordionSummary,
   Accordion,
   AccordionDetails,
+  Chip,
   Divider,
 } from "@mui/material";
 import { DataGrid, GridColDef, GridEditBooleanCell } from "@mui/x-data-grid";
@@ -171,6 +172,16 @@ const ClonesPage: React.FC = () => {
       editable: true,
       width: 125,
       flex: 0,
+    },
+    {
+      field: "phenoHunted",
+      headerName: "Source",
+      headerAlign: "center",
+      align: "center",
+      width: 130,
+      flex: 0,
+      renderCell: (params) =>
+        params.value ? <Chip label="Pheno Hunted" size="small" /> : null,
     },
     {
       field: "generation",

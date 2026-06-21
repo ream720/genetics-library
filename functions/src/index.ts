@@ -6,6 +6,10 @@ import { createSeedAssistantFlows } from "./flows/seedAssistant.js";
 import { SEED_ASSISTANT_MODEL_NAME } from "./lib/genkit.js";
 import { adminDb } from "./lib/admin.js";
 import {
+  deleteOwnedProjectData,
+  validateProjectId,
+} from "./projects.js";
+import {
   assertAiAssistantEnabled,
   createAiAssistantEvent,
   getErrorCategory,
@@ -22,6 +26,33 @@ import {
 // Define email password as a secret parameter
 const emailPassword = defineSecret("EMAIL_PASSWORD");
 const googleAiKey = defineSecret("GOOGLE_AI_API_KEY");
+
+export const deleteProjectData = onCall(
+  {
+    enforceAppCheck: false,
+    maxInstances: 5,
+  },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Sign in to delete a project.");
+    }
+
+    const projectId = validateProjectId(request.data);
+    const result = await deleteOwnedProjectData(
+      request.auth.uid,
+      projectId
+    );
+
+    console.info("Deleted project data", {
+      uid: request.auth.uid,
+      projectId,
+      deletedChildRecordCount: result.deletedChildRecordCount,
+      deletedMediaFileCount: result.deletedMediaFileCount,
+    });
+
+    return result;
+  }
+);
 
 async function logValidationErrorEvent(
   uid: string,

@@ -33,6 +33,8 @@ import { SeedProvider } from "./context/SeedContext";
 import ClonesPage from "./pages/ClonesPage";
 import { CloneProvider } from "./context/CloneContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { useUnsavedChanges } from "./context/UnsavedChangesContext";
+import { UnsavedChangesProvider } from "./context/UnsavedChangesProvider";
 import Login from "./components/Login";
 import Signup from "./components/Signup";
 import ForgotPassword from "./components/ForgotPassword";
@@ -40,6 +42,10 @@ import useIdleTimer from "./hooks/useIdleTimer";
 import SearchPage from "./pages/SearchPage";
 import Landing from "./pages/Landing";
 import ContactInfo from "./pages/ContactInfo";
+import ProjectsPage from "./pages/ProjectsPage";
+import ProjectCreatePage from "./pages/ProjectCreatePage";
+import ProjectDetailPage from "./pages/ProjectDetailPage";
+import ProjectAnalyticsPage from "./pages/ProjectAnalyticsPage";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 
@@ -50,10 +56,10 @@ import ModeNightOutlinedIcon from "@mui/icons-material/ModeNightOutlined";
 import SearchIcon from "@mui/icons-material/Search";
 import AccountCircleIcon from "@mui/icons-material/AccountCircleOutlined";
 import DashboardIcon from "@mui/icons-material/Dashboard";
+import FolderIcon from "@mui/icons-material/Folder";
 import LoginIcon from "@mui/icons-material/Login";
 import TermsOfService from "./legal/TermsOfService";
 import PrivacyPolicy from "./legal/PrivacyPolicy";
-import CultivarInfoPage from "./pages/CultivarInfoPage";
 
 interface PrivateRouteProps {
   children: React.ReactNode;
@@ -75,6 +81,7 @@ const AppWithRouter: React.FC = () => {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { confirmNavigation } = useUnsavedChanges();
 
   const handleThemeChange = () => {
     setIsDarkMode(!isDarkMode);
@@ -84,16 +91,23 @@ const AppWithRouter: React.FC = () => {
   const getActiveTabValue = () => {
     if (location.pathname === "/dashboard") return "/dashboard";
     if (location.pathname.startsWith("/search")) return "/search";
+    if (
+      location.pathname.startsWith("/projects") ||
+      location.pathname.startsWith("/project-analytics")
+    )
+      return "/projects";
     if (!currentUser && location.pathname.startsWith("/login")) return "/login";
     if (location.pathname === "/profile") return "/profile";
     return false;
   };
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: string) => {
-    navigate(newValue);
+    if (confirmNavigation()) {
+      navigate(newValue);
+    }
   };
 
-  const handleLogout = async () => {
+  const performLogout = async () => {
     try {
       await logout();
       navigate("/login");
@@ -102,9 +116,15 @@ const AppWithRouter: React.FC = () => {
     }
   };
 
+  const handleLogout = async () => {
+    if (confirmNavigation()) {
+      await performLogout();
+    }
+  };
+
   // Idle timer
   const IDLE_TIMEOUT = 900000; // 15 minutes
-  useIdleTimer({ timeout: IDLE_TIMEOUT, onIdle: handleLogout });
+  useIdleTimer({ timeout: IDLE_TIMEOUT, onIdle: performLogout });
 
   const savePaymentOptions = async (methods: string[]) => {
     if (currentUser) {
@@ -277,6 +297,28 @@ const AppWithRouter: React.FC = () => {
                 aria-label="Search"
               />
 
+              {/* Projects Tab: only if logged in */}
+              {currentUser && (
+                <Tab
+                  icon={
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                      }}
+                    >
+                      <FolderIcon />
+                      <Typography variant="caption" sx={{ fontSize: "0.7rem" }}>
+                        Projects
+                      </Typography>
+                    </Box>
+                  }
+                  value="/projects"
+                  aria-label="Projects"
+                />
+              )}
+
               {/* Profile Tab: only if logged in */}
               {currentUser && (
                 <Tab
@@ -379,10 +421,42 @@ const AppWithRouter: React.FC = () => {
               }
             />
             <Route
-              path="/cultivar-info"
+              path="/projects"
               element={
                 <PrivateRoute>
-                  <CultivarInfoPage />
+                  <ProjectsPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/projects/new"
+              element={
+                <PrivateRoute>
+                  <ProjectCreatePage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/projects/:projectId"
+              element={
+                <PrivateRoute>
+                  <ProjectDetailPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/projects/:projectId/analytics"
+              element={
+                <PrivateRoute>
+                  <ProjectAnalyticsPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/project-analytics"
+              element={
+                <PrivateRoute>
+                  <ProjectAnalyticsPage />
                 </PrivateRoute>
               }
             />
@@ -423,7 +497,9 @@ const App: React.FC = () => {
       <AuthProvider>
         <SeedProvider>
           <CloneProvider>
-            <AppWithRouter />
+            <UnsavedChangesProvider>
+              <AppWithRouter />
+            </UnsavedChangesProvider>
           </CloneProvider>
         </SeedProvider>
       </AuthProvider>

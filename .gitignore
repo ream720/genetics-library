@@ -13,6 +13,8 @@ dist-ssr
 *.local
 .env
 .genkit/*
+.firebase-config/
+.npm-cache/
 
 gha-creds-*.json
 functions/.env.genetics-library

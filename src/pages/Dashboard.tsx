@@ -4,7 +4,7 @@ import {
   Payments,
   ContactMail,
   Email,
-  SpaOutlined,
+  FolderOutlined,
 } from "@mui/icons-material";
 import {
   Button,
@@ -97,7 +97,7 @@ function Dashboard() {
           <Stack direction="row" spacing={1} alignItems="center">
             <Info fontSize="small" />
             <Typography variant="subtitle2">
-              Manage your seeds, clones, and payment options here.
+              Manage your genetics, projects, and account options here.
             </Typography>
           </Stack>
         </Box>
@@ -115,8 +115,8 @@ function Dashboard() {
                   color="text.secondary"
                   sx={{ mb: 3, maxWidth: "600px" }}
                 >
-                  Organize and keep track of your seeds and clones for easy
-                  access.
+                  Organize your seeds and clones, then track their results in
+                  Projects.
                 </Typography>
               </Box>
               <Stack direction="row" spacing={2} justifyContent="flex-start">
@@ -137,12 +137,12 @@ function Dashboard() {
                   Clones
                 </Button>
                 <Button
-                  startIcon={<SpaOutlined />}
+                  startIcon={<FolderOutlined />}
                   variant="contained"
                   size="small"
-                  onClick={() => navigate("/cultivar-info")}
+                  onClick={() => navigate("/projects")}
                 >
-                  Add Cultivar Info
+                  Projects
                 </Button>
               </Stack>
             </CardContent>

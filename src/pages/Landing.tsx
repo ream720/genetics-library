@@ -21,7 +21,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import Inventory2Icon from "@mui/icons-material/Inventory2";
 import SmartToyIcon from "@mui/icons-material/SmartToy";
-import GrassIcon from "@mui/icons-material/Grass";
+import FolderCopyIcon from "@mui/icons-material/FolderCopy";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 
 // interface Article {
@@ -108,10 +108,10 @@ const Landing: React.FC = () => {
     },
 
     {
-      icon: <GrassIcon fontSize="medium" color="primary" />,
-      title: "Cultivar Info & Grower Notes",
+      icon: <FolderCopyIcon fontSize="medium" color="primary" />,
+      title: "Track Projects and Results",
       description:
-        "Access and contribute real-world grow data, tips, and experiences for each cultivar—shared by the community.",
+        "Record Pheno Hunts and Wash/Process work, compare results, and build a private history over time.",
     },
     {
       icon: <SmartToyIcon fontSize="medium" color="primary" />,
