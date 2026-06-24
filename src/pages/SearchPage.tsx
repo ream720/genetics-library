@@ -1,34 +1,33 @@
 import React, { useState } from "react";
 import {
-  TextField,
-  Button,
+  Alert,
+  Avatar,
   Box,
-  Typography,
+  Button,
   CircularProgress,
   List,
   ListItem,
-  ListItemText,
   ListItemAvatar,
-  Avatar,
-  Tabs,
-  Tab,
-  Paper,
+  ListItemText,
   Snackbar,
   Stack,
+  Tab,
+  Tabs,
+  TextField,
 } from "@mui/material";
 import {
-  getFirestore,
   collection,
-  query,
-  where,
-  getDocs,
   doc,
   getDoc,
+  getDocs,
+  getFirestore,
+  query,
+  where,
 } from "firebase/firestore";
-import { app, logAnalyticsEvent } from "../../firebaseConfig";
 import { Link } from "react-router-dom";
-import { Seed, Clone } from "../types";
-import { PageContainer, PageHeader, SectionCard } from "../components/ui";
+import { app, logAnalyticsEvent } from "../../firebaseConfig";
+import { EmptyState, PageContainer, PageHeader, SectionCard } from "../components/ui";
+import { Clone, Seed } from "../types";
 
 const db = getFirestore(app);
 
@@ -50,6 +49,12 @@ interface SearchResult {
   quantity?: number;
   phenoHunted?: boolean;
 }
+
+const resultTabs: Array<{ label: string; type: SearchResult["type"] }> = [
+  { label: "Users", type: "user" },
+  { label: "Seeds", type: "seed" },
+  { label: "Clones", type: "clone" },
+];
 
 function SearchPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -82,7 +87,6 @@ function SearchPage() {
         searchClones(searchQuery),
       ]);
 
-      // Get user profiles for seeds and clones
       const userIdsSet = new Set([
         ...seeds
           .filter((seed) => seed.userId)
@@ -97,7 +101,6 @@ function SearchPage() {
         userProfiles.map((profile) => [profile.id, profile])
       );
 
-      // Transform results into unified format
       const transformedResults: SearchResult[] = [
         ...users.map(
           (user): SearchResult => ({
@@ -108,7 +111,6 @@ function SearchPage() {
             profilePicture: user.profilePicture,
           })
         ),
-        // Update seed and clone mappings to include profilePicture
         ...seeds.map(
           (seed): SearchResult => ({
             type: "seed",
@@ -166,25 +168,21 @@ function SearchPage() {
       return {
         id: doc.id,
         username: userData.username || "",
-        profilePicture: userData.photoURL || userData.profilePicture, // Check both possible field names
+        profilePicture: userData.photoURL || userData.profilePicture,
       };
     });
   };
 
   const searchSeeds = async (queryText: string): Promise<Seed[]> => {
-    // Get all seeds that might be relevant (we'll filter more precisely client-side)
     const seedsRef = collection(db, "seeds");
 
     try {
-      // Get all seeds (this is a temporary solution - we should implement pagination for larger datasets)
       const snapshot = await getDocs(seedsRef);
-
       const seeds = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       })) as Seed[];
 
-      // Filter client-side for case-insensitive partial matches
       const lowerQuery = queryText.toLowerCase().trim();
       return seeds.filter(
         (seed) =>
@@ -201,15 +199,12 @@ function SearchPage() {
     const clonesRef = collection(db, "clones");
 
     try {
-      // Get all clones (this is a temporary solution - we should implement pagination for larger datasets)
       const snapshot = await getDocs(clonesRef);
-
       const clones = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       })) as Clone[];
 
-      // Filter client-side for case-insensitive partial matches
       const lowerQuery = queryText.toLowerCase().trim();
       return clones.filter(
         (clone) =>
@@ -235,7 +230,7 @@ function SearchPage() {
           const profile: UserProfile = {
             id: userId,
             username: userData?.username || "",
-            profilePicture: userData?.photoURL || userData?.profilePicture, // Check both possible field names
+            profilePicture: userData?.photoURL || userData?.profilePicture,
           };
           return profile;
         }
@@ -248,12 +243,13 @@ function SearchPage() {
     );
   };
 
-  const filteredResults = searchResults.filter((result) => {
-    if (activeTab === 0) return result.type === "user"; // Show only users
-    if (activeTab === 1) return result.type === "seed"; // Show only seeds
-    if (activeTab === 2) return result.type === "clone"; // Show only clones
-    return false;
-  });
+  const activeResultType = resultTabs[activeTab].type;
+  const filteredResults = searchResults.filter(
+    (result) => result.type === activeResultType
+  );
+
+  const countByType = (type: SearchResult["type"]) =>
+    searchResults.filter((result) => result.type === type).length;
 
   const getResultContent = (result: SearchResult) => {
     if (result.type === "user") {
@@ -267,112 +263,142 @@ function SearchPage() {
       return {
         primary: result.strain,
         secondary: `${result.breeder}${
-          result.phenoHunted ? " • Pheno Hunted" : ""
-        } • @${result.username}`,
+          result.phenoHunted ? " - Pheno Hunted" : ""
+        } - @${result.username}`,
       };
     }
 
-    // Handle seed display
     let secondary = result.breeder;
 
     if (result.isMultiple && result.quantity && result.quantity > 1) {
-      secondary = `${result.breeder} • ${result.quantity} Packs Available`;
+      secondary = `${result.breeder} - ${result.quantity} packs available`;
     }
 
     return {
       primary: result.strain,
-      secondary: `${secondary} • @${result.username}`,
+      secondary: `${secondary} - @${result.username}`,
     };
   };
 
   return (
     <PageContainer maxWidth="md">
-      <Stack spacing={3}>
+      <Stack spacing={2.5}>
         <PageHeader
           eyebrow="Community database"
           title="Search"
           description="Find users and public seed or clone entries by username, strain, breeder, or lineage."
         />
-        <SectionCard>
-        <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-          <TextField
-            size="medium"
-            label="Search Users, Seeds, or Clones"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-            fullWidth
-          />
-          <Button
-            size="medium"
-            variant="contained"
-            onClick={handleSearch}
-            disabled={loading || !searchQuery.trim()}
-          >
-            Search
-          </Button>
-        </Stack>
 
-        {loading && (
-          <Box sx={{ display: "flex", justifyContent: "center", mt: 1 }}>
-            <CircularProgress size={24} />
-          </Box>
-        )}
-
-        {error && (
-          <Typography color="error" sx={{ mt: 1 }}>
-            {error}
-          </Typography>
-        )}
-
-        {searchResults.length > 0 && (
-          <Paper sx={{ mt: 1, p: 1 }}>
-            <Tabs value={activeTab} onChange={handleTabChange}>
-              <Tab
-                label={`Users (${
-                  searchResults.filter((r) => r.type === "user").length
-                })`}
+        <SectionCard title="Search Library" contentPadding={2.5}>
+          <Stack spacing={2}>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
+              <TextField
+                label="Search users, seeds, or clones"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                onKeyDown={(event) => event.key === "Enter" && handleSearch()}
+                fullWidth
               />
-              <Tab
-                label={`Seeds (${
-                  searchResults.filter((r) => r.type === "seed").length
-                })`}
-              />
-              <Tab
-                label={`Clones (${
-                  searchResults.filter((r) => r.type === "clone").length
-                })`}
-              />
-            </Tabs>
-          </Paper>
-        )}
+              <Button
+                variant="contained"
+                onClick={handleSearch}
+                disabled={loading || !searchQuery.trim()}
+                sx={{ width: { xs: "100%", sm: "auto" } }}
+              >
+                Search
+              </Button>
+            </Stack>
 
-        <List sx={{ mt: 1 }}>
-          {filteredResults.map((result) => (
-            <ListItem
-              key={`${result.type}-${result.id}`}
-              component={Link}
-              to={`/profile/${result.userId}?itemType=${result.type}&itemId=${result.id}`}
-              sx={{
-                bgcolor: "background.paper",
-                mb: 0.5,
-                borderRadius: 1,
-                "&:hover": {
-                  bgcolor: "action.hover",
-                },
-              }}
-            >
-              <ListItemAvatar>
-                <Avatar src={result.profilePicture}>
-                  {result.type === "user"
-                    ? result.username?.charAt(0)
-                    : result.strain?.charAt(0)}
-                </Avatar>
-              </ListItemAvatar>
-              <ListItemText {...getResultContent(result)} />
-            </ListItem>
-          ))}
-        </List>
+            {loading && (
+              <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
+                <CircularProgress size={24} />
+              </Box>
+            )}
+
+            {error && <Alert severity="error">{error}</Alert>}
+
+            {searchResults.length > 0 ? (
+              <>
+                <Box
+                  sx={(theme) => ({
+                    border: 1,
+                    borderColor: "divider",
+                    borderRadius: 3,
+                    bgcolor: theme.palette.surface.subtle,
+                  })}
+                >
+                  <Tabs
+                    value={activeTab}
+                    onChange={handleTabChange}
+                    variant="fullWidth"
+                  >
+                    {resultTabs.map((tab) => (
+                      <Tab
+                        key={tab.type}
+                        label={`${tab.label} (${countByType(tab.type)})`}
+                      />
+                    ))}
+                  </Tabs>
+                </Box>
+
+                {filteredResults.length === 0 ? (
+                  <EmptyState
+                    title={`No ${resultTabs[activeTab].label.toLowerCase()} found`}
+                    description="Try another result type or search term."
+                  />
+                ) : (
+                  <List disablePadding>
+                    {filteredResults.map((result) => {
+                      const content = getResultContent(result);
+
+                      return (
+                        <ListItem
+                          key={`${result.type}-${result.id}`}
+                          component={Link}
+                          to={`/profile/${result.userId}?itemType=${result.type}&itemId=${result.id}`}
+                          sx={(theme) => ({
+                            minHeight: 68,
+                            mb: 1,
+                            border: 1,
+                            borderColor: "divider",
+                            borderRadius: 3,
+                            color: "text.primary",
+                            textDecoration: "none",
+                            bgcolor: theme.palette.surface.subtle,
+                            transition:
+                              "background-color 180ms ease, border-color 180ms ease",
+                            "&:hover": {
+                              bgcolor: "action.hover",
+                              borderColor: "primary.main",
+                            },
+                          })}
+                        >
+                          <ListItemAvatar>
+                            <Avatar src={result.profilePicture}>
+                              {result.type === "user"
+                                ? result.username?.charAt(0)
+                                : result.strain?.charAt(0)}
+                            </Avatar>
+                          </ListItemAvatar>
+                          <ListItemText
+                            primary={content.primary}
+                            secondary={content.secondary}
+                            primaryTypographyProps={{ fontWeight: 800 }}
+                          />
+                        </ListItem>
+                      );
+                    })}
+                  </List>
+                )}
+              </>
+            ) : !loading ? (
+              <EmptyState
+                title="Search the community"
+                description="Enter a username, breeder, or strain to find public Genetics Library records."
+              />
+            ) : null}
+          </Stack>
+        </SectionCard>
 
         <Snackbar
           open={showSnackbar}
@@ -380,7 +406,6 @@ function SearchPage() {
           onClose={() => setShowSnackbar(false)}
           message={snackbarMessage}
         />
-        </SectionCard>
       </Stack>
     </PageContainer>
   );

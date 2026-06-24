@@ -67,7 +67,9 @@ const PageHeader = ({
         <Box
           sx={{
             flexShrink: 0,
-            "& > *": { width: { xs: "100%", sm: "auto" } },
+            width: { xs: "100%", sm: "auto" },
+            "& > .MuiButton-root": { width: { xs: "100%", sm: "auto" } },
+            "& > .MuiChip-root": { width: "auto" },
           }}
         >
           {actions}
@@ -78,4 +80,3 @@ const PageHeader = ({
 );
 
 export default PageHeader;
-

@@ -5,10 +5,6 @@ import {
   Card,
   CardContent,
   Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   Divider,
   MenuItem,
   Stack,
@@ -47,6 +43,7 @@ import {
   WashSession,
   WashSource,
 } from "../../types/v2";
+import { ResponsiveDialog, SectionCard } from "../ui";
 
 interface WashProcessSetupProps {
   project: ProjectBase;
@@ -933,15 +930,19 @@ const WashProcessSetup: React.FC<WashProcessSetupProps> = ({
 
   return (
     <>
-      <Card variant="outlined">
-        <CardContent>
-          <Stack spacing={2}>
-            <Box>
-              <Typography variant="h6">Wash Sessions</Typography>
-              <Typography color="text.secondary" variant="body2">
-                Track wash dates, runs, fractions, cycles, and press results.
-              </Typography>
-            </Box>
+      <SectionCard
+        title="Wash Sessions"
+        description="Track wash dates, runs, fractions, cycles, and press results."
+        contentPadding={2.5}
+        action={
+          !readOnly ? (
+            <Button variant="contained" onClick={handleAddSession}>
+              Add Session
+            </Button>
+          ) : undefined
+        }
+      >
+        <Stack spacing={2}>
 
             {error && <Alert severity="error">{error}</Alert>}
 
@@ -950,17 +951,7 @@ const WashProcessSetup: React.FC<WashProcessSetupProps> = ({
                 Loading wash sessions...
               </Typography>
             ) : (
-              <Stack spacing={2}>
-                {!readOnly && (
-                  <Button
-                    variant="contained"
-                    onClick={handleAddSession}
-                    sx={{ alignSelf: "flex-start" }}
-                  >
-                    Add Session
-                  </Button>
-                )}
-
+              <>
                 {data.sessions.length === 0 ? (
                   <Typography color="text.secondary" variant="body2">
                     No wash sessions yet.
@@ -1018,6 +1009,7 @@ const WashProcessSetup: React.FC<WashProcessSetupProps> = ({
                                     variant="outlined"
                                     size="small"
                                     onClick={() => handleEditSession(session)}
+                                    sx={{ minHeight: 44 }}
                                   >
                                     Edit
                                   </Button>
@@ -1027,6 +1019,7 @@ const WashProcessSetup: React.FC<WashProcessSetupProps> = ({
                                     variant="outlined"
                                     size="small"
                                     onClick={() => handleAddRun(session)}
+                                    sx={{ minHeight: 44 }}
                                   >
                                     Add Run
                                   </Button>
@@ -1112,24 +1105,35 @@ const WashProcessSetup: React.FC<WashProcessSetupProps> = ({
                     );
                   })
                 )}
-              </Stack>
+              </>
             )}
-          </Stack>
-        </CardContent>
-      </Card>
+        </Stack>
+      </SectionCard>
 
-      <Dialog
+      <ResponsiveDialog
         open={Boolean(sessionDraft)}
         onClose={handleCloseSessionDialog}
-        fullWidth
         maxWidth="sm"
+        title={selectedSession ? "Edit Wash Session" : "Add Wash Session"}
+        actions={
+          <>
+            <Button onClick={handleCloseSessionDialog} disabled={savingSession}>
+              Close
+            </Button>
+            {!readOnly && (
+              <Button
+                variant="contained"
+                onClick={handleSaveSession}
+                disabled={savingSession}
+              >
+                {savingSession ? "Saving..." : "Save Session"}
+              </Button>
+            )}
+          </>
+        }
       >
-        <DialogTitle>
-          {selectedSession ? "Edit Wash Session" : "Add Wash Session"}
-        </DialogTitle>
-        <DialogContent dividers>
-          {sessionDraft && (
-            <Stack spacing={2} sx={{ pt: 1 }}>
+        {sessionDraft && (
+          <Stack spacing={2} sx={{ pt: 1 }}>
               <TextField
                 label="Session date"
                 type="date"
@@ -1175,35 +1179,50 @@ const WashProcessSetup: React.FC<WashProcessSetupProps> = ({
                   deferDeletePhotoIds={sessionOriginalPhotoIds}
                 />
               )}
-            </Stack>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseSessionDialog} disabled={savingSession}>
-            Close
-          </Button>
-          {!readOnly && (
-            <Button
-              variant="contained"
-              onClick={handleSaveSession}
-              disabled={savingSession}
-            >
-              {savingSession ? "Saving..." : "Save Session"}
-            </Button>
-          )}
-        </DialogActions>
-      </Dialog>
+          </Stack>
+        )}
+      </ResponsiveDialog>
 
-      <Dialog
+      <ResponsiveDialog
         open={Boolean(runDraft)}
         onClose={handleCloseRunDialog}
-        fullWidth
         maxWidth="md"
+        title={runDialogTitle}
+        actions={
+          <>
+            <Button onClick={handleCloseRunDialog} disabled={savingRun}>
+              Close
+            </Button>
+            {!readOnly && selectedRun && !runEditMode && (
+              <Button variant="outlined" onClick={() => setRunEditMode(true)}>
+                Edit
+              </Button>
+            )}
+            {!readOnly && runEditMode && (
+              <>
+                <Button
+                  variant={nextRunStage ? "outlined" : "contained"}
+                  onClick={() => handleSaveRun()}
+                  disabled={savingRun}
+                >
+                  {savingRun ? "Saving..." : saveRunButtonLabel}
+                </Button>
+                {nextRunStage && nextRunStageActionLabel && (
+                  <Button
+                    variant="contained"
+                    onClick={() => handleSaveRun(nextRunStage)}
+                    disabled={savingRun}
+                  >
+                    {savingRun ? "Saving..." : nextRunStageActionLabel}
+                  </Button>
+                )}
+              </>
+            )}
+          </>
+        }
       >
-        <DialogTitle>{runDialogTitle}</DialogTitle>
-        <DialogContent dividers>
-          {runDraft && (
-            <Stack spacing={2} sx={{ pt: 1 }}>
+        {runDraft && (
+          <Stack spacing={2} sx={{ pt: 1 }}>
               {error && <Alert severity="error">{error}</Alert>}
 
               {selectedRun && !runEditMode ? (
@@ -1869,40 +1888,9 @@ const WashProcessSetup: React.FC<WashProcessSetupProps> = ({
                   )}
                 </Stack>
               )}
-            </Stack>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseRunDialog} disabled={savingRun}>
-            Close
-          </Button>
-          {!readOnly && selectedRun && !runEditMode && (
-            <Button variant="outlined" onClick={() => setRunEditMode(true)}>
-              Edit
-            </Button>
-          )}
-          {!readOnly && runEditMode && (
-            <>
-              <Button
-                variant={nextRunStage ? "outlined" : "contained"}
-                onClick={() => handleSaveRun()}
-                disabled={savingRun}
-              >
-                {savingRun ? "Saving..." : saveRunButtonLabel}
-              </Button>
-              {nextRunStage && nextRunStageActionLabel && (
-                <Button
-                  variant="contained"
-                  onClick={() => handleSaveRun(nextRunStage)}
-                  disabled={savingRun}
-                >
-                  {savingRun ? "Saving..." : nextRunStageActionLabel}
-                </Button>
-              )}
-            </>
-          )}
-        </DialogActions>
-      </Dialog>
+          </Stack>
+        )}
+      </ResponsiveDialog>
     </>
   );
 };

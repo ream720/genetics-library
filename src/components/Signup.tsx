@@ -1,27 +1,39 @@
-import React, { useRef, useState } from "react";
+import { type FormEvent, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { Link, useNavigate } from "react-router-dom";
-import { TextField, Button, Stack, Paper, Alert, Box } from "@mui/material";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
+import {
+  Alert,
+  Button,
+  IconButton,
+  InputAdornment,
+  Link as MuiLink,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { UsernameAlreadyInUseError } from "../errors/UsernameAlreadyInUserError";
 import { FirebaseError } from "firebase/app";
+import AuthPanel from "./auth/AuthPanel";
 
 function Signup() {
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
-  const usernameRef = useRef<HTMLInputElement>(null); // Add username ref
+  const usernameRef = useRef<HTMLInputElement>(null);
   const { signup } = useAuth();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
 
     try {
       setError("");
       setLoading(true);
       if (emailRef.current && passwordRef.current && usernameRef.current) {
-        // Call signup and get the userCredential
         await signup(
           emailRef.current.value,
           passwordRef.current.value,
@@ -31,21 +43,19 @@ function Signup() {
         navigate("/dashboard");
       }
     } catch (err: unknown) {
-      // We now discriminate the 'err' type with instanceof checks
       if (err instanceof UsernameAlreadyInUseError) {
         setError("That username is already taken. Please try again.");
       } else if (err instanceof FirebaseError) {
-        // For any Firebase-specific errors, we check the code property
         if (err.code === "auth/email-already-in-use") {
           setError("That email is already in use. Please try a different one.");
+        } else if (err.code === "auth/weak-password") {
+          setError("Password is too weak. Use at least 6 characters.");
         } else {
-          setError(`Firebase error: ${err.message}`);
+          setError(`Signup failed: ${err.message}`);
         }
       } else if (err instanceof Error) {
-        // Fallback for other unexpected JS errors
         setError(err.message);
       } else {
-        // Just in case it's something truly unknown
         setError("An unknown error occurred.");
       }
     } finally {
@@ -54,64 +64,81 @@ function Signup() {
   }
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        minHeight: "30vh", // fills the full viewport height
-      }}
+    <AuthPanel
+      eyebrow="Create account"
+      title="Start building your genetics library."
+      description="Catalog seeds and clones now, then use Projects to track hunts, washes, photos, and results over time."
+      supportTitle="Built for growers and makers"
+      supportItems={[
+        "Create seed and clone records from your own collection.",
+        "Use private Projects for Pheno Hunt and Wash/Process workflows.",
+        "Keep public collection sharing separate from private project data.",
+      ]}
     >
-      <Stack spacing={3} sx={{ p: 3, maxWidth: 400 }}>
-        <Paper elevation={3} sx={{ p: 3 }}>
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
-          <form onSubmit={handleSubmit}>
-            <TextField
-              sx={{ mb: 2 }}
-              label="Username"
-              type="text"
-              placeholder="Username"
-              inputRef={usernameRef} // Add username field
-              required
-              fullWidth
-            />
-            <TextField
-              sx={{ mb: 2 }}
-              label="Email"
-              type="email"
-              placeholder="Email"
-              inputRef={emailRef}
-              required
-              fullWidth
-            />
-            <TextField
-              sx={{ mb: 2 }}
-              label="Password"
-              type="password"
-              placeholder="Password"
-              inputRef={passwordRef}
-              required
-              fullWidth
-            />
-            <Button
-              sx={{ mb: 2 }}
-              disabled={loading}
-              type="submit"
-              variant="contained"
-            >
-              Sign Up
-            </Button>
-          </form>
-          <div>
-            Already have an account? <Link to="/login">Log In</Link>
-          </div>
-        </Paper>
+      <Stack spacing={2.5}>
+        <Stack spacing={0.75}>
+          <Typography component="h2" variant="h5">
+            Sign up
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Choose a username, email, and password.
+          </Typography>
+        </Stack>
+
+        {error && <Alert severity="error">{error}</Alert>}
+
+        <Stack component="form" spacing={2} onSubmit={handleSubmit} noValidate>
+          <TextField
+            label="Username"
+            type="text"
+            inputRef={usernameRef}
+            required
+            fullWidth
+            autoComplete="username"
+          />
+          <TextField
+            label="Email"
+            type="email"
+            inputRef={emailRef}
+            required
+            fullWidth
+            autoComplete="email"
+          />
+          <TextField
+            label="Password"
+            type={showPassword ? "text" : "password"}
+            inputRef={passwordRef}
+            required
+            fullWidth
+            autoComplete="new-password"
+            helperText="Use at least 6 characters."
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={() => setShowPassword((value) => !value)}
+                    edge="end"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
+          <Button disabled={loading} type="submit" variant="contained" fullWidth>
+            {loading ? "Creating account..." : "Create account"}
+          </Button>
+        </Stack>
+
+        <Typography variant="body2" color="text.secondary" textAlign="center">
+          Already have an account?{" "}
+          <MuiLink component={RouterLink} to="/login">
+            Log in
+          </MuiLink>
+        </Typography>
       </Stack>
-    </Box>
+    </AuthPanel>
   );
 }
 

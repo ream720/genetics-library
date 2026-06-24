@@ -2,19 +2,19 @@ import {
   Alert,
   Box,
   Button,
+  ButtonBase,
   Card,
   CardContent,
   Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
+  InputAdornment,
   MenuItem,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import KeyboardArrowRightRoundedIcon from "@mui/icons-material/KeyboardArrowRightRounded";
+import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import ProjectPhotoUploader from "../v2/ProjectPhotoUploader";
 import {
@@ -47,6 +47,7 @@ import {
   ProjectStatus,
   RatingScore,
 } from "../../types/v2";
+import { FilterBar, ResponsiveDialog, SectionCard } from "../ui";
 
 interface PhenoHuntSetupProps {
   project: ProjectBase;
@@ -132,6 +133,26 @@ const ACTIVE_STATES = new Set<PlantLifecycleState>([
 
 type LifecycleFilter = PlantLifecycleState | "all";
 type FinalLabelFilter = FinalLabel | "all";
+
+const lifecycleTone = (state: PlantLifecycleState) => {
+  if (state === "harvested") {
+    return "success.main";
+  }
+
+  if (state === "failed_to_germinate" || state === "cancelled") {
+    return "error.main";
+  }
+
+  if (state === "flowering") {
+    return "warning.main";
+  }
+
+  if (ACTIVE_STATES.has(state)) {
+    return "primary.main";
+  }
+
+  return "text.disabled";
+};
 
 const countPlantsByState = (
   plants: PhysicalPlant[],
@@ -257,6 +278,13 @@ const PhenoHuntSetup: React.FC<PhenoHuntSetupProps> = ({
     useState<LifecycleFilter>("all");
   const [finalLabelFilter, setFinalLabelFilter] =
     useState<FinalLabelFilter>("all");
+  const [plantSearch, setPlantSearch] = useState("");
+  const [editingGroupIds, setEditingGroupIds] = useState<
+    Record<string, boolean>
+  >({});
+  const [plantDisplayLimits, setPlantDisplayLimits] = useState<
+    Record<string, number>
+  >({});
   const [error, setError] = useState<string | null>(null);
 
   const projectId = project.id;
@@ -449,6 +477,10 @@ const PhenoHuntSetup: React.FC<PhenoHuntSetupProps> = ({
       }
 
       await loadData();
+      setEditingGroupIds((current) => ({
+        ...current,
+        [group.id!]: false,
+      }));
     } catch (saveError) {
       console.error("Failed to save pheno group:", saveError);
       setError(
@@ -459,6 +491,30 @@ const PhenoHuntSetup: React.FC<PhenoHuntSetupProps> = ({
     } finally {
       setSavingGroupId(null);
     }
+  };
+
+  const handleToggleGroupEditor = (group: PhenoComparisonGroup) => {
+    if (!group.id) {
+      return;
+    }
+
+    const isEditing = Boolean(editingGroupIds[group.id]);
+
+    if (isEditing) {
+      setGroupDrafts((current) => ({
+        ...current,
+        [group.id!]: {
+          name: group.name,
+          notes: group.notes ?? "",
+          plantedCount: String(group.plantedCount),
+        },
+      }));
+    }
+
+    setEditingGroupIds((current) => ({
+      ...current,
+      [group.id!]: !isEditing,
+    }));
   };
 
   const handleOpenPlant = (plant: PhysicalPlant) => {
@@ -792,6 +848,14 @@ const PhenoHuntSetup: React.FC<PhenoHuntSetupProps> = ({
   };
 
   const plantMatchesFilters = (plant: PhysicalPlant) => {
+    const normalizedSearch = plantSearch.trim().toLowerCase();
+    if (
+      normalizedSearch &&
+      !plant.displayId.toLowerCase().includes(normalizedSearch)
+    ) {
+      return false;
+    }
+
     if (
       lifecycleFilter !== "all" &&
       plant.lifecycleState !== lifecycleFilter
@@ -822,315 +886,504 @@ const PhenoHuntSetup: React.FC<PhenoHuntSetupProps> = ({
 
   return (
     <>
-      <Card variant="outlined">
-        <CardContent>
-          <Stack spacing={2}>
-            <Box>
-              <Typography variant="h6">Pheno Hunt Groups</Typography>
-              <Typography color="text.secondary" variant="body2">
-                Create pheno hunt groups.
-              </Typography>
-            </Box>
+      <SectionCard
+        title="Pheno Hunt Groups"
+        description="Track and compare plants by genetic group."
+        action={
+          data.groups.length > 0 ? (
+            <Chip
+              label={`${data.groups.length} group${
+                data.groups.length === 1 ? "" : "s"
+              }`}
+              size="small"
+            />
+          ) : undefined
+        }
+        contentPadding={2.5}
+      >
+        <Stack spacing={2}>
+          <FilterBar>
+            <TextField
+              label="Search plants"
+              value={plantSearch}
+              onChange={(event) => setPlantSearch(event.target.value)}
+              size="small"
+              fullWidth
+              sx={{ flex: { md: 1.4 } }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchRoundedIcon fontSize="small" />
+                  </InputAdornment>
+                ),
+              }}
+            />
+            <TextField
+              label="Lifecycle"
+              value={lifecycleFilter}
+              onChange={(event) =>
+                setLifecycleFilter(event.target.value as LifecycleFilter)
+              }
+              size="small"
+              select
+              sx={{ flex: 1 }}
+            >
+              <MenuItem value="all">All stages</MenuItem>
+              {Object.entries(PLANT_LIFECYCLE_STATE_LABELS).map(
+                ([value, label]) => (
+                  <MenuItem key={value} value={value}>
+                    {label}
+                  </MenuItem>
+                )
+              )}
+            </TextField>
+            <TextField
+              label="Final label"
+              value={finalLabelFilter}
+              onChange={(event) =>
+                setFinalLabelFilter(event.target.value as FinalLabelFilter)
+              }
+              size="small"
+              select
+              sx={{ flex: 1 }}
+            >
+              <MenuItem value="all">All labels</MenuItem>
+              {FINAL_LABEL_OPTIONS.map((label) => (
+                <MenuItem key={label} value={label}>
+                  {FINAL_LABEL_LABELS[label]}
+                </MenuItem>
+              ))}
+            </TextField>
+            {(plantSearch ||
+              lifecycleFilter !== "all" ||
+              finalLabelFilter !== "all") && (
+              <Button
+                size="small"
+                variant="text"
+                onClick={() => {
+                  setPlantSearch("");
+                  setLifecycleFilter("all");
+                  setFinalLabelFilter("all");
+                }}
+                sx={{
+                  alignSelf: { xs: "stretch", md: "center" },
+                  minHeight: 44,
+                  flexShrink: 0,
+                }}
+              >
+                Clear filters
+              </Button>
+            )}
+          </FilterBar>
 
-            <Stack spacing={1}>
-              <Typography fontWeight={700} variant="body2">
-                Filter plants
+          {error && <Alert severity="error">{error}</Alert>}
+
+          {loading ? (
+            <Typography color="text.secondary" variant="body2">
+              Loading groups...
+            </Typography>
+          ) : data.groups.length === 0 ? (
+            <Stack spacing={2} alignItems="flex-start">
+              <Typography color="text.secondary" variant="body2">
+                No groups yet.
               </Typography>
-              <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                <Chip
-                  label="All stages"
-                  size="small"
-                  color={lifecycleFilter === "all" ? "primary" : "default"}
-                  variant={lifecycleFilter === "all" ? "filled" : "outlined"}
-                  onClick={() => setLifecycleFilter("all")}
-                />
-                {Object.entries(PLANT_LIFECYCLE_STATE_LABELS).map(
-                  ([value, label]) => (
-                    <Chip
-                      key={value}
-                      label={label}
-                      size="small"
-                      color={
-                        lifecycleFilter === value ? "primary" : "default"
-                      }
-                      variant={
-                        lifecycleFilter === value ? "filled" : "outlined"
-                      }
-                      onClick={() =>
-                        setLifecycleFilter(value as PlantLifecycleState)
-                      }
-                    />
-                  )
-                )}
-              </Stack>
-              <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                <Chip
-                  label="All labels"
-                  size="small"
-                  color={finalLabelFilter === "all" ? "primary" : "default"}
-                  variant={finalLabelFilter === "all" ? "filled" : "outlined"}
-                  onClick={() => setFinalLabelFilter("all")}
-                />
-                {FINAL_LABEL_OPTIONS.map((label) => (
-                  <Chip
-                    key={label}
-                    label={FINAL_LABEL_LABELS[label]}
-                    size="small"
-                    color={finalLabelFilter === label ? "primary" : "default"}
-                    variant={
-                      finalLabelFilter === label ? "filled" : "outlined"
-                    }
-                    onClick={() => setFinalLabelFilter(label)}
-                  />
-                ))}
-              </Stack>
+              <Button
+                variant="contained"
+                onClick={handleInitializeGroups}
+                disabled={
+                  readOnly ||
+                  initializing ||
+                  project.sourceSnapshots.length === 0
+                }
+              >
+                {initializing ? "Creating..." : "Create Groups"}
+              </Button>
             </Stack>
+          ) : (
+            <Stack spacing={2}>
+              {data.groups.map((group, index) => {
+                const groupId = group.id ?? "";
+                const draft = groupDrafts[groupId];
+                const plants = plantsByGroupId[groupId] ?? [];
+                const visiblePlants = plants.filter(plantMatchesFilters);
+                const plantDisplayLimit = plantDisplayLimits[groupId] ?? 30;
+                const displayedPlants = visiblePlants.slice(
+                  0,
+                  plantDisplayLimit
+                );
+                const phenotypes = phenotypesByGroupId[groupId] ?? [];
+                const germinatedCount = countPlantsByState(
+                  plants,
+                  GERMINATED_STATES
+                );
+                const activeCount = countPlantsByState(plants, ACTIVE_STATES);
+                const isEditingGroup = Boolean(editingGroupIds[groupId]);
 
-            {error && <Alert severity="error">{error}</Alert>}
-
-            {loading ? (
-              <Typography color="text.secondary" variant="body2">
-                Loading groups...
-              </Typography>
-            ) : data.groups.length === 0 ? (
-              <Stack spacing={2} alignItems="flex-start">
-                <Typography color="text.secondary" variant="body2">
-                  No groups yet.
-                </Typography>
-                <Button
-                  variant="contained"
-                  onClick={handleInitializeGroups}
-                  disabled={
-                    readOnly ||
-                    initializing ||
-                    project.sourceSnapshots.length === 0
-                  }
-                >
-                  {initializing ? "Creating..." : "Create Groups"}
-                </Button>
-              </Stack>
-            ) : (
-              <Stack spacing={2}>
-                {data.groups.map((group, index) => {
-                  const groupId = group.id ?? "";
-                  const draft = groupDrafts[groupId];
-                  const plants = plantsByGroupId[groupId] ?? [];
-                  const visiblePlants = plants.filter(plantMatchesFilters);
-                  const phenotypes = phenotypesByGroupId[groupId] ?? [];
-                  const germinatedCount = countPlantsByState(
-                    plants,
-                    GERMINATED_STATES
-                  );
-                  const activeCount = countPlantsByState(plants, ACTIVE_STATES);
-
-                  return (
-                    <Card key={groupId} variant="outlined">
-                      <CardContent>
-                        <Stack spacing={2}>
-                          <Stack
-                            direction={{ xs: "column", sm: "row" }}
-                            spacing={1}
-                            alignItems={{ xs: "flex-start", sm: "center" }}
-                            justifyContent="space-between"
-                          >
-                            <Box>
-                              <Typography fontWeight={700}>
-                                Group {index + 1}
-                              </Typography>
-                            </Box>
-                            <Stack direction="row" spacing={1} flexWrap="wrap">
-                              <Chip
-                                label={`${group.sourceSnapshotIds.length} source${
-                                  group.sourceSnapshotIds.length === 1
-                                    ? ""
-                                    : "s"
-                                }`}
-                                size="small"
-                              />
-                              <Chip
-                                label={`${plants.length} planted`}
-                                size="small"
-                              />
-                              <Chip
-                                label={`${germinatedCount} germinated`}
-                                size="small"
-                              />
-                              <Chip
-                                label={`${activeCount} active`}
-                                size="small"
-                              />
-                              <Chip
-                                label={`${phenotypes.length} pheno${
-                                  phenotypes.length === 1 ? "" : "s"
-                                }`}
-                                size="small"
-                              />
-                            </Stack>
-                          </Stack>
-
-                          {draft && (
-                            <Stack spacing={2}>
-                              <Stack
-                                direction={{ xs: "column", sm: "row" }}
-                                spacing={2}
-                              >
-                                <TextField
-                                  label="Name"
-                                  value={draft.name}
-                                  onChange={(event) =>
-                                    handleDraftChange(
-                                      groupId,
-                                      "name",
-                                      event.target.value
-                                    )
-                                  }
-                                  disabled={readOnly}
-                                  fullWidth
-                                />
-                                <TextField
-                                  label="Seeds planted"
-                                  type="number"
-                                  value={draft.plantedCount}
-                                  onChange={(event) =>
-                                    handleDraftChange(
-                                      groupId,
-                                      "plantedCount",
-                                      event.target.value
-                                    )
-                                  }
-                                  disabled={readOnly}
-                                  inputProps={{ min: 0, step: 1 }}
-                                  sx={{ minWidth: { sm: 180 } }}
-                                />
-                              </Stack>
-                              <TextField
-                                label="Notes"
-                                value={draft.notes}
-                                onChange={(event) =>
-                                  handleDraftChange(
-                                    groupId,
-                                    "notes",
-                                    event.target.value
-                                  )
-                                }
-                                disabled={readOnly}
-                                fullWidth
-                                multiline
-                                minRows={2}
-                              />
-                              <Button
-                                variant="outlined"
-                                onClick={() => handleSaveGroup(group)}
-                                disabled={readOnly || savingGroupId === groupId}
-                                sx={{ alignSelf: "flex-start" }}
-                              >
-                                {savingGroupId === groupId
-                                  ? "Saving..."
-                                  : "Save Group"}
-                              </Button>
-                            </Stack>
+                return (
+                  <Box
+                    key={groupId}
+                    sx={(theme) => ({
+                      pt: index === 0 ? 0 : 2,
+                      borderTop:
+                        index === 0
+                          ? "none"
+                          : `1px solid ${theme.palette.divider}`,
+                    })}
+                  >
+                    <Stack spacing={1.5}>
+                        <Stack
+                          direction="row"
+                          spacing={1}
+                          alignItems="flex-start"
+                          justifyContent="space-between"
+                        >
+                          <Box sx={{ minWidth: 0 }}>
+                            <Typography
+                              color="text.secondary"
+                              variant="overline"
+                            >
+                              Group {index + 1}
+                            </Typography>
+                            <Typography
+                              fontWeight={750}
+                              lineHeight={1.25}
+                              sx={{ overflowWrap: "anywhere" }}
+                            >
+                              {group.name}
+                            </Typography>
+                            <Typography
+                              color="text.secondary"
+                              variant="caption"
+                            >
+                              {group.sourceSnapshotIds.length}{" "}
+                              {group.sourceSnapshotIds.length === 1
+                                ? "source"
+                                : "sources"}{" "}
+                              - {phenotypes.length}{" "}
+                              {phenotypes.length === 1
+                                ? "phenotype"
+                                : "phenotypes"}
+                            </Typography>
+                          </Box>
+                          {!readOnly && (
+                            <Button
+                              size="small"
+                              variant="text"
+                              startIcon={<EditOutlinedIcon />}
+                              onClick={() => handleToggleGroupEditor(group)}
+                              sx={{ flexShrink: 0, minHeight: 44 }}
+                            >
+                              {isEditingGroup ? "Cancel" : "Edit"}
+                            </Button>
                           )}
+                        </Stack>
 
-                          {plants.length > 0 ? (
-                            <Stack spacing={1}>
+                        <Box
+                          sx={(theme) => ({
+                            display: "grid",
+                            gridTemplateColumns:
+                              "repeat(3, minmax(0, 1fr))",
+                            gap: 1,
+                            py: 1.25,
+                            borderTop: `1px solid ${theme.palette.divider}`,
+                            borderBottom: `1px solid ${theme.palette.divider}`,
+                          })}
+                        >
+                          {[
+                            ["Planted", plants.length],
+                            ["Germinated", germinatedCount],
+                            ["Active", activeCount],
+                          ].map(([label, value]) => (
+                            <Box key={label} sx={{ minWidth: 0 }}>
+                              <Typography
+                                fontWeight={750}
+                                sx={{ fontVariantNumeric: "tabular-nums" }}
+                              >
+                                {value}
+                              </Typography>
                               <Typography
                                 color="text.secondary"
                                 variant="caption"
                               >
-                                Showing {visiblePlants.length} of {plants.length}{" "}
-                                plants
+                                {label}
                               </Typography>
+                            </Box>
+                          ))}
+                        </Box>
+
+                        {draft && isEditingGroup && (
+                          <Stack spacing={1.5}>
+                            <Typography fontWeight={700} variant="body2">
+                              Group settings
+                            </Typography>
+                            <Stack
+                              direction={{ xs: "column", sm: "row" }}
+                              spacing={1.5}
+                            >
+                              <TextField
+                                label="Name"
+                                value={draft.name}
+                                onChange={(event) =>
+                                  handleDraftChange(
+                                    groupId,
+                                    "name",
+                                    event.target.value
+                                  )
+                                }
+                                disabled={readOnly}
+                                size="small"
+                                fullWidth
+                              />
+                              <TextField
+                                label="Seeds planted"
+                                type="number"
+                                value={draft.plantedCount}
+                                onChange={(event) =>
+                                  handleDraftChange(
+                                    groupId,
+                                    "plantedCount",
+                                    event.target.value
+                                  )
+                                }
+                                disabled={readOnly}
+                                inputProps={{ min: 0, step: 1 }}
+                                size="small"
+                                sx={{ minWidth: { sm: 180 } }}
+                              />
+                            </Stack>
+                            <TextField
+                              label="Notes"
+                              value={draft.notes}
+                              onChange={(event) =>
+                                handleDraftChange(
+                                  groupId,
+                                  "notes",
+                                  event.target.value
+                                )
+                              }
+                              disabled={readOnly}
+                              fullWidth
+                              multiline
+                              minRows={2}
+                            />
+                            <Button
+                              variant="outlined"
+                              onClick={() => handleSaveGroup(group)}
+                              disabled={
+                                readOnly || savingGroupId === groupId
+                              }
+                              sx={{ alignSelf: "flex-start" }}
+                            >
+                              {savingGroupId === groupId
+                                ? "Saving..."
+                                : "Save Group"}
+                            </Button>
+                          </Stack>
+                        )}
+
+                        {plants.length > 0 ? (
+                          <Stack spacing={1}>
+                            <Stack
+                              direction="row"
+                              alignItems="baseline"
+                              justifyContent="space-between"
+                              spacing={1}
+                            >
+                              <Typography fontWeight={700} variant="body2">
+                                Plants
+                              </Typography>
+                              <Typography
+                                color="text.secondary"
+                                variant="caption"
+                                sx={{ textAlign: "right" }}
+                              >
+                                {visiblePlants.length} matching -{" "}
+                                {displayedPlants.length} shown
+                              </Typography>
+                            </Stack>
+                            {visiblePlants.length > 0 ? (
                               <Box
-                                sx={(theme) => ({
+                                sx={{
                                   display: "grid",
                                   gridTemplateColumns: {
-                                    xs: "1fr",
+                                    xs: "minmax(0, 1fr)",
                                     sm: "repeat(2, minmax(0, 1fr))",
                                     lg: "repeat(3, minmax(0, 1fr))",
                                   },
-                                  gap: 1,
-                                  maxHeight: 480,
-                                  overflowY: "auto",
-                                  overscrollBehavior: "contain",
-                                  p: 1,
-                                  borderRadius: 3,
-                                  bgcolor: theme.palette.surface.subtle,
-                                  border: `1px solid ${theme.palette.divider}`,
-                                })}
+                                  gap: 0.75,
+                                  minWidth: 0,
+                                }}
                               >
-                                {visiblePlants.map((plant) => (
-                                  <Chip
-                                    key={plant.id}
-                                    label={[
-                                      `${plant.displayId} - ${
-                                        PLANT_LIFECYCLE_STATE_LABELS[
-                                          plant.lifecycleState
-                                        ]
-                                      }`,
-                                      ...((plant.phenotypeId &&
-                                        phenotypesById[plant.phenotypeId]
-                                          ?.finalLabels.map(
-                                            (label) => FINAL_LABEL_LABELS[label]
-                                          )) ??
-                                        []),
-                                    ].join(" - ")}
-                                    color={
-                                      plant.phenotypeId &&
-                                      phenotypesById[
-                                        plant.phenotypeId
-                                      ]?.finalLabels.includes("keeper")
-                                        ? "success"
-                                        : "default"
-                                    }
-                                    variant="outlined"
-                                    onClick={() => handleOpenPlant(plant)}
-                                    sx={{
-                                      width: "100%",
-                                      height: 44,
-                                      justifyContent: "flex-start",
-                                      "& .MuiChip-label": {
-                                        overflow: "hidden",
-                                        textOverflow: "ellipsis",
-                                      },
-                                    }}
-                                  />
-                                ))}
-                              </Box>
-                              {visiblePlants.length === 0 && (
-                                <Typography
-                                  color="text.secondary"
-                                  variant="body2"
-                                >
-                                  No plants match the selected filters.
-                                </Typography>
-                              )}
-                            </Stack>
-                          ) : (
-                            <Typography color="text.secondary" variant="body2">
-                              Set seeds planted and save to generate plants.
-                            </Typography>
-                          )}
-                        </Stack>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </Stack>
-            )}
-          </Stack>
-        </CardContent>
-      </Card>
+                                {displayedPlants.map((plant) => {
+                                  const finalLabels =
+                                    (plant.phenotypeId &&
+                                      phenotypesById[plant.phenotypeId]
+                                        ?.finalLabels) ||
+                                    [];
 
-      <Dialog
+                                  return (
+                                    <ButtonBase
+                                      key={plant.id}
+                                      onClick={() => handleOpenPlant(plant)}
+                                      aria-label={`Edit ${plant.displayId}`}
+                                      sx={(theme) => ({
+                                        width: "100%",
+                                        minWidth: 0,
+                                        minHeight: 48,
+                                        px: 1.25,
+                                        py: 0.75,
+                                        border: `1px solid ${theme.palette.divider}`,
+                                        borderRadius: 2,
+                                        textAlign: "left",
+                                        justifyContent: "stretch",
+                                        bgcolor: theme.palette.surface.subtle,
+                                        overflow: "hidden",
+                                        "&:hover": {
+                                          bgcolor: theme.palette.action.hover,
+                                        },
+                                      })}
+                                    >
+                                      <Stack
+                                        direction="row"
+                                        alignItems="center"
+                                        spacing={1}
+                                        sx={{ width: "100%", minWidth: 0 }}
+                                      >
+                                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                                          <Typography
+                                            fontWeight={650}
+                                            variant="body2"
+                                            noWrap
+                                          >
+                                            {plant.displayId}
+                                          </Typography>
+                                          {finalLabels.length > 0 && (
+                                            <Typography
+                                              color="text.secondary"
+                                              variant="caption"
+                                              noWrap
+                                              sx={{ display: "block" }}
+                                            >
+                                              {finalLabels
+                                                .map(
+                                                  (label) =>
+                                                    FINAL_LABEL_LABELS[label]
+                                                )
+                                                .join(" - ")}
+                                            </Typography>
+                                          )}
+                                        </Box>
+                                        <Stack
+                                          direction="row"
+                                          alignItems="center"
+                                          spacing={0.75}
+                                          sx={{
+                                            flexShrink: 0,
+                                            maxWidth: "48%",
+                                          }}
+                                        >
+                                          <Box
+                                            aria-hidden="true"
+                                            sx={{
+                                              width: 7,
+                                              height: 7,
+                                              flexShrink: 0,
+                                              borderRadius: "50%",
+                                              bgcolor: lifecycleTone(
+                                                plant.lifecycleState
+                                              ),
+                                            }}
+                                          />
+                                          <Typography
+                                            color="text.secondary"
+                                            variant="caption"
+                                            noWrap
+                                          >
+                                            {
+                                              PLANT_LIFECYCLE_STATE_LABELS[
+                                                plant.lifecycleState
+                                              ]
+                                            }
+                                          </Typography>
+                                          <KeyboardArrowRightRoundedIcon
+                                            color="action"
+                                            fontSize="small"
+                                            sx={{ flexShrink: 0 }}
+                                          />
+                                        </Stack>
+                                      </Stack>
+                                    </ButtonBase>
+                                  );
+                                })}
+                              </Box>
+                            ) : (
+                              <Typography
+                                color="text.secondary"
+                                variant="body2"
+                              >
+                                No plants match the selected filters.
+                              </Typography>
+                            )}
+                            {displayedPlants.length <
+                              visiblePlants.length && (
+                              <Button
+                                variant="text"
+                                onClick={() =>
+                                  setPlantDisplayLimits((current) => ({
+                                    ...current,
+                                    [groupId]: plantDisplayLimit + 30,
+                                  }))
+                                }
+                                sx={{ alignSelf: "center" }}
+                              >
+                                Show{" "}
+                                {Math.min(
+                                  30,
+                                  visiblePlants.length -
+                                    displayedPlants.length
+                                )}{" "}
+                                more
+                              </Button>
+                            )}
+                          </Stack>
+                        ) : (
+                          <Typography color="text.secondary" variant="body2">
+                            Set seeds planted and save to generate plants.
+                          </Typography>
+                        )}
+                    </Stack>
+                  </Box>
+                );
+              })}
+            </Stack>
+          )}
+        </Stack>
+      </SectionCard>
+
+      <ResponsiveDialog
         open={Boolean(selectedPlant && plantDraft)}
         onClose={handleClosePlant}
         maxWidth="sm"
-        fullWidth
+        title="Edit Plant"
+        actions={
+          <>
+            <Button onClick={handleClosePlant} disabled={savingPlant}>
+              Close
+            </Button>
+            {!readOnly && (
+              <Button
+                variant="contained"
+                onClick={handleSavePlant}
+                disabled={savingPlant}
+              >
+                {savingPlant ? "Saving..." : "Save Plant"}
+              </Button>
+            )}
+          </>
+        }
       >
-        <DialogTitle>Edit Plant</DialogTitle>
-        <DialogContent>
-          {selectedPlant && plantDraft && (
-            <Stack spacing={2} sx={{ pt: 1 }}>
+        {selectedPlant && plantDraft && (
+          <Stack spacing={2} sx={{ pt: 1 }}>
               <TextField
                 label="Plant ID"
                 value={plantDraft.displayId}
@@ -1340,26 +1593,11 @@ const PhenoHuntSetup: React.FC<PhenoHuntSetupProps> = ({
                   )}
                 </Stack>
               </Box>
-            </Stack>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClosePlant} disabled={savingPlant}>
-            Close
-          </Button>
-          {!readOnly && (
-            <Button
-              variant="contained"
-              onClick={handleSavePlant}
-              disabled={savingPlant}
-            >
-              {savingPlant ? "Saving..." : "Save Plant"}
-            </Button>
-          )}
-        </DialogActions>
-      </Dialog>
+          </Stack>
+        )}
+      </ResponsiveDialog>
 
-      <Dialog
+      <ResponsiveDialog
         open={Boolean(keeperRemovalDraft)}
         onClose={() => {
           if (!savingFinalLabels) {
@@ -1367,56 +1605,77 @@ const PhenoHuntSetup: React.FC<PhenoHuntSetupProps> = ({
           }
         }}
         maxWidth="sm"
-        fullWidth
+        title="Remove Keeper Label?"
+        actions={
+          <>
+            <Button
+              onClick={() => setKeeperRemovalDraft(null)}
+              disabled={savingFinalLabels}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={() =>
+                keeperRemovalDraft &&
+                saveFinalLabels(keeperRemovalDraft.finalLabels, "unlink")
+              }
+              disabled={savingFinalLabels}
+            >
+              Keep Clone
+            </Button>
+            <Button
+              color="error"
+              variant="contained"
+              onClick={() =>
+                keeperRemovalDraft &&
+                saveFinalLabels(keeperRemovalDraft.finalLabels, "delete")
+              }
+              disabled={savingFinalLabels}
+            >
+              Delete Clone
+            </Button>
+          </>
+        }
       >
-        <DialogTitle>Remove Keeper Label?</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            This phenotype already created a clone-library entry. Choose what
-            should happen to that clone before removing Keeper.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => setKeeperRemovalDraft(null)}
-            disabled={savingFinalLabels}
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="outlined"
-            onClick={() =>
-              keeperRemovalDraft &&
-              saveFinalLabels(keeperRemovalDraft.finalLabels, "unlink")
-            }
-            disabled={savingFinalLabels}
-          >
-            Keep Clone
-          </Button>
-          <Button
-            color="error"
-            variant="contained"
-            onClick={() =>
-              keeperRemovalDraft &&
-              saveFinalLabels(keeperRemovalDraft.finalLabels, "delete")
-            }
-            disabled={savingFinalLabels}
-          >
-            Delete Clone
-          </Button>
-        </DialogActions>
-      </Dialog>
+        <Typography color="text.secondary">
+          This phenotype already created a clone-library entry. Choose what
+          should happen to that clone before removing Keeper.
+        </Typography>
+      </ResponsiveDialog>
 
-      <Dialog
+      <ResponsiveDialog
         open={Boolean(selectedPlant && evaluationDraft)}
         onClose={handleCloseEvaluation}
-        fullWidth
         maxWidth="sm"
+        title={evaluationDialogTitle}
+        actions={
+          <>
+            <Button onClick={handleCloseEvaluation} disabled={savingEvaluation}>
+              Close
+            </Button>
+            {!readOnly && !evaluationEditMode && selectedEvaluation && (
+              <Button
+                variant="outlined"
+                onClick={() => setEvaluationEditMode(true)}
+              >
+                Edit
+              </Button>
+            )}
+            {!readOnly && evaluationEditMode && (
+              <Button
+                variant="contained"
+                onClick={handleSaveEvaluation}
+                disabled={savingEvaluation}
+              >
+                {savingEvaluation ? "Saving..." : "Save Evaluation"}
+              </Button>
+            )}
+          </>
+        }
       >
-        <DialogTitle>{evaluationDialogTitle}</DialogTitle>
-        <DialogContent dividers>
-          {selectedPlant && evaluationDraft && (
-            <Stack spacing={2} sx={{ pt: 1 }}>
+        {selectedPlant && evaluationDraft && (
+          <Stack spacing={2} sx={{ pt: 1 }}>
               <Box>
                 <Typography color="text.secondary" variant="body2">
                   {selectedPlant.displayId}
@@ -1670,32 +1929,9 @@ const PhenoHuntSetup: React.FC<PhenoHuntSetupProps> = ({
                   )}
                 </Stack>
               )}
-            </Stack>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseEvaluation} disabled={savingEvaluation}>
-            Close
-          </Button>
-          {!readOnly && !evaluationEditMode && selectedEvaluation && (
-            <Button
-              variant="outlined"
-              onClick={() => setEvaluationEditMode(true)}
-            >
-              Edit
-            </Button>
-          )}
-          {!readOnly && evaluationEditMode && (
-            <Button
-              variant="contained"
-              onClick={handleSaveEvaluation}
-              disabled={savingEvaluation}
-            >
-              {savingEvaluation ? "Saving..." : "Save Evaluation"}
-            </Button>
-          )}
-        </DialogActions>
-      </Dialog>
+          </Stack>
+        )}
+      </ResponsiveDialog>
     </>
   );
 };

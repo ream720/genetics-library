@@ -1,24 +1,24 @@
-import React, { useRef, useState, useEffect } from "react";
+import { type FormEvent, useRef, useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link as RouterLink, useNavigate, useLocation } from "react-router-dom";
 import {
   TextField,
   Button,
   Stack,
-  Paper,
   Alert,
   IconButton,
   InputAdornment,
-  Box,
-  Card,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
+  Link as MuiLink,
+  Typography,
 } from "@mui/material";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import GoogleIcon from "@mui/icons-material/Google";
+import AuthPanel from "./auth/AuthPanel";
 
 interface LocationState {
   from?: {
@@ -47,7 +47,7 @@ function Login() {
     }
   }, [currentUser, navigate, location.state?.from]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
     try {
@@ -57,7 +57,7 @@ function Login() {
         await login(emailRef.current.value, passwordRef.current.value);
       }
     } catch {
-      setError("Failed to log in");
+      setError("Failed to log in. Check your email and password.");
     } finally {
       setLoading(false);
     }
@@ -74,7 +74,7 @@ function Login() {
       }
     } catch (error) {
       console.error("Google Sign-In Error:", error);
-      setError("Failed to sign in with Google");
+      setError("Failed to sign in with Google. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -102,109 +102,120 @@ function Login() {
     }
   };
 
-  const handleClickShowPassword = () => {
-    setShowPassword(!showPassword);
-  };
+  const handleClickShowPassword = () => setShowPassword((value) => !value);
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        minHeight: "30vh",
-      }}
+    <AuthPanel
+      eyebrow="Welcome back"
+      title="Log in to your genetics library."
+      description="Access your private Projects, seed collection, clone library, photos, and completed analytics."
+      supportTitle="Your working data stays private"
+      supportItems={[
+        "Projects never appear on public profiles.",
+        "Seeds and clones remain available for your collection workflows.",
+        "Completed projects feed your personal analytics.",
+      ]}
     >
-      <Stack sx={{ p: 1, maxWidth: 400 }}>
-        <Paper elevation={3} sx={{ p: 3 }}>
-          <Card sx={{ p: 2 }}>
-            {error && <Alert severity="error">{error}</Alert>}
+      <Stack spacing={2.5}>
+        <Stack spacing={0.75}>
+          <Typography component="h2" variant="h5">
+            Log in
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Use email and password or continue with Google.
+          </Typography>
+        </Stack>
 
-            <form onSubmit={handleSubmit}>
-              <TextField
-                sx={{ mb: 2 }}
-                label="Email"
-                type="email"
-                placeholder="Email"
-                inputRef={emailRef}
-                required
-                fullWidth
-              />
-              <TextField
-                sx={{ mb: 2 }}
-                label="Password"
-                type={showPassword ? "text" : "password"}
-                placeholder="Password"
-                inputRef={passwordRef}
-                required
-                fullWidth
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton onClick={handleClickShowPassword} edge="end">
-                        {showPassword ? <Visibility /> : <VisibilityOff />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-              <Button
-                sx={{ mb: 2 }}
-                disabled={loading}
-                type="submit"
-                variant="contained"
-                fullWidth
-              >
-                Login
-              </Button>
-            </form>
+        {error && <Alert severity="error">{error}</Alert>}
 
-            <Stack spacing={2} sx={{ mt: 2 }}>
-              <Button
-                variant="outlined"
-                startIcon={<GoogleIcon />}
-                onClick={handleGoogleSignIn}
-                disabled={loading}
-                fullWidth
-              >
-                Sign in with Google
-              </Button>
-            </Stack>
-          </Card>
+        <Stack component="form" spacing={2} onSubmit={handleSubmit} noValidate>
+          <TextField
+            label="Email"
+            type="email"
+            inputRef={emailRef}
+            required
+            fullWidth
+            autoComplete="email"
+          />
+          <TextField
+            label="Password"
+            type={showPassword ? "text" : "password"}
+            inputRef={passwordRef}
+            required
+            fullWidth
+            autoComplete="current-password"
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={handleClickShowPassword}
+                    edge="end"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
+          <Button disabled={loading} type="submit" variant="contained" fullWidth>
+            {loading ? "Logging in..." : "Log in"}
+          </Button>
+        </Stack>
 
-          <Box sx={{ mt: 2 }}>
-            <div>
-              Don't have an account? <Link to="/signup">Sign up</Link>
-            </div>
-            <div style={{ marginTop: "8px" }}>
-              <Link to="/forgot-password">Forgot Password?</Link>
-            </div>
-          </Box>
-        </Paper>
+        <Button
+          variant="outlined"
+          startIcon={<GoogleIcon />}
+          onClick={handleGoogleSignIn}
+          disabled={loading}
+          fullWidth
+        >
+          Continue with Google
+        </Button>
 
-        {/* Profile Setup Dialog */}
-        <Dialog open={showProfileDialog} onClose={() => {}}>
-          <DialogTitle>Complete Your Profile</DialogTitle>
-          <DialogContent>
+        <Stack spacing={1} alignItems="center">
+          <Typography variant="body2" color="text.secondary">
+            Need an account?{" "}
+            <MuiLink component={RouterLink} to="/signup">
+              Sign up
+            </MuiLink>
+          </Typography>
+          <MuiLink component={RouterLink} to="/forgot-password" variant="body2">
+            Forgot password?
+          </MuiLink>
+        </Stack>
+      </Stack>
+
+      <Dialog open={showProfileDialog} onClose={() => {}} fullWidth maxWidth="xs">
+        <DialogTitle>Complete your profile</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ pt: 0.5 }}>
+            <Typography variant="body2" color="text.secondary">
+              Choose a username so your library profile can be created.
+            </Typography>
             {profileError && <Alert severity="error">{profileError}</Alert>}
             <TextField
               autoFocus
-              margin="dense"
-              label="Choose a Username"
+              label="Username"
               type="text"
               fullWidth
               inputRef={usernameRef}
               required
+              autoComplete="username"
             />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleProfileSubmit} disabled={loading}>
-              Complete Setup
-            </Button>
-          </DialogActions>
-        </Dialog>
-      </Stack>
-    </Box>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={handleProfileSubmit}
+            disabled={loading}
+            variant="contained"
+          >
+            {loading ? "Saving..." : "Complete setup"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </AuthPanel>
   );
 }
 

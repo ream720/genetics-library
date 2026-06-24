@@ -1,8 +1,6 @@
 import {
   Alert,
   Box,
-  Card,
-  CardContent,
   Chip,
   MenuItem,
   Stack,
@@ -15,6 +13,10 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import AnalyticsOutlinedIcon from "@mui/icons-material/AnalyticsOutlined";
+import FilterAltOutlinedIcon from "@mui/icons-material/FilterAltOutlined";
+import GrassOutlinedIcon from "@mui/icons-material/GrassOutlined";
+import WaterDropOutlinedIcon from "@mui/icons-material/WaterDropOutlined";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -38,13 +40,14 @@ import {
   WashRunType,
   MaterialType,
 } from "../types/v2";
-import { PageContainer, PageHeader } from "../components/ui";
-
-interface MetricCardProps {
-  label: string;
-  value: string;
-  detail?: string;
-}
+import {
+  EmptyState,
+  FilterBar,
+  MetricCard,
+  PageContainer,
+  PageHeader,
+  SectionCard,
+} from "../components/ui";
 
 const WASH_RUN_TYPE_LABELS: Record<WashRunType, string> = {
   pheno_specific: "Pheno Specific",
@@ -76,27 +79,28 @@ const metricGridSx = {
   gap: 1.5,
 };
 
-const MetricCard: React.FC<MetricCardProps> = ({
-  label,
-  value,
-  detail,
-}) => (
-  <Card variant="outlined">
-    <CardContent sx={{ "&:last-child": { pb: 2 } }}>
-      <Typography color="text.secondary" variant="body2">
-        {label}
-      </Typography>
-      <Typography variant="h5" sx={{ mt: 0.5 }}>
-        {value}
-      </Typography>
-      {detail && (
-        <Typography color="text.secondary" variant="caption">
-          {detail}
-        </Typography>
-      )}
-    </CardContent>
-  </Card>
-);
+const tableContainerSx = {
+  overflowX: "auto",
+  border: "1px solid",
+  borderColor: "divider",
+  borderRadius: 3,
+  bgcolor: "surface.sunken",
+};
+
+const tableSx = {
+  minWidth: 760,
+  "& th": {
+    whiteSpace: "nowrap",
+    color: "text.secondary",
+    fontSize: "0.75rem",
+    fontWeight: 800,
+    letterSpacing: "0.06em",
+    textTransform: "uppercase",
+  },
+  "& td": {
+    verticalAlign: "top",
+  },
+};
 
 const formatPercent = (value: number | null) =>
   value === null ? "No data" : `${value.toFixed(2)}%`;
@@ -142,12 +146,16 @@ const PhenoAnalyticsView: React.FC<{
   analytics: PhenoProjectAnalytics;
 }> = ({ analytics }) => (
   <Stack spacing={3}>
-    <Box>
-      <Typography variant="h6" gutterBottom>
-        Hunt Overview
-      </Typography>
+    <SectionCard
+      title="Hunt overview"
+      description="Counts and selection rates from this completed Pheno Hunt."
+    >
       <Box sx={metricGridSx}>
-        <MetricCard label="Seeds planted" value={String(analytics.plantedCount)} />
+        <MetricCard
+          label="Seeds planted"
+          value={String(analytics.plantedCount)}
+          icon={<GrassOutlinedIcon color="primary" />}
+        />
         <MetricCard
           label="Germinated"
           value={String(analytics.germinatedCount)}
@@ -158,12 +166,12 @@ const PhenoAnalyticsView: React.FC<{
         />
         <MetricCard label="Keepers" value={String(analytics.keeperCount)} />
       </Box>
-    </Box>
+    </SectionCard>
 
-    <Box>
-      <Typography variant="h6" gutterBottom>
-        Rates
-      </Typography>
+    <SectionCard
+      title="Rates"
+      description="Calculated from completed project records, with no combined overall score."
+    >
       <Box sx={metricGridSx}>
         <MetricCard
           label="Germination rate"
@@ -186,16 +194,17 @@ const PhenoAnalyticsView: React.FC<{
           detail="Harvested plants with flowering history"
         />
       </Box>
-    </Box>
+    </SectionCard>
 
-    <Box>
-      <Typography variant="h6" gutterBottom>
-        Evaluation Averages
-      </Typography>
+    <SectionCard
+      title="Evaluation averages"
+      description="Averages use recorded evaluation fields only; skipped fields are ignored."
+    >
       <Box sx={metricGridSx}>
         <MetricCard
           label="Vigor"
           value={formatNumber(analytics.averageVigorScore, " / 5")}
+          icon={<AnalyticsOutlinedIcon color="secondary" />}
         />
         <MetricCard
           label="Stretch"
@@ -216,33 +225,34 @@ const PhenoAnalyticsView: React.FC<{
           detail="Average latest recorded value"
         />
       </Box>
-    </Box>
+    </SectionCard>
 
-    <Card variant="outlined">
-      <CardContent>
-        <Stack spacing={2}>
-          <Typography variant="h6">Common Characteristics</Typography>
-          <TagSummary title="Aromas" tags={analytics.aromaTags} />
-          <TagSummary title="Flavors" tags={analytics.flavorTags} />
-          <TagSummary
-            title="Resin character"
-            tags={analytics.resinCharacterTags}
-          />
-        </Stack>
-      </CardContent>
-    </Card>
+    <SectionCard
+      title="Common characteristics"
+      description="Most frequently recorded tags across this hunt."
+    >
+      <Stack spacing={2}>
+        <TagSummary title="Aromas" tags={analytics.aromaTags} />
+        <TagSummary title="Flavors" tags={analytics.flavorTags} />
+        <TagSummary
+          title="Resin character"
+          tags={analytics.resinCharacterTags}
+        />
+      </Stack>
+    </SectionCard>
 
-    <Box>
-      <Typography variant="h6" gutterBottom>
-        Comparison Groups
-      </Typography>
+    <SectionCard
+      title="Comparison groups"
+      description="Group-level counts and rates for side-by-side review."
+    >
       {analytics.groups.length === 0 ? (
-        <Typography color="text.secondary">
-          No comparison groups recorded.
-        </Typography>
+        <EmptyState
+          title="No comparison groups"
+          description="This completed hunt does not have group-level analytics yet."
+        />
       ) : (
-        <TableContainer component={Card} variant="outlined">
-          <Table size="small">
+        <TableContainer component={Box} sx={tableContainerSx}>
+          <Table size="small" sx={tableSx}>
             <TableHead>
               <TableRow>
                 <TableCell>Group</TableCell>
@@ -285,7 +295,7 @@ const PhenoAnalyticsView: React.FC<{
           </Table>
         </TableContainer>
       )}
-    </Box>
+    </SectionCard>
   </Stack>
 );
 
@@ -293,14 +303,15 @@ const WashAnalyticsView: React.FC<{
   analytics: WashProjectAnalytics;
 }> = ({ analytics }) => (
   <Stack spacing={3}>
-    <Box>
-      <Typography variant="h6" gutterBottom>
-        Process Overview
-      </Typography>
+    <SectionCard
+      title="Process overview"
+      description="Session, run, and output totals for this completed Wash/Process project."
+    >
       <Box sx={metricGridSx}>
         <MetricCard
           label="Wash sessions"
           value={String(analytics.sessionCount)}
+          icon={<WaterDropOutlinedIcon color="primary" />}
         />
         <MetricCard label="Wash runs" value={String(analytics.runCount)} />
         <MetricCard
@@ -316,12 +327,12 @@ const WashAnalyticsView: React.FC<{
           value={formatWeight(analytics.totalRosinOutputWeightGrams)}
         />
       </Box>
-    </Box>
+    </SectionCard>
 
-    <Box>
-      <Typography variant="h6" gutterBottom>
-        Return Averages
-      </Typography>
+    <SectionCard
+      title="Return averages"
+      description="RTH, RTR, and rosin return calculations use completed run results."
+    >
       <Box sx={metricGridSx}>
         <MetricCard
           label="RTH"
@@ -343,26 +354,30 @@ const WashAnalyticsView: React.FC<{
           value={formatNumber(analytics.averageQualityStars, " / 6")}
         />
       </Box>
-    </Box>
+    </SectionCard>
 
-    <Card variant="outlined">
-      <CardContent>
-        <TagSummary
-          title="Common Resin Character"
-          tags={analytics.resinCharacterTags}
-        />
-      </CardContent>
-    </Card>
+    <SectionCard
+      title="Common resin character"
+      description="Most frequently recorded resin-character tags across this project."
+    >
+      <TagSummary
+        title="Resin character"
+        tags={analytics.resinCharacterTags}
+      />
+    </SectionCard>
 
-    <Box>
-      <Typography variant="h6" gutterBottom>
-        Wash Runs
-      </Typography>
+    <SectionCard
+      title="Wash runs"
+      description="Run-level returns, quality, material type, and output weights."
+    >
       {analytics.runs.length === 0 ? (
-        <Typography color="text.secondary">No wash runs recorded.</Typography>
+        <EmptyState
+          title="No wash runs"
+          description="This completed project does not have wash run analytics yet."
+        />
       ) : (
-        <TableContainer component={Card} variant="outlined">
-          <Table size="small">
+        <TableContainer component={Box} sx={tableContainerSx}>
+          <Table size="small" sx={{ ...tableSx, minWidth: 980 }}>
             <TableHead>
               <TableRow>
                 <TableCell>Run</TableCell>
@@ -416,7 +431,7 @@ const WashAnalyticsView: React.FC<{
           </Table>
         </TableContainer>
       )}
-    </Box>
+    </SectionCard>
   </Stack>
 );
 
@@ -717,10 +732,11 @@ const PersonalAnalyticsDashboard: React.FC<{
 
   if (records.length === 0) {
     return (
-      <Alert severity="info">
-        Complete a Pheno Hunt or Wash/Process project to begin building
-        your personal analytics dashboard.
-      </Alert>
+      <EmptyState
+        icon={<AnalyticsOutlinedIcon fontSize="large" />}
+        title="No completed project analytics yet"
+        description="Complete a Pheno Hunt or Wash/Process project to begin building your personal analytics dashboard."
+      />
     );
   }
 
@@ -728,19 +744,16 @@ const PersonalAnalyticsDashboard: React.FC<{
 
   return (
     <Stack spacing={3}>
-      <Card variant="outlined">
-        <CardContent>
-          <Stack spacing={2}>
-            <Box>
-              <Typography variant="h6">Filters</Typography>
-              <Typography color="text.secondary" variant="body2">
-                Compare completed project results without combining them
-                into a single score.
-              </Typography>
-            </Box>
+      <SectionCard
+        title="Filters"
+        description="Compare completed project results without combining them into a single score."
+        action={<FilterAltOutlinedIcon color="primary" />}
+      >
+        <FilterBar>
             <Box
               sx={{
                 display: "grid",
+                width: "100%",
                 gridTemplateColumns: {
                   xs: "1fr",
                   sm: "repeat(2, minmax(0, 1fr))",
@@ -855,92 +868,100 @@ const PersonalAnalyticsDashboard: React.FC<{
                 )}
               </TextField>
             </Box>
-          </Stack>
-        </CardContent>
-      </Card>
+        </FilterBar>
+      </SectionCard>
 
       {!hasResults ? (
-        <Alert severity="info">
-          No completed results match the selected filters.
-        </Alert>
+        <EmptyState
+          title="No matching analytics"
+          description="No completed project results match the selected filters."
+        />
       ) : null}
 
       {phenoRecords.length > 0 && (
         <Stack spacing={2}>
-          <Box>
-            <Typography variant="h5">Pheno Hunt Results</Typography>
-            <Typography color="text.secondary" variant="body2">
-              {phenoRecords.length} completed{" "}
-              {phenoRecords.length === 1 ? "project" : "projects"}
-            </Typography>
-          </Box>
-          <Box sx={metricGridSx}>
-            <MetricCard
-              label="Seeds planted"
-              value={String(phenoSummary.plantedCount)}
-            />
-            <MetricCard
-              label="Germination rate"
-              value={formatPercent(phenoSummary.germinationRate)}
-            />
-            <MetricCard
-              label="Survival rate"
-              value={formatPercent(phenoSummary.survivalRate)}
-            />
-            <MetricCard
-              label="Keeper rate"
-              value={formatPercent(phenoSummary.keeperRate)}
-            />
-            <MetricCard
-              label="Average flowering"
-              value={formatNumber(
-                phenoSummary.averageFloweringDays,
-                " days"
-              )}
-              detail="Average across projects with data"
-            />
-            <MetricCard
-              label="Average vigor"
-              value={formatNumber(
-                phenoSummary.averageVigorScore,
-                " / 5"
-              )}
-              detail="Average across projects with data"
-            />
-            <MetricCard
-              label="Average resin"
-              value={formatNumber(
-                phenoSummary.averageResinCoverageScore,
-                " / 5"
-              )}
-              detail="Average across projects with data"
-            />
-            <MetricCard
-              label="Average dry yield"
-              value={formatWeight(phenoSummary.averageDryFlowerGrams)}
-              detail="Average across projects with data"
-            />
-          </Box>
-          <Card variant="outlined">
-            <CardContent>
-              <Stack spacing={2}>
-                <TagSummary
-                  title="Common aromas"
-                  tags={phenoSummary.aromaTags}
-                />
-                <TagSummary
-                  title="Common flavors"
-                  tags={phenoSummary.flavorTags}
-                />
-                <TagSummary
-                  title="Common resin character"
-                  tags={phenoSummary.resinCharacterTags}
-                />
-              </Stack>
-            </CardContent>
-          </Card>
-          <TableContainer component={Card} variant="outlined">
-            <Table size="small">
+          <SectionCard
+            title="Pheno Hunt results"
+            description={`${phenoRecords.length} completed ${
+              phenoRecords.length === 1 ? "project" : "projects"
+            } included in these metrics.`}
+          >
+            <Box sx={metricGridSx}>
+              <MetricCard
+                label="Seeds planted"
+                value={String(phenoSummary.plantedCount)}
+                icon={<GrassOutlinedIcon color="primary" />}
+              />
+              <MetricCard
+                label="Germination rate"
+                value={formatPercent(phenoSummary.germinationRate)}
+              />
+              <MetricCard
+                label="Survival rate"
+                value={formatPercent(phenoSummary.survivalRate)}
+              />
+              <MetricCard
+                label="Keeper rate"
+                value={formatPercent(phenoSummary.keeperRate)}
+              />
+              <MetricCard
+                label="Average flowering"
+                value={formatNumber(
+                  phenoSummary.averageFloweringDays,
+                  " days"
+                )}
+                detail="Average across projects with data"
+              />
+              <MetricCard
+                label="Average vigor"
+                value={formatNumber(
+                  phenoSummary.averageVigorScore,
+                  " / 5"
+                )}
+                detail="Average across projects with data"
+              />
+              <MetricCard
+                label="Average resin"
+                value={formatNumber(
+                  phenoSummary.averageResinCoverageScore,
+                  " / 5"
+                )}
+                detail="Average across projects with data"
+              />
+              <MetricCard
+                label="Average dry yield"
+                value={formatWeight(phenoSummary.averageDryFlowerGrams)}
+                detail="Average across projects with data"
+              />
+            </Box>
+          </SectionCard>
+
+          <SectionCard
+            title="Common pheno tags"
+            description="Most frequent tags across the filtered Pheno Hunt projects."
+          >
+            <Stack spacing={2}>
+              <TagSummary
+                title="Common aromas"
+                tags={phenoSummary.aromaTags}
+              />
+              <TagSummary
+                title="Common flavors"
+                tags={phenoSummary.flavorTags}
+              />
+              <TagSummary
+                title="Common resin character"
+                tags={phenoSummary.resinCharacterTags}
+              />
+            </Stack>
+          </SectionCard>
+
+          <SectionCard
+            title="Completed pheno projects"
+            description="Tap a row to open project-specific analytics."
+          >
+            <TableContainer component={Box} sx={tableContainerSx}>
+              <Table size="small" sx={{ ...tableSx, minWidth: 860 }}>
               <TableHead>
                 <TableRow>
                   <TableCell>Project</TableCell>
@@ -1013,23 +1034,25 @@ const PersonalAnalyticsDashboard: React.FC<{
               </TableBody>
             </Table>
           </TableContainer>
+          </SectionCard>
         </Stack>
       )}
 
       {washRecords.length > 0 && (
         <Stack spacing={2}>
-          <Box>
-            <Typography variant="h5">Wash/Process Results</Typography>
-            <Typography color="text.secondary" variant="body2">
-              {washRecords.length} completed{" "}
-              {washRecords.length === 1 ? "project" : "projects"} ·{" "}
-              {washRuns.length} {washRuns.length === 1 ? "run" : "runs"}
-            </Typography>
-          </Box>
-          <Box sx={metricGridSx}>
+          <SectionCard
+            title="Wash/Process results"
+            description={`${washRecords.length} completed ${
+              washRecords.length === 1 ? "project" : "projects"
+            } and ${washRuns.length} ${
+              washRuns.length === 1 ? "run" : "runs"
+            } included in these metrics.`}
+          >
+            <Box sx={metricGridSx}>
             <MetricCard
               label="Starting material"
               value={formatWeight(washSummary.totalInputWeightGrams)}
+              icon={<WaterDropOutlinedIcon color="primary" />}
             />
             <MetricCard
               label="Dry hash"
@@ -1060,17 +1083,25 @@ const PersonalAnalyticsDashboard: React.FC<{
                 " / 6"
               )}
             />
-          </Box>
-          <Card variant="outlined">
-            <CardContent>
-              <TagSummary
-                title="Common resin character"
-                tags={washSummary.resinCharacterTags}
-              />
-            </CardContent>
-          </Card>
-          <TableContainer component={Card} variant="outlined">
-            <Table size="small">
+            </Box>
+          </SectionCard>
+
+          <SectionCard
+            title="Common wash tags"
+            description="Most frequent resin-character tags across filtered wash runs."
+          >
+            <TagSummary
+              title="Common resin character"
+              tags={washSummary.resinCharacterTags}
+            />
+          </SectionCard>
+
+          <SectionCard
+            title="Completed wash projects"
+            description="Tap a row to open project-specific analytics."
+          >
+            <TableContainer component={Box} sx={tableContainerSx}>
+              <Table size="small" sx={{ ...tableSx, minWidth: 980 }}>
               <TableHead>
                 <TableRow>
                   <TableCell>Project</TableCell>
@@ -1174,8 +1205,9 @@ const PersonalAnalyticsDashboard: React.FC<{
                   </TableRow>
                 ))}
               </TableBody>
-            </Table>
-          </TableContainer>
+              </Table>
+            </TableContainer>
+          </SectionCard>
         </Stack>
       )}
     </Stack>
@@ -1298,9 +1330,11 @@ const ProjectAnalyticsPage: React.FC = () => {
         ) : !isProjectScoped ? (
           <PersonalAnalyticsDashboard records={personalRecords} />
         ) : !projectIsComplete ? (
-          <Alert severity="info">
-            Analytics become available after this project is marked Complete.
-          </Alert>
+          <EmptyState
+            icon={<AnalyticsOutlinedIcon fontSize="large" />}
+            title="Analytics unlock after completion"
+            description="Project analytics use completed project records only. Mark this project Complete when the results are ready to review."
+          />
         ) : analytics?.type === "pheno_hunt" ? (
           <PhenoAnalyticsView analytics={analytics} />
         ) : analytics?.type === "wash_process" ? (

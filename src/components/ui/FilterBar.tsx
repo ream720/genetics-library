@@ -5,9 +5,10 @@ const FilterBar = ({ children }: { children: ReactNode }) => (
   <Paper
     variant="outlined"
     sx={(theme) => ({
-      p: { xs: 1.5, sm: 2 },
-      borderRadius: 4,
-      bgcolor: theme.palette.surface.subtle,
+      p: { xs: 0, md: 2 },
+      borderRadius: { xs: 0, md: 4 },
+      border: { xs: 0, md: `1px solid ${theme.palette.divider}` },
+      bgcolor: { xs: "transparent", md: theme.palette.surface.subtle },
     })}
   >
     <Stack direction={{ xs: "column", md: "row" }} spacing={1.5}>
@@ -17,4 +18,3 @@ const FilterBar = ({ children }: { children: ReactNode }) => (
 );
 
 export default FilterBar;
-

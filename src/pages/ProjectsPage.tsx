@@ -102,7 +102,11 @@ const ProjectsPage = () => {
         <PageHeader
           eyebrow="Private workspace"
           title="Projects"
-          description={`${projects.length} total · ${completedCount} completed. Track Pheno Hunts and Wash/Process work from setup through results.`}
+          description={
+            loading
+              ? "Loading your private Pheno Hunt and Wash/Process projects."
+              : `${projects.length} total · ${completedCount} completed. Track Pheno Hunts and Wash/Process work from setup through results.`
+          }
           actions={
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
               <Button
