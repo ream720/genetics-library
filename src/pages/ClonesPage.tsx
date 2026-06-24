@@ -1,7 +1,6 @@
 import React from "react";
 import {
   Box,
-  Typography,
   Button,
   Checkbox,
   Stack,
@@ -19,10 +18,7 @@ import {
   MenuItem,
   Select,
   Autocomplete,
-  AccordionSummary,
-  Accordion,
-  AccordionDetails,
-  Divider,
+  Chip,
 } from "@mui/material";
 import { DataGrid, GridColDef, GridEditBooleanCell } from "@mui/x-data-grid";
 import { useCloneContext } from "../context/CloneContext";
@@ -30,9 +26,9 @@ import { Clone } from "../types";
 import { Edit, Delete, AddCircleOutline, Verified } from "@mui/icons-material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import EditCloneModal from "../components/EditCloneModal";
 import CSVUpload from "../components/CSVUpload";
+import { PageContainer, PageHeader, SectionCard } from "../components/ui";
 
 const ClonesPage: React.FC = () => {
   const { clones, addClone, deleteClone, updateClone, setClones } =
@@ -173,6 +169,16 @@ const ClonesPage: React.FC = () => {
       flex: 0,
     },
     {
+      field: "phenoHunted",
+      headerName: "Source",
+      headerAlign: "center",
+      align: "center",
+      width: 130,
+      flex: 0,
+      renderCell: (params) =>
+        params.value ? <Chip label="Pheno Hunted" size="small" /> : null,
+    },
+    {
       field: "generation",
       headerName: "Generation",
       headerAlign: "center",
@@ -187,13 +193,14 @@ const ClonesPage: React.FC = () => {
       headerAlign: "center",
       align: "center",
       editable: true,
-      width: 65,
+      width: 92,
       flex: 0,
       renderCell: (params) => {
         const sexValue = params.value;
-        if (sexValue === "Female") return "♀";
-        if (sexValue === "Male") return "♂";
-        return ""; // fallback if unknown
+        if (sexValue === "Female" || sexValue === "Male") {
+          return <Chip label={sexValue} size="small" variant="outlined" />;
+        }
+        return "";
       },
     },
     {
@@ -295,169 +302,161 @@ const ClonesPage: React.FC = () => {
   ];
 
   return (
-    <Box sx={{ pb: 3, px: 3 }}>
-      <Typography
-        variant="h4"
-        gutterBottom
-        sx={{
-          fontFamily: "Roboto, sans-serif",
-          fontWeight: 600,
-          textAlign: "center",
-          marginBottom: 3,
-        }}
-      >
-        Manage Clones
-      </Typography>
+    <PageContainer maxWidth="xl">
+      <Stack spacing={3}>
+        <PageHeader
+          eyebrow="Genetics library"
+          title="Clones"
+          description={`${clones.length} clone ${clones.length === 1 ? "entry" : "entries"} in your private collection. Add individual records or import a CSV.`}
+        />
 
-      {/* CSV Upload Form */}
-
-      <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
-        <CSVUpload onUploadSuccess={handleCSVUpload} />
-      </Box>
-      <Divider sx={{ mb: 2 }} />
-      {/* Add Clone Form */}
-      <Box sx={{ display: "flex", justifyContent: "center", mb: 2, p: 2 }}>
-        <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-          <Stack spacing={1}>
-            <TextField
-              required
-              placeholder="Candy Fumez"
-              label="Strain"
-              value={cloneStrain}
-              onChange={(e) => setCloneStrain(e.target.value)}
-              error={strainError}
-              helperText={strainError ? "Strain is required" : ""}
-              fullWidth
-            />
-            <Autocomplete
-              options={uniqueBreeders}
-              freeSolo
-              inputValue={cloneBreeder}
-              onInputChange={(_event, newInputValue) => {
-                setCloneBreeder(newInputValue);
+        <SectionCard
+          title="Add Clones"
+          description="Add one clone manually or import a CSV when you have a batch."
+          action={<CSVUpload onUploadSuccess={handleCSVUpload} />}
+          contentPadding={2.5}
+        >
+          <Stack spacing={2.5}>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: {
+                  xs: "1fr",
+                  md: "minmax(0, 1.2fr) minmax(260px, 0.8fr)",
+                },
+                gap: 2,
               }}
-              renderInput={(params) => (
+            >
+              <Stack spacing={2}>
                 <TextField
-                  {...params}
                   required
-                  placeholder="Bloom Seed Co"
-                  label="Breeder"
-                  value={cloneBreeder}
-                  onChange={(e) => setCloneBreeder(e.target.value)}
-                  error={breederError}
-                  helperText={breederError ? "Breeder is required" : ""}
+                  placeholder="Candy Fumez"
+                  label="Strain"
+                  value={cloneStrain}
+                  onChange={(e) => setCloneStrain(e.target.value)}
+                  error={strainError}
+                  helperText={strainError ? "Strain is required" : ""}
                   fullWidth
                 />
-              )}
-            />
-            <FormControlLabel
-              control={
-                <Checkbox
-                  size="small"
-                  checked={isBreederCut}
-                  onChange={(e) => setIsBreederCut(e.target.checked)}
+                <Autocomplete
+                  options={uniqueBreeders}
+                  freeSolo
+                  inputValue={cloneBreeder}
+                  onInputChange={(_event, newInputValue) => {
+                    setCloneBreeder(newInputValue);
+                  }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      required
+                      placeholder="Bloom Seed Co"
+                      label="Breeder"
+                      value={cloneBreeder}
+                      onChange={(e) => setCloneBreeder(e.target.value)}
+                      error={breederError}
+                      helperText={breederError ? "Breeder is required" : ""}
+                      fullWidth
+                    />
+                  )}
                 />
-              }
-              label="Breeder Cut"
-            />
-            <FormControlLabel
-              control={
-                <Checkbox
-                  size="small"
-                  checked={isAvailable}
-                  onChange={(e) => setIsAvailable(e.target.checked)}
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                  <TextField
+                    placeholder="Harry Palms Cut"
+                    label="Tag"
+                    value={cutName}
+                    onChange={(e) => setCutName(e.target.value)}
+                    fullWidth
+                  />
+                  <TextField
+                    label="Generation"
+                    placeholder="F1, S1, etc."
+                    value={filalGeneration}
+                    onChange={(e) => setFilalGeneration(e.target.value)}
+                    fullWidth
+                  />
+                </Stack>
+                <TextField
+                  label="Lineage"
+                  placeholder="Sherbanger x Z"
+                  value={lineage}
+                  onChange={(e) => setLineage(e.target.value)}
+                  fullWidth
                 />
-              }
-              label="Available?"
+              </Stack>
+
+              <Stack spacing={1}>
+                <FormControl fullWidth>
+                  <InputLabel>Sex</InputLabel>
+                  <Select
+                    value={isMale}
+                    onChange={(e) =>
+                      setIsMale(e.target.value as "Female" | "Male")
+                    }
+                    label="Sex"
+                  >
+                    <MenuItem value="Female">Female</MenuItem>
+                    <MenuItem value="Male">Male</MenuItem>
+                  </Select>
+                </FormControl>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={isBreederCut}
+                      onChange={(e) => setIsBreederCut(e.target.checked)}
+                    />
+                  }
+                  label="Breeder cut"
+                />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={isAvailable}
+                      onChange={(e) => setIsAvailable(e.target.checked)}
+                    />
+                  }
+                  label="Available"
+                />
+              </Stack>
+            </Box>
+
+            <Button
+              variant="contained"
+              startIcon={<AddCircleOutline />}
+              onClick={handleAddClone}
+              sx={{ alignSelf: { xs: "stretch", sm: "flex-start" } }}
+            >
+              Add Clone
+            </Button>
+          </Stack>
+        </SectionCard>
+
+        <SectionCard
+          title="Clone Records"
+          description="Edit clone metadata, availability, and source details."
+          action={<Chip label={`${clones.length} total`} size="small" />}
+          contentPadding={2.5}
+        >
+          <Box sx={{ height: 600, width: "100%", overflowX: "auto" }}>
+            <DataGrid
+              rows={clones.map((clone) => ({ ...clone, id: clone.id }))}
+              columns={columns}
+              pagination
+              initialState={{
+                pagination: {
+                  rowCount: clones.length,
+                  paginationModel: {
+                    pageSize: 10,
+                  },
+                },
+              }}
+              pageSizeOptions={[10, 20, 50]}
+              disableRowSelectionOnClick
+              onCellEditStart={(_params, event) => {
+                event.defaultMuiPrevented = true;
+              }}
             />
-          </Stack>
-
-          {/* Column 3 */}
-          <Stack maxWidth={"300px"} spacing={1}>
-            <Stack>
-              <Box>
-                <Accordion>
-                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                    <Typography>Optional Info</Typography>
-                  </AccordionSummary>
-                  <AccordionDetails>
-                    <TextField
-                      sx={{ mb: 1 }}
-                      label="Lineage"
-                      placeholder="Sherbanger x Z"
-                      value={lineage}
-                      onChange={(e) => setLineage(e.target.value)}
-                      fullWidth
-                    />
-                    <TextField
-                      sx={{ mb: 1 }}
-                      placeholder="Harry Palms Cut"
-                      label="Tag"
-                      value={cutName}
-                      onChange={(e) => setCutName(e.target.value)}
-                      fullWidth
-                    />
-                    <TextField
-                      sx={{ mb: 2 }}
-                      label="Generation"
-                      placeholder="F1, S1, etc."
-                      value={filalGeneration}
-                      onChange={(e) => setFilalGeneration(e.target.value)}
-                      fullWidth
-                    />
-                    <FormControl fullWidth>
-                      <InputLabel>Sex</InputLabel>
-                      <Select
-                        size="small"
-                        value={isMale}
-                        onChange={(e) =>
-                          setIsMale(e.target.value as "Female" | "Male")
-                        }
-                        label="Sex"
-                      >
-                        <MenuItem value="Male">Male</MenuItem>
-                        <MenuItem value="Female">Female</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </AccordionDetails>
-                </Accordion>
-              </Box>
-            </Stack>
-          </Stack>
-          <Stack>
-            <Tooltip title="Add Clone">
-              <IconButton
-                sx={{ mt: { xs: 0, md: 3 }, color: "primary.main" }}
-                onClick={handleAddClone}
-              >
-                <AddCircleOutline fontSize="large" />
-              </IconButton>
-            </Tooltip>
-          </Stack>
-
-          {/* Column 4 */}
-        </Stack>
-      </Box>
-
-      {/* Data Grid Section */}
-      <Box sx={{ height: 600, width: "100%", overflowX: "auto" }}>
-        <DataGrid
-          rows={clones.map((clone) => ({ ...clone, id: clone.id }))}
-          columns={columns}
-          initialState={{
-            pagination: {
-              paginationModel: {
-                pageSize: 10, // Default page size
-              },
-            },
-          }}
-          pageSizeOptions={[10, 20, 50]} // Page size options
-          disableRowSelectionOnClick // Prevent row selection on click
-          onCellEditStart={(_params, event) => {
-            event.defaultMuiPrevented = true;
-          }}
-        />
-      </Box>
+          </Box>
+        </SectionCard>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onClose={handleCloseDeleteDialog}>
@@ -488,8 +487,10 @@ const ClonesPage: React.FC = () => {
         clone={selectedClone}
         onSave={handleSaveEdit}
       />
-    </Box>
+      </Stack>
+    </PageContainer>
   );
 };
 
 export default ClonesPage;
+

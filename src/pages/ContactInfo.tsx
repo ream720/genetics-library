@@ -1,126 +1,153 @@
 import { useEffect, useState } from "react";
 import {
-  Box,
-  TextField,
+  Alert,
   Button,
+  Chip,
+  CircularProgress,
+  Stack,
+  TextField,
   Typography,
-  IconButton,
-  Tooltip,
 } from "@mui/material";
 import { useAuth } from "../context/AuthContext";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
 import { useNavigate } from "react-router-dom";
-import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import { PageContainer, PageHeader, SectionCard } from "../components/ui";
 
 function ContactInfo() {
   const [contactInfo, setContactInfo] = useState<string>("");
-  const [loading, setLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [error, setError] = useState<string>("");
   const { currentUser } = useAuth();
 
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchContactInfo = async () => {
-      if (currentUser) {
-        try {
-          const userDocRef = doc(db, "users", currentUser.uid);
-          const userDocSnap = await getDoc(userDocRef);
+    let isMounted = true;
 
-          if (userDocSnap.exists()) {
-            const data = userDocSnap.data();
-            setContactInfo(data.contactInfo || ""); // Set contact info or empty string
-          }
-        } catch (error) {
-          console.error("Error fetching contact info:", error);
-        } finally {
-          setLoading(false);
+    const fetchContactInfo = async () => {
+      if (!currentUser) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        setError("");
+        setIsLoading(true);
+
+        const userDocRef = doc(db, "users", currentUser.uid);
+        const userDocSnap = await getDoc(userDocRef);
+
+        if (!isMounted) {
+          return;
+        }
+
+        if (userDocSnap.exists()) {
+          const data = userDocSnap.data();
+          setContactInfo(
+            typeof data.contactInfo === "string" ? data.contactInfo : ""
+          );
+        }
+      } catch (fetchError) {
+        console.error("Error fetching contact info:", fetchError);
+        if (isMounted) {
+          setError("Failed to load contact info. Please try again.");
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
         }
       }
     };
 
     fetchContactInfo();
+
+    return () => {
+      isMounted = false;
+    };
   }, [currentUser]);
 
-  const handleButtonClick = async () => {
+  const handleSave = async () => {
     try {
-      await saveContactInfo(contactInfo.trim()); // Trim the value but allow empty string
+      setError("");
+      setIsSaving(true);
+      await saveContactInfo(contactInfo.trim());
       navigate("/dashboard");
-    } catch (error) {
-      alert("Failed to save contact info - try again.");
-      console.error("Error saving contact info:", error);
+    } catch (saveError) {
+      console.error("Error saving contact info:", saveError);
+      setError("Failed to save contact info. Please try again.");
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const saveContactInfo = async (info: string) => {
-    if (currentUser) {
-      try {
-        const userDocRef = doc(db, "users", currentUser.uid);
-        await setDoc(userDocRef, { contactInfo: info }, { merge: true });
-      } catch (error) {
-        console.error("Error saving contact info:", error);
-      }
+    if (!currentUser) {
+      throw new Error("Cannot save contact info without an authenticated user.");
     }
+
+    const userDocRef = doc(db, "users", currentUser.uid);
+    await setDoc(userDocRef, { contactInfo: info }, { merge: true });
   };
 
   return (
-    <Box
-      sx={{
-        maxWidth: 400,
-        margin: "0 auto",
-        mt: 5,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: 2,
-      }}
-    >
-      <Box sx={{ textAlign: "center", mb: 1 }}>
-        <Typography variant="h5" sx={{ mb: 0.5 }}>
-          Set Contact Info
-        </Typography>
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          sx={{ maxWidth: 320, mx: "auto" }}
+    <PageContainer maxWidth="sm">
+      <Stack spacing={3}>
+        <PageHeader
+          eyebrow="Account details"
+          title="Contact info"
+          description="Add optional ways for other users to reach you from your public profile."
+          backLabel="Back to dashboard"
+          onBack={() => navigate("/dashboard")}
+        />
+
+        <SectionCard
+          title="Public contact details"
+          description="This appears on your public profile. Leave it blank if you do not want to show contact information."
+          action={<Chip label="Public profile" variant="outlined" color="primary" />}
         >
-          Provide the contact details others can use to reach you about your
-          collections.
-        </Typography>
-      </Box>
-      {loading ? (
-        <Typography>Loading...</Typography>
-      ) : (
-        <>
-          <TextField
-            fullWidth
-            label="Contact Info"
-            variant="outlined"
-            value={contactInfo}
-            onChange={(e) => setContactInfo(e.target.value)}
-            placeholder="Enter your contact information"
-          />
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleButtonClick}
-              disabled={loading}
-            >
-              Set Contact Info
-            </Button>
-            <Tooltip
-              title='To delete your contact info, clear it from the box and click "Set Contact Info".'
-              arrow
-            >
-              <IconButton size="small">
-                <InfoOutlinedIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          </Box>
-        </>
-      )}
-    </Box>
+          <Stack spacing={2}>
+            {error && <Alert severity="error">{error}</Alert>}
+
+            {isLoading ? (
+              <Stack
+                direction="row"
+                spacing={1.5}
+                alignItems="center"
+                sx={{ minHeight: 96 }}
+              >
+                <CircularProgress size={22} />
+                <Typography color="text.secondary">Loading contact info...</Typography>
+              </Stack>
+            ) : (
+              <>
+                <TextField
+                  fullWidth
+                  label="Contact info"
+                  value={contactInfo}
+                  onChange={(event) => setContactInfo(event.target.value)}
+                  placeholder="Email, Instagram, website, Discord, or other preferred contact details"
+                  helperText={`${contactInfo.length}/500 characters. Clear this field and save to remove contact info from your profile.`}
+                  inputProps={{ maxLength: 500 }}
+                  multiline
+                  minRows={5}
+                />
+
+                <Button
+                  variant="contained"
+                  fullWidth
+                  onClick={handleSave}
+                  disabled={isSaving}
+                >
+                  {isSaving ? "Saving..." : "Save contact info"}
+                </Button>
+              </>
+            )}
+          </Stack>
+        </SectionCard>
+      </Stack>
+    </PageContainer>
   );
 }
 

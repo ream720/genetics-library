@@ -1,8 +1,8 @@
 import React from "react";
 import {
   Box,
-  Typography,
   Button,
+  Chip,
   Checkbox,
   Stack,
   FormControlLabel,
@@ -17,7 +17,6 @@ import {
   Autocomplete,
   Tabs,
   Tab,
-  Paper,
 } from "@mui/material";
 import {
   DataGrid,
@@ -36,6 +35,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 import EditSeedModal from "../components/EditSeedModal";
 import ConversationalSeedAssistant from "../components/ConversationalSeedAssistant";
+import { PageContainer, PageHeader, SectionCard } from "../components/ui";
 
 // Interface for the tab values
 interface TabPanelProps {
@@ -57,7 +57,7 @@ function TabPanel(props: TabPanelProps) {
       {...other}
       style={{ width: "100%" }}
     >
-      {value === index && <Box sx={{ p: 2 }}>{children}</Box>}
+      {value === index && <Box sx={{ pt: 2 }}>{children}</Box>}
     </div>
   );
 }
@@ -312,14 +312,19 @@ const SeedsPage: React.FC = () => {
     },
     {
       field: "feminized",
-      headerName: "Sex",
+      headerName: "Type",
       headerAlign: "center",
       align: "center",
       editable: true,
+      width: 110,
       flex: 0,
-      renderCell: (params) => {
-        return params.value ? "♀" : "♂";
-      },
+      renderCell: (params) => (
+        <Chip
+          label={params.value ? "Feminized" : "Regular"}
+          size="small"
+          variant={params.value ? "filled" : "outlined"}
+        />
+      ),
       renderEditCell: (params) => {
         return <GridEditBooleanCell {...params} />;
       },
@@ -440,215 +445,228 @@ const SeedsPage: React.FC = () => {
   ];
 
   return (
-    <Box sx={{ px: 3, pb: 3 }}>
-      <Typography
-        variant="h4"
-        gutterBottom
-        sx={{
-          fontFamily: "Roboto, sans-serif",
-          fontWeight: 600,
-          textAlign: "center",
-          marginBottom: 3,
-        }}
-      >
-        Manage Seeds
-      </Typography>
+    <PageContainer maxWidth="xl">
+      <Stack spacing={3}>
+        <PageHeader
+          eyebrow="Genetics library"
+          title="Seeds"
+          description={`${seeds.length} seed ${seeds.length === 1 ? "entry" : "entries"} in your private collection. Add records manually, with AI assistance, or by CSV.`}
+        />
 
-      {/* Mode Selection Tabs */}
-      <Paper sx={{ mb: 1, maxWidth: "1400px", mx: "auto" }}>
-        <Tabs
-          value={inputMode}
-          onChange={handleTabChange}
-          variant="fullWidth"
-          textColor="primary"
-          indicatorColor="primary"
-          aria-label="seed input method tabs"
+        <SectionCard
+          title="Add Seeds"
+          description="Use the assistant for fast cataloging, or enter seed details manually."
+          contentPadding={2.5}
         >
-          <Tab
-            icon={<FaMagic size={20} />}
-            label="AI Assistant"
-            iconPosition="start"
-            sx={{ fontWeight: "bold" }}
-          />
-          <Tab
-            icon={<EditIcon />}
-            label="Manual Entry"
-            iconPosition="start"
-            sx={{ fontWeight: "bold" }}
-          />
-        </Tabs>
-      </Paper>
-
-      {/* AI Assistant Panel */}
-      <TabPanel value={inputMode} index={0}>
-        <Box sx={{ display: "flex", justifyContent: "center" }}>
-          <ConversationalSeedAssistant />
-        </Box>
-      </TabPanel>
-
-      {/* Manual Entry Panel */}
-      <TabPanel value={inputMode} index={1}>
-        <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
-          <Stack
-            spacing={2}
-            direction={{ xs: "column", sm: "row" }}
-            alignItems="flex-start"
+          <Box
+            sx={(theme) => ({
+              border: 1,
+              borderColor: "divider",
+              borderRadius: 3,
+              bgcolor: theme.palette.surface.subtle,
+              overflow: "hidden",
+            })}
           >
-            <Stack spacing={2} sx={{ minWidth: 300 }}>
-              <Autocomplete
-                options={uniqueBreeders}
-                freeSolo
-                inputValue={seedBreeder}
-                onInputChange={(_event, newInputValue) => {
-                  setSeedBreeder(newInputValue);
+            <Tabs
+              value={inputMode}
+              onChange={handleTabChange}
+              variant="fullWidth"
+              textColor="primary"
+              indicatorColor="primary"
+              aria-label="seed input method tabs"
+            >
+              <Tab
+                icon={<FaMagic size={20} />}
+                label="AI Assistant"
+                iconPosition="start"
+                sx={{ fontWeight: "bold" }}
+              />
+              <Tab
+                icon={<EditIcon />}
+                label="Manual Entry"
+                iconPosition="start"
+                sx={{ fontWeight: "bold" }}
+              />
+            </Tabs>
+          </Box>
+
+          <TabPanel value={inputMode} index={0}>
+            <ConversationalSeedAssistant />
+          </TabPanel>
+
+          <TabPanel value={inputMode} index={1}>
+            <Stack spacing={2.5}>
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: {
+                    xs: "1fr",
+                    md: "minmax(0, 1.3fr) minmax(240px, 0.7fr)",
+                  },
+                  gap: 2,
                 }}
-                renderInput={(params) => (
+              >
+                <Stack spacing={2}>
+                  <Autocomplete
+                    options={uniqueBreeders}
+                    freeSolo
+                    inputValue={seedBreeder}
+                    onInputChange={(_event, newInputValue) => {
+                      setSeedBreeder(newInputValue);
+                    }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        required
+                        placeholder="Archive Seed Bank"
+                        label="Breeder"
+                        value={seedBreeder}
+                        onChange={(e) => setSeedBreeder(e.target.value)}
+                        error={breederError}
+                        helperText={breederError ? "Breeder is required" : ""}
+                        fullWidth
+                      />
+                    )}
+                  />
                   <TextField
-                    {...params}
                     required
-                    placeholder="Archive Seed Bank"
-                    label="Breeder"
-                    value={seedBreeder}
-                    onChange={(e) => setSeedBreeder(e.target.value)}
-                    error={breederError}
-                    helperText={breederError ? "Breeder is required" : ""}
+                    placeholder="Dark Rainbow"
+                    label="Strain"
+                    value={seedStrain}
+                    error={strainError}
+                    helperText={strainError ? "Strain is required" : ""}
+                    onChange={(e) => setSeedStrain(e.target.value)}
                     fullWidth
                   />
-                )}
-              />
-              <TextField
-                required
-                placeholder="Dark Rainbow"
-                label="Strain"
-                value={seedStrain}
-                error={strainError}
-                helperText={strainError ? "Strain is required" : ""}
-                onChange={(e) => setSeedStrain(e.target.value)}
-                fullWidth
-              />
-              <TextField
-                label="# of Seeds"
-                placeholder="12"
-                type="number"
-                value={numSeeds}
-                onChange={(e) => setNumSeeds(Number(e.target.value))}
-                fullWidth
-              />
-              <TextField
-                label="Lineage"
-                placeholder="GMO x Rainbow Belts F1"
-                value={lineage}
-                onChange={(e) => setLineage(e.target.value)}
-                fullWidth
-              />
-              <TextField
-                placeholder="F1, S1, etc."
-                label="Generation"
-                value={filalGeneration}
-                onChange={(e) => setFilalGeneration(e.target.value)}
-                fullWidth
-              />
-            </Stack>
-
-            <Stack spacing={2} sx={{ minWidth: 200 }}>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={isFeminized}
-                    onChange={(e) => setIsFeminized(e.target.checked)}
-                  />
-                }
-                label="Feminized"
-              />
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={isOpen}
-                    onChange={(e) => setIsOpen(e.target.checked)}
-                  />
-                }
-                label="Open Pack?"
-              />
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={isAvailable}
-                    onChange={(e) => setIsAvailable(e.target.checked)}
-                  />
-                }
-                label="Available?"
-              />
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={isMultiple}
-                    onChange={(e) => setIsMultiple(e.target.checked)}
-                  />
-                }
-                label="Multiple Packs?"
-              />
-              {isMultiple && (
-                <Stack pl={1}>
+                  <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                    <TextField
+                      label="# of Seeds"
+                      placeholder="12"
+                      type="number"
+                      value={numSeeds}
+                      onChange={(e) => setNumSeeds(Number(e.target.value))}
+                      fullWidth
+                    />
+                    <TextField
+                      placeholder="F1, S1, etc."
+                      label="Generation"
+                      value={filalGeneration}
+                      onChange={(e) => setFilalGeneration(e.target.value)}
+                      fullWidth
+                    />
+                  </Stack>
                   <TextField
-                    sx={{ maxWidth: 100 }}
-                    label="Quantity"
-                    type="number"
-                    value={quantity === 0 ? "" : quantity}
-                    onChange={(e) => {
-                      const value =
-                        e.target.value === ""
-                          ? 0
-                          : Math.max(0, parseInt(e.target.value) || 0);
-                      setQuantity(value);
-                    }}
+                    label="Lineage"
+                    placeholder="GMO x Rainbow Belts F1"
+                    value={lineage}
+                    onChange={(e) => setLineage(e.target.value)}
+                    fullWidth
                   />
                 </Stack>
-              )}
+
+                <Stack spacing={1}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={isFeminized}
+                        onChange={(e) => setIsFeminized(e.target.checked)}
+                      />
+                    }
+                    label="Feminized"
+                  />
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={isOpen}
+                        onChange={(e) => setIsOpen(e.target.checked)}
+                      />
+                    }
+                    label="Open pack"
+                  />
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={isAvailable}
+                        onChange={(e) => setIsAvailable(e.target.checked)}
+                      />
+                    }
+                    label="Available"
+                  />
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={isMultiple}
+                        onChange={(e) => setIsMultiple(e.target.checked)}
+                      />
+                    }
+                    label="Multiple packs"
+                  />
+                  {isMultiple && (
+                    <TextField
+                      sx={{ maxWidth: 160 }}
+                      label="Quantity"
+                      type="number"
+                      value={quantity === 0 ? "" : quantity}
+                      onChange={(e) => {
+                        const value =
+                          e.target.value === ""
+                            ? 0
+                            : Math.max(0, parseInt(e.target.value) || 0);
+                        setQuantity(value);
+                      }}
+                    />
+                  )}
+                </Stack>
+              </Box>
+
+              <Button
+                variant="contained"
+                startIcon={<AddCircleOutline />}
+                onClick={handleAddSeed}
+                sx={{ alignSelf: { xs: "stretch", sm: "flex-start" } }}
+              >
+                Add Seed
+              </Button>
             </Stack>
+          </TabPanel>
+        </SectionCard>
 
-            <Box sx={{ pt: 2 }}>
-              <Tooltip title="Add Seed">
-                <IconButton
-                  sx={{ color: "primary.main" }}
-                  onClick={handleAddSeed}
-                  size="large"
-                >
-                  <AddCircleOutline fontSize="large" />
-                </IconButton>
-              </Tooltip>
-            </Box>
-          </Stack>
-        </Box>
-      </TabPanel>
-
-      {/* Data Grid Section */}
-      <Box sx={{ height: 600, width: "100%", overflowX: "auto" }}>
-        <DataGrid
-          rows={seeds.map((seed) => ({
-            ...seed,
-            id: seed.id,
-          }))}
-          columns={columns}
-          processRowUpdate={processRowUpdate}
-          onProcessRowUpdateError={(error) =>
-            console.error("Error during row update:", error)
-          }
-          rowModesModel={rowModesModel}
-          onRowModesModelChange={(newModel) => setRowModesModel(newModel)}
-          initialState={{
-            pagination: {
-              paginationModel: {
-                pageSize: 10,
-              },
-            },
-          }}
-          pageSizeOptions={[10, 20, 50]}
-          disableRowSelectionOnClick
-          onCellEditStart={(_params, event) => {
-            event.defaultMuiPrevented = true;
-          }}
-        />
-      </Box>
+        <SectionCard
+          title="Seed Records"
+          description="Edit availability, inventory, and seed pack details."
+          action={<Chip label={`${seeds.length} total`} size="small" />}
+          contentPadding={2.5}
+        >
+          <Box sx={{ height: 600, width: "100%", overflowX: "auto" }}>
+            <DataGrid
+              rows={seeds.map((seed) => ({
+                ...seed,
+                id: seed.id,
+              }))}
+              columns={columns}
+              processRowUpdate={processRowUpdate}
+              onProcessRowUpdateError={(error) =>
+                console.error("Error during row update:", error)
+              }
+              rowModesModel={rowModesModel}
+              onRowModesModelChange={(newModel) => setRowModesModel(newModel)}
+              pagination
+              initialState={{
+                pagination: {
+                  rowCount: seeds.length,
+                  paginationModel: {
+                    pageSize: 10,
+                  },
+                },
+              }}
+              pageSizeOptions={[10, 20, 50]}
+              disableRowSelectionOnClick
+              onCellEditStart={(_params, event) => {
+                event.defaultMuiPrevented = true;
+              }}
+            />
+          </Box>
+        </SectionCard>
 
       {/* Delete Confirmation Dialog */}
       <Dialog
@@ -687,8 +705,10 @@ const SeedsPage: React.FC = () => {
         seed={selectedSeed}
         onSave={handleSaveEdit}
       />
-    </Box>
+      </Stack>
+    </PageContainer>
   );
 };
 
 export default SeedsPage;
+

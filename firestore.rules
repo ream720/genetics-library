@@ -1,0 +1,263 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function ownsProject() {
+      return signedIn() && resource.data.ownerId == request.auth.uid;
+    }
+
+    function ownsIncomingProject() {
+      return signedIn() && request.resource.data.ownerId == request.auth.uid;
+    }
+
+    function ownsProjectById(projectId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/projects/$(projectId))
+        && get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid;
+    }
+
+    function projectIsWritable(projectId) {
+      return ownsProjectById(projectId)
+        && get(/databases/$(database)/documents/projects/$(projectId)).data.status != "complete";
+    }
+
+    function projectIsComplete(projectId) {
+      return ownsProjectById(projectId)
+        && get(/databases/$(database)/documents/projects/$(projectId)).data.status == "complete";
+    }
+
+    function ownsExistingV2Record() {
+      return signedIn() && resource.data.ownerId == request.auth.uid;
+    }
+
+    function ownsIncomingV2Record() {
+      return signedIn() && request.resource.data.ownerId == request.auth.uid;
+    }
+
+    function keepsV2OwnershipAndProject() {
+      return request.resource.data.ownerId == resource.data.ownerId
+        && request.resource.data.projectId == resource.data.projectId;
+    }
+
+    function isDraftAddendumPhoto() {
+      return resource.data.contextType == "addendum"
+        && !exists(/databases/$(database)/documents/projectAddenda/$(resource.data.contextId));
+    }
+
+    // ---------- USERS ----------
+    match /users/{userId} {
+      // Any user can read any user's doc.
+      allow read: if true;
+
+      // Any authenticated user can create a user doc on sign up.
+      allow create: if signedIn();
+
+      // Only the owner of the doc can update or delete.
+      allow update, delete: if signedIn() && request.auth.uid == userId;
+    }
+
+    // ---------- SEEDS ----------
+    match /seeds/{seedId} {
+      // Public search and public profiles rely on reading seed docs.
+      allow read: if true;
+
+      // Only the owner can create a new seed.
+      allow create: if signedIn() && request.auth.uid == request.resource.data.userId;
+
+      // Only the owner of the seed can update or delete it.
+      allow update, delete: if signedIn() && request.auth.uid == resource.data.userId;
+    }
+
+    // ---------- CLONES ----------
+    match /clones/{cloneId} {
+      // Public search and public profiles rely on reading clone docs.
+      allow read: if true;
+
+      // Only the owner can create a new clone.
+      allow create: if signedIn() && request.auth.uid == request.resource.data.userId;
+
+      // Only the owner of the clone can update or delete it.
+      allow update, delete: if signedIn() && request.auth.uid == resource.data.userId;
+    }
+
+    // ---------- LEGACY CULTIVAR INFO ----------
+    // Retained temporarily so existing data remains untouched while the UI is retired.
+    match /cultivarInfo/{infoId} {
+      allow read: if true;
+      allow create: if signedIn() && request.auth.uid == request.resource.data.userId;
+      allow update, delete: if signedIn() && request.auth.uid == resource.data.userId;
+    }
+
+    // ---------- BREEDER INFO ----------
+    match /breederInfo/{breederId} {
+      // Anyone can read breeder info.
+      allow read: if true;
+
+      // Breeder info is managed through Firebase Console.
+      allow write: if false;
+    }
+
+    // ---------- V2 PROJECTS ----------
+    match /projects/{projectId} {
+      // Projects are private to their owner for V2 MVP.
+      allow read: if ownsProject();
+
+      // Project creation must bind the document to the authenticated user.
+      allow create: if ownsIncomingProject();
+
+      // Owners can edit projects, but cannot transfer ownership.
+      allow update: if ownsProject()
+        && request.resource.data.ownerId == resource.data.ownerId
+        && resource.data.status != "complete";
+
+      // Full deletion is handled by the trusted deleteProjectData callable.
+      allow delete: if false;
+    }
+
+    // ---------- V2 PROJECT CHILD RECORDS ----------
+    match /projectAddenda/{addendumId} {
+      allow read: if ownsExistingV2Record();
+      allow create: if ownsIncomingV2Record()
+        && projectIsComplete(request.resource.data.projectId);
+      allow update, delete: if false;
+    }
+
+    match /projectPhotos/{photoId} {
+      allow read: if ownsExistingV2Record();
+      allow create: if ownsIncomingV2Record()
+        && ownsProjectById(request.resource.data.projectId)
+        && (
+          projectIsWritable(request.resource.data.projectId)
+          || (
+            projectIsComplete(request.resource.data.projectId)
+            && request.resource.data.contextType == "addendum"
+          )
+        );
+      allow update: if ownsExistingV2Record()
+        && keepsV2OwnershipAndProject()
+        && (
+          projectIsWritable(resource.data.projectId)
+          || isDraftAddendumPhoto()
+        );
+      allow delete: if ownsExistingV2Record()
+        && (
+          projectIsWritable(resource.data.projectId)
+          || isDraftAddendumPhoto()
+        );
+    }
+
+    match /phenoGroups/{groupId} {
+      allow read: if ownsExistingV2Record();
+      allow create: if ownsIncomingV2Record()
+        && projectIsWritable(request.resource.data.projectId);
+      allow update: if ownsExistingV2Record()
+        && keepsV2OwnershipAndProject()
+        && projectIsWritable(resource.data.projectId);
+      allow delete: if ownsExistingV2Record()
+        && projectIsWritable(resource.data.projectId);
+    }
+
+    match /phenotypes/{phenotypeId} {
+      allow read: if ownsExistingV2Record();
+      allow create: if ownsIncomingV2Record()
+        && projectIsWritable(request.resource.data.projectId);
+      allow update: if ownsExistingV2Record()
+        && keepsV2OwnershipAndProject()
+        && projectIsWritable(resource.data.projectId);
+      allow delete: if ownsExistingV2Record()
+        && projectIsWritable(resource.data.projectId);
+    }
+
+    match /physicalPlants/{plantId} {
+      allow read: if ownsExistingV2Record();
+      allow create: if ownsIncomingV2Record()
+        && projectIsWritable(request.resource.data.projectId);
+      allow update: if ownsExistingV2Record()
+        && keepsV2OwnershipAndProject()
+        && projectIsWritable(resource.data.projectId);
+      allow delete: if ownsExistingV2Record()
+        && projectIsWritable(resource.data.projectId);
+    }
+
+    match /plantStageEvents/{eventId} {
+      allow read: if ownsExistingV2Record();
+      allow create: if ownsIncomingV2Record()
+        && projectIsWritable(request.resource.data.projectId);
+      allow update: if ownsExistingV2Record()
+        && keepsV2OwnershipAndProject()
+        && projectIsWritable(resource.data.projectId);
+      allow delete: if ownsExistingV2Record()
+        && projectIsWritable(resource.data.projectId);
+    }
+
+    match /plantEvaluations/{evaluationId} {
+      allow read: if ownsExistingV2Record();
+      allow create: if ownsIncomingV2Record()
+        && projectIsWritable(request.resource.data.projectId);
+      allow update: if ownsExistingV2Record()
+        && keepsV2OwnershipAndProject()
+        && projectIsWritable(resource.data.projectId);
+      allow delete: if ownsExistingV2Record()
+        && projectIsWritable(resource.data.projectId);
+    }
+
+    match /washSessions/{sessionId} {
+      allow read: if ownsExistingV2Record();
+      allow create: if ownsIncomingV2Record()
+        && projectIsWritable(request.resource.data.projectId);
+      allow update: if ownsExistingV2Record()
+        && keepsV2OwnershipAndProject()
+        && projectIsWritable(resource.data.projectId);
+      allow delete: if ownsExistingV2Record()
+        && projectIsWritable(resource.data.projectId);
+    }
+
+    match /washRuns/{runId} {
+      allow read: if ownsExistingV2Record();
+      allow create: if ownsIncomingV2Record()
+        && projectIsWritable(request.resource.data.projectId);
+      allow update: if ownsExistingV2Record()
+        && keepsV2OwnershipAndProject()
+        && projectIsWritable(resource.data.projectId);
+      allow delete: if ownsExistingV2Record()
+        && projectIsWritable(resource.data.projectId);
+    }
+
+    match /washCycles/{cycleId} {
+      allow read: if ownsExistingV2Record();
+      allow create: if ownsIncomingV2Record()
+        && projectIsWritable(request.resource.data.projectId);
+      allow update: if ownsExistingV2Record()
+        && keepsV2OwnershipAndProject()
+        && projectIsWritable(resource.data.projectId);
+      allow delete: if ownsExistingV2Record()
+        && projectIsWritable(resource.data.projectId);
+    }
+
+    match /micronFractions/{fractionId} {
+      allow read: if ownsExistingV2Record();
+      allow create: if ownsIncomingV2Record()
+        && projectIsWritable(request.resource.data.projectId);
+      allow update: if ownsExistingV2Record()
+        && keepsV2OwnershipAndProject()
+        && projectIsWritable(resource.data.projectId);
+      allow delete: if ownsExistingV2Record()
+        && projectIsWritable(resource.data.projectId);
+    }
+
+    match /pressRecords/{pressRecordId} {
+      allow read: if ownsExistingV2Record();
+      allow create: if ownsIncomingV2Record()
+        && projectIsWritable(request.resource.data.projectId);
+      allow update: if ownsExistingV2Record()
+        && keepsV2OwnershipAndProject()
+        && projectIsWritable(resource.data.projectId);
+      allow delete: if ownsExistingV2Record()
+        && projectIsWritable(resource.data.projectId);
+    }
+  }
+}

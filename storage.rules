@@ -1,0 +1,88 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function ownsProject(ownerId, projectId) {
+      return signedIn()
+        && request.auth.uid == ownerId
+        && firestore.exists(/databases/(default)/documents/projects/$(projectId))
+        && firestore.get(/databases/(default)/documents/projects/$(projectId)).data.ownerId == ownerId;
+    }
+
+    function projectIsWritable(ownerId, projectId) {
+      return ownsProject(ownerId, projectId)
+        && firestore.get(/databases/(default)/documents/projects/$(projectId)).data.status != "complete";
+    }
+
+    function isDraftAddendumMedia(contextType, contextId) {
+      return contextType == "addendum"
+        && !firestore.exists(/databases/(default)/documents/projectAddenda/$(contextId));
+    }
+
+    function validImageUpload() {
+      return request.resource.size <= 10 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|png|webp)');
+    }
+
+    match /projectMedia/{ownerId}/{projectId}/{contextType}/{contextId}/{fileName} {
+      allow read: if signedIn() && request.auth.uid == ownerId;
+      allow create: if ownsProject(ownerId, projectId)
+        && validImageUpload()
+        && request.resource.metadata.ownerId == ownerId
+        && request.resource.metadata.projectId == projectId
+        && request.resource.metadata.contextType == contextType
+        && request.resource.metadata.contextId == contextId
+        && (
+          projectIsWritable(ownerId, projectId)
+          || isDraftAddendumMedia(contextType, contextId)
+        );
+      allow update: if signedIn()
+        && request.auth.uid == ownerId
+        && validImageUpload()
+        && request.resource.metadata.ownerId == ownerId
+        && request.resource.metadata.projectId == projectId
+        && request.resource.metadata.photoId == resource.metadata.photoId
+        && request.resource.metadata.contextType == resource.metadata.contextType
+        && (
+          projectIsWritable(ownerId, projectId)
+          || isDraftAddendumMedia(
+            resource.metadata.contextType,
+            resource.metadata.contextId
+          )
+        );
+      allow delete: if signedIn()
+        && request.auth.uid == ownerId
+        && (
+          projectIsWritable(ownerId, projectId)
+          || isDraftAddendumMedia(
+            resource.metadata.contextType,
+            resource.metadata.contextId
+          )
+        );
+    }
+
+    match /avatars/{userId} {
+      allow read: if true;
+      allow write: if signedIn() && request.auth.uid == userId;
+    }
+
+    match /breederLogos/{allPaths=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /breeder-logos/{allPaths=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /logos/{allPaths=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}

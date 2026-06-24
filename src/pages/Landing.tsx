@@ -1,415 +1,556 @@
-import React, { useEffect, useState } from "react";
 import {
-  Container,
-  Typography,
+  Avatar,
   Box,
+  Button,
   Card,
   CardContent,
-  Avatar,
-  Grid,
-  Divider,
+  Chip,
   CircularProgress,
+  Container,
+  Divider,
+  Link,
+  Paper,
+  Stack,
+  Typography,
+  alpha,
 } from "@mui/material";
-import { Button } from "@mui/material";
+import AnalyticsOutlinedIcon from "@mui/icons-material/AnalyticsOutlined";
+import AutoAwesomeOutlinedIcon from "@mui/icons-material/AutoAwesomeOutlined";
+import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
+import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
+import ScienceOutlinedIcon from "@mui/icons-material/ScienceOutlined";
+import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
+import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
+import UploadFileOutlinedIcon from "@mui/icons-material/UploadFileOutlined";
+import { Timestamp, collection, getDocs } from "firebase/firestore";
+import { getDownloadURL, getStorage, ref } from "firebase/storage";
+import { useEffect, useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
-import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
-import { Timestamp } from "firebase/firestore";
-import { getStorage, ref, getDownloadURL } from "firebase/storage";
-import StarIcon from "@mui/icons-material/Star";
-import SearchIcon from "@mui/icons-material/Search";
-import DarkModeIcon from "@mui/icons-material/DarkMode";
-import Inventory2Icon from "@mui/icons-material/Inventory2";
-import SmartToyIcon from "@mui/icons-material/SmartToy";
-import GrassIcon from "@mui/icons-material/Grass";
-import UploadFileIcon from "@mui/icons-material/UploadFile";
-
-// interface Article {
-//   title: string;
-//   description: string;
-//   imageUrl?: string;
-//   date: string;
-//   author: string;
-// }
 
 interface BreederInfo {
-  name: string; // Breeder name (e.g., "Raw Genetics")
-  logoURL: string; // URL to their logo in Firebase Storage
-  verified: boolean; // Whether this is an official/verified breeder
-  createdAt: Timestamp; // When this breeder was added to our system
+  name: string;
+  logoURL: string;
+  verified: boolean;
+  createdAt: Timestamp;
 }
 
 interface PopularItem {
   name: string;
   totalEntries: number;
-  breederInfo?: BreederInfo; // Add this to include logo URLs and verification status
+  breederInfo?: BreederInfo;
 }
 
-const Landing: React.FC = () => {
+const featureCards = [
+  {
+    icon: <Inventory2OutlinedIcon />,
+    title: "Build your genetics library",
+    description:
+      "Catalog seeds and clones with breeder, lineage, generation, notes, and collection details.",
+  },
+  {
+    icon: <FolderOutlinedIcon />,
+    title: "Track private projects",
+    description:
+      "Run Pheno Hunt and Wash/Process projects without exposing your working data publicly.",
+  },
+  {
+    icon: <AnalyticsOutlinedIcon />,
+    title: "Compare results over time",
+    description:
+      "Use completed projects to review germination, keeper rates, wash returns, quality, and yield.",
+  },
+  {
+    icon: <SearchOutlinedIcon />,
+    title: "Search public collections",
+    description:
+      "Find genetics by username, breeder, strain, and lineage while keeping project records private.",
+  },
+  {
+    icon: <AutoAwesomeOutlinedIcon />,
+    title: "Enter records faster",
+    description:
+      "Use AI-assisted entry creation to turn rough notes into cleaner seed and clone records.",
+  },
+  {
+    icon: <UploadFileOutlinedIcon />,
+    title: "Import from spreadsheets",
+    description:
+      "Bring existing seed and clone lists in through CSV instead of rebuilding a collection by hand.",
+  },
+];
+
+const projectSteps = [
+  "Start with genetics from your library or an ad-hoc source.",
+  "Record plants, photos, evaluations, wash runs, and processing notes.",
+  "Complete the project when results are ready for analytics.",
+];
+
+const Landing = () => {
   const [topBreeders, setTopBreeders] = useState<PopularItem[]>([]);
   const [topStrains, setTopStrains] = useState<PopularItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  // const [articles] = useState<Article[]>([
-  //   {
-  //     title: "Understanding Cannabis Genetics",
-  //     description:
-  //       "A comprehensive guide to cannabis genetics and breeding techniques.",
-  //     date: "2024-03-20",
-  //     author: "Dr. Jane Smith",
-  //   },
-  //   {
-  //     title: "The Future of Cannabis Breeding",
-  //     description:
-  //       "Exploring new trends and technologies in cannabis breeding.",
-  //     date: "2024-03-18",
-  //     author: "John Doe",
-  //   },
-  //   {
-  //     title: "Sustainable Breeding Practices",
-  //     description:
-  //       "How to implement eco-friendly practices in cannabis breeding.",
-  //     date: "2024-03-15",
-  //     author: "Sarah Johnson",
-  //   },
-  //   {
-  //     title: "Phenotype vs Genotype",
-  //     description:
-  //       "Understanding the difference between phenotype and genotype in cannabis.",
-  //     date: "2024-03-12",
-  //     author: "Mike Wilson",
-  //   },
-  //   {
-  //     title: "Breeding for Medical Properties",
-  //     description:
-  //       "How breeders are developing strains for specific medical applications.",
-  //     date: "2024-03-10",
-  //     author: "Dr. Emily Brown",
-  //   },
-  // ]);
-
-  const features = [
-    {
-      icon: <Inventory2Icon fontSize="medium" color="primary" />,
-      title: "Track Your Collection",
-      description:
-        "Catalog your personal seed and clone collection, keep notes, and never lose track of your genetics.",
-    },
-    {
-      icon: <StarIcon fontSize="medium" color="primary" />,
-      title: "Top Seed & Clone Database",
-      description:
-        "With access to the most comprehensive trading database ever, discover and connect with genetics collectors from around the world.",
-    },
-    {
-      icon: <SearchIcon fontSize="medium" color="primary" />,
-      title: "Advanced Search & Filters",
-      description:
-        "Find exactly what you need with powerful search and filtering tools. Search by username, strain name, breeder, lineage, and more.",
-    },
-
-    {
-      icon: <GrassIcon fontSize="medium" color="primary" />,
-      title: "Cultivar Info & Grower Notes",
-      description:
-        "Access and contribute real-world grow data, tips, and experiences for each cultivar—shared by the community.",
-    },
-    {
-      icon: <SmartToyIcon fontSize="medium" color="primary" />,
-      title: "AI-Powered Entry Creation",
-      description:
-        "Save time with AI-assisted form filling—just describe your seeds or clones and let our system auto-fill your seed or clone entry.",
-    },
-
-    {
-      icon: <UploadFileIcon fontSize="medium" color="primary" />,
-      title: "Bulk Import via CSV",
-      description:
-        "Quickly import your entire collection from an Excel or CSV file—perfect for breeders and collectors migrating from spreadsheets.",
-    },
-    {
-      icon: <DarkModeIcon fontSize="medium" color="primary" />,
-      title: "Modern, Mobile-Friendly, Intuitive UI",
-      description:
-        "Optimized for mobile, tablet, and desktop. Enjoy a clean, dark-mode friendly interface. No need to download an app, just use the website on any device!",
-    },
-    // {
-    //   icon: <ArticleIcon fontSize="large" color="primary" />,
-    //   title: "Expert Articles & Guides",
-    //   description:
-    //     "Learn from expert-written articles and guides. (Coming soon!)",
-    // },
-    // {
-    //   icon: <VerifiedUserIcon fontSize="large" color="primary" />,
-    //   title: "Verified Member Profiles",
-    //   description:
-    //     "Look for the verified badge for trusted, official members / traders.",
-    // },
-  ];
-
-  const fetchPopularItems = async () => {
-    try {
-      setIsLoading(true);
-
-      // Get all seeds and clones
-      const seedsSnapshot = await getDocs(collection(db, "seeds"));
-      const clonesSnapshot = await getDocs(collection(db, "clones"));
-
-      // Get breeder info and convert storage paths to download URLs
-      const breederInfoSnapshot = await getDocs(collection(db, "breederInfo"));
-      console.log(
-        "Breeder info docs:",
-        breederInfoSnapshot.docs.map((doc) => doc.data())
-      ); // Debug log
-
-      const storage = getStorage();
-      const breederInfoMap = new Map();
-
-      for (const doc of breederInfoSnapshot.docs) {
-        const data = doc.data() as BreederInfo;
-        console.log(
-          "Processing breeder:",
-          data.name,
-          "with URL:",
-          data.logoURL
-        ); // Debug log
-
-        if (data.logoURL && data.logoURL.startsWith("gs://")) {
-          const storagePath = data.logoURL.replace(
-            "gs://genetics-library.firebasestorage.app/",
-            ""
-          );
-          console.log("Converting storage path:", storagePath); // Debug log
-
-          try {
-            const storageRef = ref(storage, storagePath);
-            const downloadURL = await getDownloadURL(storageRef);
-            console.log("Got download URL:", downloadURL); // Debug log
-            data.logoURL = downloadURL;
-          } catch (error) {
-            console.error(
-              `Error getting download URL for ${data.name}:`,
-              error
-            );
-          }
-        }
-        breederInfoMap.set(data.name.toLowerCase(), data);
-      }
-
-      // Create maps to count frequencies
-      const breederCounts = new Map<string, number>();
-      const strainCounts = new Map<string, number>();
-
-      // Count seeds
-      seedsSnapshot.docs.forEach((doc) => {
-        const seed = doc.data();
-        const { breeder, strain } = seed;
-        if (breeder) {
-          breederCounts.set(breeder, (breederCounts.get(breeder) || 0) + 1);
-        }
-        if (strain) {
-          strainCounts.set(strain, (strainCounts.get(strain) || 0) + 1);
-        }
-      });
-
-      // Count clones
-      clonesSnapshot.docs.forEach((doc) => {
-        const clone = doc.data();
-        const { breeder, strain } = clone;
-        if (breeder) {
-          breederCounts.set(breeder, (breederCounts.get(breeder) || 0) + 1);
-        }
-        if (strain) {
-          strainCounts.set(strain, (strainCounts.get(strain) || 0) + 1);
-        }
-      });
-
-      // Convert to arrays and sort by count, now including breeder info
-      const sortedBreeders = Array.from(breederCounts.entries())
-        .map(([name, totalEntries]) => ({
-          name,
-          totalEntries,
-          breederInfo: breederInfoMap.get(name.toLowerCase()),
-        }))
-        .sort((a, b) => b.totalEntries - a.totalEntries)
-        .slice(0, 3);
-
-      const sortedStrains = Array.from(strainCounts.entries())
-        .map(([name, totalEntries]) => ({ name, totalEntries }))
-        .sort((a, b) => b.totalEntries - a.totalEntries)
-        .slice(0, 3);
-
-      setTopBreeders(sortedBreeders);
-      setTopStrains(sortedStrains);
-    } catch (error) {
-      console.error("Error fetching popular items:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   useEffect(() => {
+    let isMounted = true;
+
+    const fetchPopularItems = async () => {
+      try {
+        setIsLoading(true);
+
+        const [seedsSnapshot, clonesSnapshot, breederInfoSnapshot] =
+          await Promise.all([
+            getDocs(collection(db, "seeds")),
+            getDocs(collection(db, "clones")),
+            getDocs(collection(db, "breederInfo")),
+          ]);
+
+        const storage = getStorage();
+        const breederInfoMap = new Map<string, BreederInfo>();
+
+        await Promise.all(
+          breederInfoSnapshot.docs.map(async (docSnapshot) => {
+            const data = docSnapshot.data() as BreederInfo;
+
+            if (data.logoURL?.startsWith("gs://")) {
+              const storagePath = data.logoURL.replace(
+                "gs://genetics-library.firebasestorage.app/",
+                ""
+              );
+
+              try {
+                data.logoURL = await getDownloadURL(ref(storage, storagePath));
+              } catch (error) {
+                console.error(
+                  `Error getting breeder logo for ${data.name}:`,
+                  error
+                );
+              }
+            }
+
+            breederInfoMap.set(data.name.toLowerCase(), data);
+          })
+        );
+
+        const breederCounts = new Map<string, number>();
+        const strainCounts = new Map<string, number>();
+
+        [...seedsSnapshot.docs, ...clonesSnapshot.docs].forEach((docSnapshot) => {
+          const geneticsRecord = docSnapshot.data();
+          const breeder = geneticsRecord.breeder as string | undefined;
+          const strain = geneticsRecord.strain as string | undefined;
+
+          if (breeder) {
+            breederCounts.set(
+              breeder,
+              (breederCounts.get(breeder) || 0) + 1
+            );
+          }
+
+          if (strain) {
+            strainCounts.set(strain, (strainCounts.get(strain) || 0) + 1);
+          }
+        });
+
+        if (!isMounted) {
+          return;
+        }
+
+        setTopBreeders(
+          Array.from(breederCounts.entries())
+            .map(([name, totalEntries]) => ({
+              name,
+              totalEntries,
+              breederInfo: breederInfoMap.get(name.toLowerCase()),
+            }))
+            .sort((a, b) => b.totalEntries - a.totalEntries)
+            .slice(0, 3)
+        );
+        setTopStrains(
+          Array.from(strainCounts.entries())
+            .map(([name, totalEntries]) => ({ name, totalEntries }))
+            .sort((a, b) => b.totalEntries - a.totalEntries)
+            .slice(0, 3)
+        );
+      } catch (error) {
+        console.error("Error fetching popular genetics:", error);
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
     fetchPopularItems();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  const PopularItemsSection = ({
+  const PopularList = ({
     title,
     items,
   }: {
     title: string;
     items: PopularItem[];
   }) => (
-    <Box sx={{ mt: 4 }}>
-      <Typography variant="h5" gutterBottom align="center">
+    <Stack spacing={1.5}>
+      <Typography component="h4" variant="h6">
         {title}
       </Typography>
-      <Grid container spacing={3}>
-        {items.map((item) => (
-          <Grid item xs={12} sm={6} md={4} key={item.name}>
-            <Card>
-              <CardContent>
-                <Box sx={{ display: "flex", alignItems: "center" }}>
-                  <Avatar
-                    src={
-                      title === "Top Breeders"
-                        ? item.breederInfo?.logoURL
-                        : undefined
-                    }
-                    sx={{
-                      width: 60,
-                      height: 60,
-                      mr: 2,
-                      "& img": {
-                        objectFit: "contain",
-                        p: 0.5,
-                      },
-                    }}
-                  >
-                    {item.name.charAt(0)}
-                  </Avatar>
-                  <Box>
-                    <Typography variant="body1">{item.name}</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {item.totalEntries} entries
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
-    </Box>
+      {items.length === 0 ? (
+        <Typography variant="body2" color="text.secondary">
+          No public records yet.
+        </Typography>
+      ) : (
+        items.map((item) => (
+          <Paper
+            key={item.name}
+            variant="outlined"
+            sx={{
+              p: 1.5,
+              borderRadius: 3,
+              bgcolor: "surface.subtle",
+            }}
+          >
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <Avatar
+                src={title === "Top breeders" ? item.breederInfo?.logoURL : ""}
+                sx={{
+                  width: 44,
+                  height: 44,
+                  bgcolor: "primary.main",
+                  color: "primary.contrastText",
+                  "& img": {
+                    objectFit: "contain",
+                    p: 0.5,
+                  },
+                }}
+              >
+                {item.name.charAt(0)}
+              </Avatar>
+              <Box sx={{ minWidth: 0 }}>
+                <Typography fontWeight={800} noWrap>
+                  {item.name}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {item.totalEntries} public{" "}
+                  {item.totalEntries === 1 ? "entry" : "entries"}
+                </Typography>
+              </Box>
+            </Stack>
+          </Paper>
+        ))
+      )}
+    </Stack>
   );
-
-  const FeaturesSection = () => (
-    <Box sx={{ mt: 3, mb: 3 }}>
-      <Typography variant="h6" gutterBottom align="center">
-        What is Genetics Library?
-      </Typography>
-      <Grid container spacing={2} justifyContent="center">
-        {features.map((feature) => (
-          <Grid item xs={12} sm={6} md={4} key={feature.title}>
-            <Box sx={{ textAlign: "center", p: 2 }}>
-              {feature.icon}
-              <Typography variant="body1" sx={{ mt: 1 }}>
-                {feature.title}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {feature.description}
-              </Typography>
-            </Box>
-          </Grid>
-        ))}
-      </Grid>
-    </Box>
-  );
-
-  // const ArticlesSection = () => (
-  //   <Box sx={{ mt: 6 }}>
-  //     <Typography variant="h4" gutterBottom align="center">
-  //       Featured Articles
-  //     </Typography>
-  //     <Grid container spacing={3}>
-  //       {articles.map((article) => (
-  //         <Grid item xs={12} sm={6} md={4} key={article.title}>
-  //           <Card
-  //             sx={{ height: "100%", display: "flex", flexDirection: "column" }}
-  //           >
-  //             <CardContent sx={{ flexGrow: 1 }}>
-  //               <Typography variant="h6" gutterBottom>
-  //                 {article.title}
-  //               </Typography>
-  //               <Typography variant="body2" color="text.secondary" paragraph>
-  //                 {article.description}
-  //               </Typography>
-  //               <Box
-  //                 sx={{
-  //                   mt: "auto",
-  //                   display: "flex",
-  //                   justifyContent: "space-between",
-  //                   alignItems: "center",
-  //                 }}
-  //               >
-  //                 <Typography variant="caption" color="text.secondary">
-  //                   By {article.author}
-  //                 </Typography>
-  //                 <Typography variant="caption" color="text.secondary">
-  //                   {new Date(article.date).toLocaleDateString()}
-  //                 </Typography>
-  //               </Box>
-  //             </CardContent>
-  //           </Card>
-  //         </Grid>
-  //       ))}
-  //     </Grid>
-  //   </Box>
-  // );
 
   return (
-    <Container maxWidth="md">
-      <Box sx={{ mt: 2, mb: 4, textAlign: "center" }}>
-        <Typography
-          variant="h5"
-          component="h1"
-          gutterBottom
-          sx={{ fontFamily: "'Great Vibes', cursive" }}
+    <Box
+      sx={(theme) => ({
+        overflow: "hidden",
+        background:
+          theme.palette.mode === "dark"
+            ? `radial-gradient(circle at top left, ${alpha(
+                theme.palette.primary.main,
+                0.16
+              )}, transparent 34rem)`
+            : `radial-gradient(circle at top left, ${alpha(
+                theme.palette.primary.main,
+                0.18
+              )}, transparent 32rem)`,
+      })}
+    >
+      <Container maxWidth="xl" sx={{ py: { xs: 5, md: 8 } }}>
+        <Box
+          component="section"
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", lg: "1.05fr 0.95fr" },
+            gap: { xs: 4, md: 6 },
+            alignItems: "center",
+          }}
         >
-          Genetics Library
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Track, trade, and explore genetics.
-        </Typography>
-      </Box>
+          <Stack spacing={3} sx={{ maxWidth: 760 }}>
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              <Chip
+                icon={<ShieldOutlinedIcon />}
+                label="Private projects by default"
+                variant="outlined"
+              />
+              <Chip label="Seeds, clones, pheno hunts, wash runs" />
+            </Stack>
+            <Box>
+              <Typography component="h1" variant="h1">
+                A private field notebook for cannabis genetics.
+              </Typography>
+              <Typography
+                color="text.secondary"
+                sx={{ mt: 2, maxWidth: 680, fontSize: { md: "1.1rem" } }}
+              >
+                Genetics Library helps growers, pheno hunters, breeders, and
+                hashmakers organize genetics, track project work, and review
+                results over time.
+              </Typography>
+            </Box>
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              spacing={1.5}
+              sx={{ maxWidth: { xs: "none", sm: 430 } }}
+            >
+              <Button
+                component={RouterLink}
+                to="/signup"
+                variant="contained"
+                size="large"
+                fullWidth
+              >
+                Start your library
+              </Button>
+              <Button
+                component={RouterLink}
+                to="/login"
+                variant="outlined"
+                size="large"
+                fullWidth
+              >
+                Log in
+              </Button>
+            </Stack>
+          </Stack>
 
-      <Card>
-        <FeaturesSection />
-        <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
-          <Button
-            variant="contained"
-            color="primary"
-            component={RouterLink}
-            to="/dashboard"
-            sx={{ fontWeight: 600, borderRadius: 1, px: 16, mb: 2 }}
+          <Card
+            sx={(theme) => ({
+              borderRadius: 5,
+              bgcolor: alpha(theme.palette.surface.raised, 0.82),
+              backdropFilter: "blur(14px)",
+            })}
           >
-            Get Started
-          </Button>
+            <CardContent sx={{ p: { xs: 2.5, md: 3.5 } }}>
+              <Stack spacing={2.5}>
+                <Stack direction="row" alignItems="center" spacing={1.5}>
+                  <ScienceOutlinedIcon color="primary" />
+                  <Box>
+                    <Typography component="h2" variant="h5">
+                      Project-ready records
+                    </Typography>
+                    <Typography color="text.secondary" variant="body2">
+                      Built around the V2 workflow: library, projects,
+                      completion, analytics.
+                    </Typography>
+                  </Box>
+                </Stack>
+                <Divider />
+                {projectSteps.map((step, index) => (
+                  <Stack
+                    key={step}
+                    direction="row"
+                    spacing={1.5}
+                    alignItems="flex-start"
+                  >
+                    <Box
+                      sx={(theme) => ({
+                        width: 32,
+                        height: 32,
+                        borderRadius: "50%",
+                        display: "grid",
+                        placeItems: "center",
+                        flexShrink: 0,
+                        bgcolor: alpha(theme.palette.primary.main, 0.14),
+                        color: "primary.main",
+                        fontWeight: 900,
+                      })}
+                    >
+                      {index + 1}
+                    </Box>
+                    <Typography>{step}</Typography>
+                  </Stack>
+                ))}
+              </Stack>
+            </CardContent>
+          </Card>
         </Box>
-      </Card>
 
-      {isLoading ? (
-        <Box sx={{ display: "flex", justifyContent: "center", my: 4 }}>
-          <CircularProgress />
+        <Box component="section" sx={{ mt: { xs: 7, md: 10 } }}>
+          <Stack spacing={1.25} sx={{ mb: 3, maxWidth: 760 }}>
+            <Typography
+              variant="caption"
+              color="secondary.main"
+              fontWeight={800}
+              letterSpacing="0.09em"
+              textTransform="uppercase"
+            >
+              What is Genetics Library?
+            </Typography>
+            <Typography variant="h2">
+              A collection manager plus project history.
+            </Typography>
+            <Typography color="text.secondary">
+              Keep the public collection layer simple while your project work
+              remains private until future sharing tools are intentionally added.
+            </Typography>
+          </Stack>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                sm: "repeat(2, minmax(0, 1fr))",
+                lg: "repeat(3, minmax(0, 1fr))",
+              },
+              gap: 2,
+            }}
+          >
+            {featureCards.map((feature) => (
+              <Card key={feature.title} sx={{ height: "100%" }}>
+                <CardContent sx={{ height: "100%" }}>
+                  <Stack spacing={1.5} sx={{ height: "100%" }}>
+                    <Box
+                      sx={(theme) => ({
+                        width: 48,
+                        height: 48,
+                        borderRadius: 3,
+                        display: "grid",
+                        placeItems: "center",
+                        bgcolor: alpha(theme.palette.primary.main, 0.12),
+                        color: "primary.main",
+                      })}
+                    >
+                      {feature.icon}
+                    </Box>
+                    <Typography component="h3" variant="h6">
+                      {feature.title}
+                    </Typography>
+                    <Typography color="text.secondary">
+                      {feature.description}
+                    </Typography>
+                  </Stack>
+                </CardContent>
+              </Card>
+            ))}
+          </Box>
         </Box>
-      ) : (
-        <>
-          <PopularItemsSection title="Top Breeders" items={topBreeders} />
-          <Divider sx={{ my: 4 }} />
-          <PopularItemsSection title="Top Strains" items={topStrains} />
-          <Divider sx={{ my: 4 }} />
-          {/* <ArticlesSection /> */}
-        </>
-      )}
-    </Container>
+
+        <Box
+          component="section"
+          sx={{
+            mt: { xs: 7, md: 10 },
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", md: "0.9fr 1.1fr" },
+            gap: { xs: 3, md: 4 },
+            alignItems: "stretch",
+          }}
+        >
+          <Card sx={{ height: "100%" }}>
+            <CardContent sx={{ p: { xs: 2.5, md: 3.5 } }}>
+              <Stack spacing={2}>
+                <Typography variant="h3">Public discovery stays simple.</Typography>
+                <Typography color="text.secondary">
+                  Public profiles can show seeds and clones. Projects, photos,
+                  observations, and analytics stay private for MVP.
+                </Typography>
+                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                  <Chip label="Seeds" variant="outlined" />
+                  <Chip label="Clones" variant="outlined" />
+                  <Chip label="Private Projects" color="primary" />
+                </Stack>
+              </Stack>
+            </CardContent>
+          </Card>
+
+          <Card sx={{ height: "100%" }}>
+            <CardContent sx={{ p: { xs: 2.5, md: 3.5 } }}>
+              <Stack spacing={2.5}>
+                <Stack
+                  direction={{ xs: "column", sm: "row" }}
+                  alignItems={{ xs: "flex-start", sm: "center" }}
+                  justifyContent="space-between"
+                  spacing={1.5}
+                >
+                  <Box>
+                    <Typography component="h3" variant="h5">
+                      Public collection signals
+                    </Typography>
+                    <Typography color="text.secondary" variant="body2">
+                      A small preview of public seed and clone records.
+                    </Typography>
+                  </Box>
+                  {isLoading && <CircularProgress size={28} />}
+                </Stack>
+                <Box
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+                    gap: 2,
+                  }}
+                >
+                  <PopularList title="Top breeders" items={topBreeders} />
+                  <PopularList title="Top strains" items={topStrains} />
+                </Box>
+              </Stack>
+            </CardContent>
+          </Card>
+        </Box>
+
+        <Paper
+          component="section"
+          variant="outlined"
+          sx={(theme) => ({
+            mt: { xs: 7, md: 10 },
+            p: { xs: 2.5, md: 4 },
+            borderRadius: 5,
+            bgcolor: alpha(theme.palette.primary.main, 0.08),
+          })}
+        >
+          <Stack
+            direction={{ xs: "column", md: "row" }}
+            spacing={2}
+            alignItems={{ xs: "stretch", md: "center" }}
+            justifyContent="space-between"
+          >
+            <Box>
+              <Typography component="h2" variant="h4">
+                Ready to organize your library?
+              </Typography>
+              <Typography color="text.secondary" sx={{ mt: 0.75 }}>
+                Create an account, add your first seeds or clones, then start a
+                private project when you are ready.
+              </Typography>
+            </Box>
+            <Button
+              component={RouterLink}
+              to="/signup"
+              variant="contained"
+              size="large"
+              sx={{ flexShrink: 0 }}
+            >
+              Get started
+            </Button>
+          </Stack>
+        </Paper>
+
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          align="center"
+          sx={{ mt: 4 }}
+        >
+          Already have an account?{" "}
+          <Link
+            component={RouterLink}
+            to="/login"
+            sx={{
+              minHeight: 44,
+              display: "inline-flex",
+              alignItems: "center",
+            }}
+          >
+            Log in to continue.
+          </Link>
+        </Typography>
+      </Container>
+    </Box>
   );
 };
 
