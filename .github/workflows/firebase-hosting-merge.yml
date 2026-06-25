@@ -45,10 +45,6 @@ jobs:
           VITE_APP_FIREBASE_MEASUREMENT_ID: ${{ secrets.VITE_APP_FIREBASE_MEASUREMENT_ID }}
           VITE_APP_CHECK_RECAPTCHA_ENTERPRISE_SITE_KEY: ${{ secrets.VITE_APP_CHECK_RECAPTCHA_ENTERPRISE_SITE_KEY }}
 
-      # Install Firebase CLI
-      - name: Install Firebase CLI
-        run: npm install -g firebase-tools@14.6.0
-
       # Deploy to Firebase
       - name: Deploy to Firebase
-        run: firebase deploy --project genetics-library --only hosting,functions --force --non-interactive
+        run: npx firebase deploy --project genetics-library --only hosting,functions,firestore:rules,storage --force --non-interactive
