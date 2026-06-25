@@ -4,28 +4,40 @@
     "build": "tsc",
     "serve": "npm run build && firebase emulators:start --only functions",
     "deploy": "firebase deploy --only functions",
-    "test:guards": "npm run build && node --test test/*.test.mjs"
+    "test:guards": "npm run build && node --test test/*.test.mjs",
+    "test:genkit": "cross-env GENKIT_ENV=dev genkit start -- tsx --watch src/flows/seedAssistant.ts"
   },
   "engines": {
     "node": "22"
   },
   "main": "lib/index.js",
   "dependencies": {
-    "@genkit-ai/googleai": "^1.0.5",
-    "firebase-admin": "^12.6.0",
-    "firebase-functions": "^6.0.1",
-    "genkit": "^1.0.5",
-    "nodemailer": "^6.10.0"
+    "@genkit-ai/googleai": "^1.28.0",
+    "firebase-admin": "^13.10.0",
+    "firebase-functions": "^7.2.5",
+    "genkit": "^1.38.0",
+    "nodemailer": "^9.0.1"
   },
   "devDependencies": {
-    "@types/nodemailer": "^6.4.17",
-    "@typescript-eslint/eslint-plugin": "^5.0.0",
-    "@typescript-eslint/parser": "^5.0.0",
-    "eslint": "^8.15.0",
-    "typescript": "^4.9.0"
+    "@types/nodemailer": "^8.0.1",
+    "cross-env": "^7.0.3",
+    "genkit-cli": "^1.38.0",
+    "tsx": "^4.22.4",
+    "typescript": "~5.6.2"
   },
   "private": true,
   "type": "module",
+  "overrides": {
+    "@types/request": {
+      "form-data": "^4.0.6"
+    },
+    "express": "^4.22.2",
+    "google-auth-library": {
+      "jws": "^4.0.1"
+    },
+    "jsonwebtoken": "^9.0.3",
+    "path-to-regexp": "^0.1.13"
+  },
   "files": [
     "lib/**/*",
     "src/prompts/**/*"
