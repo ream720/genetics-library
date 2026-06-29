@@ -11,6 +11,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { alpha, type Theme } from "@mui/material/styles";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import ProjectPhotoUploader from "../v2/ProjectPhotoUploader";
 import { formatProjectDate, todayLocalDateString } from "../../lib/v2/date";
@@ -114,6 +115,26 @@ const WASH_RUN_STAGE_LABELS: Record<WashRunStage, string> = {
   complete: "Complete",
 };
 
+const getWashRunStageChipSx = (stage: WashRunStage) => (theme: Theme) => {
+  const stageColor: Record<WashRunStage, string> = {
+    setup: theme.palette.text.secondary,
+    washing: theme.palette.primary.main,
+    drying: theme.palette.warning.main,
+    pressed: theme.palette.secondary.main,
+    complete: theme.palette.success.main,
+  };
+  const color = stageColor[stage];
+  const outlined = stage === "setup";
+
+  return {
+    fontWeight: 800,
+    color: outlined ? color : theme.palette.getContrastText(color),
+    bgcolor: outlined ? alpha(color, 0.08) : color,
+    borderColor: alpha(color, outlined ? 0.7 : 0.9),
+    boxShadow: outlined ? "none" : `0 0 0 1px ${alpha(color, 0.18)}`,
+  };
+};
+
 const WASH_RUN_STAGE_ORDER: WashRunStage[] = [
   "setup",
   "washing",
@@ -150,7 +171,9 @@ const DRY_RESULT_STAGES = new Set<WashRunStage>([
 const PRESS_RESULT_STAGES = new Set<WashRunStage>(["pressed", "complete"]);
 
 const formatPercent = (value?: number) =>
-  value === undefined ? "Not calculated" : `${value.toFixed(2)}%`;
+  value === undefined || !Number.isFinite(value)
+    ? "Not calculated"
+    : `${value.toFixed(2)}%`;
 
 const formatWeight = (value?: number) =>
   value === undefined ? "Not recorded" : `${value} g`;
@@ -1036,67 +1059,101 @@ const WashProcessSetup: React.FC<WashProcessSetupProps> = ({
                               </Typography>
                             ) : (
                               <Stack spacing={1}>
-                                {sessionRuns.map((run) => (
-                                  <Card
-                                    key={run.id}
-                                    variant="outlined"
-                                    onClick={() => handleOpenRun(run)}
-                                    sx={{ cursor: "pointer" }}
-                                  >
-                                    <CardContent
-                                      sx={{
-                                        py: 1.5,
-                                        "&:last-child": { pb: 1.5 },
-                                      }}
+                                {sessionRuns.map((run) => {
+                                  const runStage = run.stage ?? "setup";
+                                  const hasRthPercent = Number.isFinite(
+                                    run.rthPercent
+                                  );
+
+                                  return (
+                                    <Card
+                                      key={run.id}
+                                      variant="outlined"
+                                      onClick={() => handleOpenRun(run)}
+                                      sx={{ cursor: "pointer" }}
                                     >
-                                      <Stack
-                                        direction={{ xs: "column", sm: "row" }}
-                                        justifyContent="space-between"
-                                        spacing={1}
+                                      <CardContent
+                                        sx={{
+                                          py: 1.5,
+                                          "&:last-child": { pb: 1.5 },
+                                        }}
                                       >
-                                        <Box>
-                                          <Typography fontWeight={700}>
-                                            {run.cultivarGroupName ||
-                                              WASH_RUN_TYPE_LABELS[
-                                                run.runType
-                                              ]}
-                                          </Typography>
-                                          <Typography
-                                            color="text.secondary"
-                                            variant="body2"
-                                          >
-                                            {WASH_RUN_TYPE_LABELS[run.runType]}{" "}
-                                            -{" "}
-                                            {
-                                              MATERIAL_TYPE_LABELS[
-                                                run.materialType
-                                              ]
-                                            }
-                                          </Typography>
-                                        </Box>
                                         <Stack
-                                          direction="row"
+                                          direction={{
+                                            xs: "column",
+                                            sm: "row",
+                                          }}
+                                          justifyContent="space-between"
                                           spacing={1}
-                                          useFlexGap
-                                          flexWrap="wrap"
                                         >
-                                          <Chip
-                                            label={`RTH ${formatPercent(
-                                              run.rthPercent
-                                            )}`}
-                                            size="small"
-                                          />
-                                          {run.qualityStars && (
+                                          <Box>
+                                            <Typography fontWeight={700}>
+                                              {run.cultivarGroupName ||
+                                                WASH_RUN_TYPE_LABELS[
+                                                  run.runType
+                                                ]}
+                                            </Typography>
+                                            <Typography
+                                              color="text.secondary"
+                                              variant="body2"
+                                            >
+                                              {
+                                                WASH_RUN_TYPE_LABELS[
+                                                  run.runType
+                                                ]
+                                              }{" "}
+                                              -{" "}
+                                              {
+                                                MATERIAL_TYPE_LABELS[
+                                                  run.materialType
+                                                ]
+                                              }
+                                            </Typography>
+                                          </Box>
+                                          <Stack
+                                            direction="row"
+                                            spacing={1}
+                                            useFlexGap
+                                            flexWrap="wrap"
+                                            justifyContent={{
+                                              xs: "flex-start",
+                                              sm: "flex-end",
+                                            }}
+                                          >
                                             <Chip
-                                              label={`${run.qualityStars} star`}
+                                              label={
+                                                WASH_RUN_STAGE_LABELS[runStage]
+                                              }
                                               size="small"
+                                              variant={
+                                                runStage === "setup"
+                                                  ? "outlined"
+                                                  : "filled"
+                                              }
+                                              sx={getWashRunStageChipSx(
+                                                runStage
+                                              )}
                                             />
-                                          )}
+                                            {hasRthPercent && (
+                                              <Chip
+                                                label={`RTH ${formatPercent(
+                                                  run.rthPercent
+                                                )}`}
+                                                size="small"
+                                              />
+                                            )}
+                                            {run.qualityStars && (
+                                              <Chip
+                                                label={`${run.qualityStars} star`}
+                                                size="small"
+                                              />
+                                            )}
+                                          </Stack>
                                         </Stack>
-                                      </Stack>
-                                    </CardContent>
-                                  </Card>
-                                ))}
+                                      </CardContent>
+                                    </Card>
+                                  );
+                                })}
                               </Stack>
                             )}
                           </Stack>

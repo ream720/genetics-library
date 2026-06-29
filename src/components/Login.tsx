@@ -106,18 +106,12 @@ function Login() {
 
   return (
     <AuthPanel
-      eyebrow="Welcome back"
-      title="Log in to your genetics library."
-      description="Access your private Projects, seed collection, clone library, photos, and completed analytics."
-      supportTitle="Your working data stays private"
-      supportItems={[
-        "Projects never appear on public profiles.",
-        "Seeds and clones remain available for your collection workflows.",
-        "Completed projects feed your personal analytics.",
-      ]}
+      eyebrow=""
+      title="Welcome back"
+      description="Log in to access your Projects, Browse and Search, view Analytics, or Manage your collections."
     >
-      <Stack spacing={2.5}>
-        <Stack spacing={0.75}>
+      <Stack spacing={{ xs: 2, sm: 2.5 }}>
+        <Stack spacing={0.5}>
           <Typography component="h2" variant="h5">
             Log in
           </Typography>
@@ -128,7 +122,12 @@ function Login() {
 
         {error && <Alert severity="error">{error}</Alert>}
 
-        <Stack component="form" spacing={2} onSubmit={handleSubmit} noValidate>
+        <Stack
+          component="form"
+          spacing={{ xs: 1.5, sm: 2 }}
+          onSubmit={handleSubmit}
+          noValidate
+        >
           <TextField
             label="Email"
             type="email"
@@ -173,7 +172,7 @@ function Login() {
           Continue with Google
         </Button>
 
-        <Stack spacing={1} alignItems="center">
+        <Stack spacing={0.75} alignItems="center">
           <Typography variant="body2" color="text.secondary">
             Need an account?{" "}
             <MuiLink component={RouterLink} to="/signup">

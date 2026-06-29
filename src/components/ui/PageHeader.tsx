@@ -6,18 +6,22 @@ interface PageHeaderProps {
   title: string;
   description?: string;
   eyebrow?: string;
+  eyebrowAccessory?: ReactNode;
   actions?: ReactNode;
   backLabel?: string;
   onBack?: () => void;
+  children?: ReactNode;
 }
 
 const PageHeader = ({
   title,
   description,
   eyebrow,
+  eyebrowAccessory,
   actions,
   backLabel,
   onBack,
+  children,
 }: PageHeaderProps) => (
   <Stack spacing={2.25}>
     {onBack && (
@@ -36,20 +40,30 @@ const PageHeader = ({
       spacing={2}
     >
       <Box sx={{ minWidth: 0 }}>
-        {eyebrow && (
-          <Typography
-            variant="caption"
-            color="secondary.main"
-            sx={{
-              display: "block",
-              mb: 0.75,
-              fontWeight: 800,
-              letterSpacing: "0.09em",
-              textTransform: "uppercase",
-            }}
+        {(eyebrow || eyebrowAccessory) && (
+          <Stack
+            direction="row"
+            spacing={1}
+            alignItems="center"
+            useFlexGap
+            flexWrap="wrap"
+            sx={{ mb: 0.75 }}
           >
-            {eyebrow}
-          </Typography>
+            {eyebrow && (
+              <Typography
+                variant="caption"
+                color="secondary.main"
+                sx={{
+                  fontWeight: 800,
+                  letterSpacing: "0.09em",
+                  textTransform: "uppercase",
+                }}
+              >
+                {eyebrow}
+              </Typography>
+            )}
+            {eyebrowAccessory}
+          </Stack>
         )}
         <Typography component="h1" variant="h4">
           {title}
@@ -62,6 +76,7 @@ const PageHeader = ({
             {description}
           </Typography>
         )}
+        {children && <Box sx={{ mt: 1.5 }}>{children}</Box>}
       </Box>
       {actions && (
         <Box

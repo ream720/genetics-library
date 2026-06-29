@@ -4,7 +4,6 @@ import {
   Button,
   Card,
   CardContent,
-  Chip,
   CircularProgress,
   Container,
   Divider,
@@ -20,7 +19,6 @@ import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import ScienceOutlinedIcon from "@mui/icons-material/ScienceOutlined";
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
-import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
 import UploadFileOutlinedIcon from "@mui/icons-material/UploadFileOutlined";
 import { Timestamp, collection, getDocs } from "firebase/firestore";
 import { getDownloadURL, getStorage, ref } from "firebase/storage";
@@ -41,49 +39,64 @@ interface PopularItem {
   breederInfo?: BreederInfo;
 }
 
-const featureCards = [
+const featureGroups = [
   {
     icon: <Inventory2OutlinedIcon />,
-    title: "Build your genetics library",
+    title: "Manage collections",
     description:
-      "Catalog seeds and clones with breeder, lineage, generation, notes, and collection details.",
+      "Build the core library first: seed packs, clones, breeder details, lineage, notes, and inventory.",
+    features: [
+      {
+        icon: <Inventory2OutlinedIcon />,
+        title: "Seeds and clones",
+        description: "Keep collection records clean and searchable.",
+      },
+      {
+        icon: <AutoAwesomeOutlinedIcon />,
+        title: "Faster entry",
+        description: "Use AI assistance or CSV import to move quicker.",
+      },
+      {
+        icon: <SearchOutlinedIcon />,
+        title: "Browse and search",
+        description: "Explore public records by user, breeder, strain, or lineage.",
+      },
+    ],
   },
   {
     icon: <FolderOutlinedIcon />,
-    title: "Track private projects",
+    title: "Run private projects",
     description:
-      "Run Pheno Hunt and Wash/Process projects without exposing your working data publicly.",
-  },
-  {
-    icon: <AnalyticsOutlinedIcon />,
-    title: "Compare results over time",
-    description:
-      "Use completed projects to review germination, keeper rates, wash returns, quality, and yield.",
-  },
-  {
-    icon: <SearchOutlinedIcon />,
-    title: "Search public collections",
-    description:
-      "Find genetics by username, breeder, strain, and lineage while keeping project records private.",
-  },
-  {
-    icon: <AutoAwesomeOutlinedIcon />,
-    title: "Enter records faster",
-    description:
-      "Use AI-assisted entry creation to turn rough notes into cleaner seed and clone records.",
-  },
-  {
-    icon: <UploadFileOutlinedIcon />,
-    title: "Import from spreadsheets",
-    description:
-      "Bring existing seed and clone lists in through CSV instead of rebuilding a collection by hand.",
+      "Track Pheno Hunt and Wash/Process work privately, then compare completed results.",
+    features: [
+      {
+        icon: <FolderOutlinedIcon />,
+        title: "Private projects",
+        description: "Keep working data, photos, and observations off public profiles.",
+      },
+      {
+        icon: <ScienceOutlinedIcon />,
+        title: "Pheno hunts",
+        description: "Group plants, evaluate traits, and mark keepers or washers.",
+      },
+      {
+        icon: <UploadFileOutlinedIcon />,
+        title: "Wash runs",
+        description: "Record source material, cycles, micron ranges, drying, and pressing.",
+      },
+      {
+        icon: <AnalyticsOutlinedIcon />,
+        title: "Analytics",
+        description: "Review completed projects by yield, quality, and return.",
+      },
+    ],
   },
 ];
 
 const projectSteps = [
-  "Start with genetics from your library or an ad-hoc source.",
-  "Record plants, photos, evaluations, wash runs, and processing notes.",
-  "Complete the project when results are ready for analytics.",
+  "Add seeds, clones, or an ad-hoc source.",
+  "Start a Pheno Hunt or Wash/Process project.",
+  "Complete the project to compare results over time.",
 ];
 
 const Landing = () => {
@@ -273,25 +286,16 @@ const Landing = () => {
           }}
         >
           <Stack spacing={3} sx={{ maxWidth: 760 }}>
-            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-              <Chip
-                icon={<ShieldOutlinedIcon />}
-                label="Private projects by default"
-                variant="outlined"
-              />
-              <Chip label="Seeds, clones, pheno hunts, wash runs" />
-            </Stack>
             <Box>
               <Typography component="h1" variant="h1">
-                A private field notebook for cannabis genetics.
+                An advanced field notebook.
               </Typography>
               <Typography
                 color="text.secondary"
                 sx={{ mt: 2, maxWidth: 680, fontSize: { md: "1.1rem" } }}
               >
-                Genetics Library helps growers, pheno hunters, breeders, and
-                hashmakers organize genetics, track project work, and review
-                results over time.
+                Organize cannabis genetics, track pheno hunts and wash runs,
+                and review results from completed projects.
               </Typography>
             </Box>
             <Stack
@@ -333,11 +337,10 @@ const Landing = () => {
                   <ScienceOutlinedIcon color="primary" />
                   <Box>
                     <Typography component="h2" variant="h5">
-                      Project-ready records
+                      How it works
                     </Typography>
                     <Typography color="text.secondary" variant="body2">
-                      Built around the V2 workflow: library, projects,
-                      completion, analytics.
+                      Move from library records to completed project results.
                     </Typography>
                   </Box>
                 </Stack>
@@ -381,14 +384,14 @@ const Landing = () => {
               letterSpacing="0.09em"
               textTransform="uppercase"
             >
-              What is Genetics Library?
+              What it is
             </Typography>
             <Typography variant="h2">
-              A collection manager plus project history.
+              A genetics library plus project history.
             </Typography>
             <Typography color="text.secondary">
-              Keep the public collection layer simple while your project work
-              remains private until future sharing tools are intentionally added.
+              Keep seed and clone records organized while private projects
+              capture the work, photos, observations, and results behind them.
             </Typography>
           </Stack>
           <Box
@@ -396,35 +399,104 @@ const Landing = () => {
               display: "grid",
               gridTemplateColumns: {
                 xs: "1fr",
-                sm: "repeat(2, minmax(0, 1fr))",
-                lg: "repeat(3, minmax(0, 1fr))",
+                lg: "repeat(2, minmax(0, 1fr))",
               },
-              gap: 2,
+              gap: { xs: 2, md: 2.5 },
             }}
           >
-            {featureCards.map((feature) => (
-              <Card key={feature.title} sx={{ height: "100%" }}>
-                <CardContent sx={{ height: "100%" }}>
-                  <Stack spacing={1.5} sx={{ height: "100%" }}>
+            {featureGroups.map((group) => (
+              <Card key={group.title} sx={{ height: "100%" }}>
+                <CardContent
+                  sx={{
+                    height: "100%",
+                    p: { xs: 2.25, md: 3 },
+                    "&:last-child": { pb: { xs: 2.25, md: 3 } },
+                  }}
+                >
+                  <Stack spacing={2.25} sx={{ height: "100%" }}>
+                    <Stack spacing={1.25}>
+                      <Box
+                        sx={(theme) => ({
+                          width: 52,
+                          height: 52,
+                          borderRadius: 3.5,
+                          display: "grid",
+                          placeItems: "center",
+                          bgcolor: alpha(theme.palette.primary.main, 0.12),
+                          color: "primary.main",
+                        })}
+                      >
+                        {group.icon}
+                      </Box>
+                      <Box>
+                        <Typography component="h3" variant="h5">
+                          {group.title}
+                        </Typography>
+                        <Typography color="text.secondary" sx={{ mt: 0.75 }}>
+                          {group.description}
+                        </Typography>
+                      </Box>
+                    </Stack>
+
                     <Box
-                      sx={(theme) => ({
-                        width: 48,
-                        height: 48,
-                        borderRadius: 3,
+                      sx={{
                         display: "grid",
-                        placeItems: "center",
-                        bgcolor: alpha(theme.palette.primary.main, 0.12),
-                        color: "primary.main",
-                      })}
+                        gridTemplateColumns: {
+                          xs: "1fr",
+                          sm: "repeat(2, minmax(0, 1fr))",
+                        },
+                        gap: 1.25,
+                      }}
                     >
-                      {feature.icon}
+                      {group.features.map((feature) => (
+                        <Paper
+                          key={feature.title}
+                          variant="outlined"
+                          sx={{
+                            p: 1.5,
+                            borderRadius: 3,
+                            bgcolor: "surface.subtle",
+                            height: "100%",
+                          }}
+                        >
+                          <Stack direction="row" spacing={1.25} alignItems="flex-start">
+                            <Box
+                              sx={(theme) => ({
+                                width: 34,
+                                height: 34,
+                                flex: "0 0 auto",
+                                borderRadius: 2.5,
+                                display: "grid",
+                                placeItems: "center",
+                                bgcolor: alpha(theme.palette.primary.main, 0.1),
+                                color: "primary.main",
+                                "& svg": {
+                                  fontSize: 20,
+                                },
+                              })}
+                            >
+                              {feature.icon}
+                            </Box>
+                            <Box sx={{ minWidth: 0 }}>
+                              <Typography
+                                component="h4"
+                                variant="subtitle2"
+                                fontWeight={900}
+                              >
+                                {feature.title}
+                              </Typography>
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                sx={{ mt: 0.25 }}
+                              >
+                                {feature.description}
+                              </Typography>
+                            </Box>
+                          </Stack>
+                        </Paper>
+                      ))}
                     </Box>
-                    <Typography component="h3" variant="h6">
-                      {feature.title}
-                    </Typography>
-                    <Typography color="text.secondary">
-                      {feature.description}
-                    </Typography>
                   </Stack>
                 </CardContent>
               </Card>
@@ -436,29 +508,10 @@ const Landing = () => {
           component="section"
           sx={{
             mt: { xs: 7, md: 10 },
-            display: "grid",
-            gridTemplateColumns: { xs: "1fr", md: "0.9fr 1.1fr" },
-            gap: { xs: 3, md: 4 },
-            alignItems: "stretch",
+            maxWidth: 920,
+            mx: "auto",
           }}
         >
-          <Card sx={{ height: "100%" }}>
-            <CardContent sx={{ p: { xs: 2.5, md: 3.5 } }}>
-              <Stack spacing={2}>
-                <Typography variant="h3">Public discovery stays simple.</Typography>
-                <Typography color="text.secondary">
-                  Public profiles can show seeds and clones. Projects, photos,
-                  observations, and analytics stay private for MVP.
-                </Typography>
-                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                  <Chip label="Seeds" variant="outlined" />
-                  <Chip label="Clones" variant="outlined" />
-                  <Chip label="Private Projects" color="primary" />
-                </Stack>
-              </Stack>
-            </CardContent>
-          </Card>
-
           <Card sx={{ height: "100%" }}>
             <CardContent sx={{ p: { xs: 2.5, md: 3.5 } }}>
               <Stack spacing={2.5}>
@@ -470,7 +523,7 @@ const Landing = () => {
                 >
                   <Box>
                     <Typography component="h3" variant="h5">
-                      Public collection signals
+                      Public collection stats
                     </Typography>
                     <Typography color="text.secondary" variant="body2">
                       A small preview of public seed and clone records.
@@ -499,7 +552,7 @@ const Landing = () => {
           sx={(theme) => ({
             mt: { xs: 7, md: 10 },
             p: { xs: 2.5, md: 4 },
-            borderRadius: 5,
+            borderRadius: { xs: 3, sm: 4, md: 5 },
             bgcolor: alpha(theme.palette.primary.main, 0.08),
           })}
         >

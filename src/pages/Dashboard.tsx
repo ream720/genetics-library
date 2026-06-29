@@ -12,7 +12,6 @@ import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
 import PaymentsOutlinedIcon from "@mui/icons-material/PaymentsOutlined";
 import ContactMailOutlinedIcon from "@mui/icons-material/ContactMailOutlined";
 import SupportAgentOutlinedIcon from "@mui/icons-material/SupportAgentOutlined";
-import CollectionsBookmarkOutlinedIcon from "@mui/icons-material/CollectionsBookmarkOutlined";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getFunctions, httpsCallable } from "firebase/functions";
@@ -89,7 +88,7 @@ const Dashboard = () => {
         <PageHeader
           eyebrow="Private workspace"
           title="Your genetics workspace"
-          description="Manage your collection, continue active projects, and keep account tools within reach."
+          description="Add seeds and clones to build your source library, then select them when creating private Projects."
         />
 
         <Box
@@ -137,24 +136,6 @@ const Dashboard = () => {
             onClick={() => navigate("/projects")}
           />
         </Box>
-
-        <SectionCard
-          title="Collection workflow"
-          description="Your library records source genetics. Projects capture what happens next."
-        >
-          <Stack
-            direction={{ xs: "column", sm: "row" }}
-            spacing={2}
-            alignItems={{ sm: "center" }}
-          >
-            <CollectionsBookmarkOutlinedIcon color="primary" />
-            <Typography color="text.secondary">
-              Add seeds and clones to build your source library, then select
-              them when creating a private project. Project snapshots remain
-              intact even if the original library entry changes later.
-            </Typography>
-          </Stack>
-        </SectionCard>
 
         <Box
           sx={{

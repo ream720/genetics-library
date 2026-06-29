@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Alert,
   Avatar,
@@ -57,6 +57,7 @@ const resultTabs: Array<{ label: string; type: SearchResult["type"] }> = [
 ];
 
 function SearchPage() {
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -64,6 +65,14 @@ function SearchPage() {
   const [activeTab, setActiveTab] = useState(0);
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
+
+  useEffect(() => {
+    const focusTimer = window.setTimeout(() => {
+      searchInputRef.current?.focus();
+    }, 0);
+
+    return () => window.clearTimeout(focusTimer);
+  }, []);
 
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
@@ -293,6 +302,7 @@ function SearchPage() {
           <Stack spacing={2}>
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
               <TextField
+                inputRef={searchInputRef}
                 label="Search users, seeds, or clones"
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}

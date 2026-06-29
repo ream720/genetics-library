@@ -11,9 +11,15 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import DeleteIcon from "@mui/icons-material/Delete";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import ErrorOutlineRoundedIcon from "@mui/icons-material/ErrorOutlineRounded";
 import InsightsIcon from "@mui/icons-material/Insights";
 import NoteAddIcon from "@mui/icons-material/NoteAdd";
+import SyncRoundedIcon from "@mui/icons-material/SyncRounded";
+import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
+import { alpha } from "@mui/material/styles";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import PhenoHuntSetup from "../components/pheno/PhenoHuntSetup";
@@ -68,6 +74,7 @@ const ProjectDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editBasicsOpen, setEditBasicsOpen] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [addenda, setAddenda] = useState<ProjectAddendum[]>([]);
@@ -128,6 +135,13 @@ const ProjectDetailPage: React.FC = () => {
   }, [currentUser, projectId]);
 
   const projectIsComplete = project?.status === "complete";
+
+  useEffect(() => {
+    if (projectIsComplete) {
+      setEditBasicsOpen(false);
+    }
+  }, [projectIsComplete]);
+
   const dirty = useMemo(
     () =>
       Boolean(
@@ -295,179 +309,214 @@ const ProjectDetailPage: React.FC = () => {
       );
     }
 
-    if (autosaveStatus === "error") {
-      return (
-        <Alert
-          severity="error"
-          variant="outlined"
-          action={
-            <Button color="inherit" size="small" onClick={retryAutosave}>
-              Retry
-            </Button>
-          }
-        >
-          {autosaveError instanceof Error
-            ? `Autosave failed: ${autosaveError.message}`
-            : "Autosave failed. Your changes are still pending."}
-        </Alert>
-      );
+    return null;
+  };
+
+  const renderAutosavePill = () => {
+    if (projectIsComplete) {
+      return null;
     }
 
-    if (
-      autosaveStatus === "dirty" ||
-      autosaveStatus === "saving" ||
-      autosaveStatus === "retrying"
-    ) {
-      return (
-        <Alert severity="warning" variant="outlined">
-          {autosaveStatus === "dirty"
-            ? "Unsaved edits pending."
-            : autosaveStatus === "retrying"
-              ? "Retrying autosave..."
-              : "Saving changes..."}
-        </Alert>
-      );
-    }
+    const isError = autosaveStatus === "error";
+    const isWarning =
+      autosaveStatus === "dirty" || autosaveStatus === "retrying";
+    const isSyncing = autosaveStatus === "saving";
+    const label = isError
+      ? "Sync error"
+      : autosaveStatus === "dirty"
+        ? "Unsaved"
+        : autosaveStatus === "retrying"
+          ? "Retrying"
+          : isSyncing
+            ? "Syncing"
+            : "Synced";
+    const AutosaveIcon = isError
+      ? ErrorOutlineRoundedIcon
+      : isWarning
+        ? WarningAmberRoundedIcon
+        : isSyncing
+          ? SyncRoundedIcon
+          : CheckCircleRoundedIcon;
+    const pillTitle =
+      isError && autosaveError instanceof Error
+        ? `Sync error: ${autosaveError.message}. Click to retry.`
+        : isError
+          ? "Sync error. Click to retry."
+          : label;
 
     return (
       <Box
-        sx={(theme) => ({
-          alignSelf: "flex-start",
-          border: `1px solid ${theme.palette.divider}`,
-          borderRadius: 999,
-          color: "text.secondary",
-          px: 1.5,
-          py: 0.5,
-        })}
+        component={isError ? "button" : "div"}
+        type={isError ? "button" : undefined}
+        onClick={isError ? retryAutosave : undefined}
+        aria-label={pillTitle}
+        title={pillTitle}
+        sx={(theme) => {
+          const syncColor = isError
+            ? theme.palette.error.main
+            : isWarning
+              ? theme.palette.warning.main
+              : isSyncing
+                ? theme.palette.info.main
+                : theme.palette.success.main;
+          const glow = label === "Synced" ? 0.3 : 0.16;
+
+          return {
+            appearance: "none",
+            alignSelf: "center",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 0.75,
+            minHeight: 32,
+            border: `1px solid ${alpha(syncColor, 0.7)}`,
+            borderRadius: 999,
+            color: syncColor,
+            bgcolor: alpha(syncColor, theme.palette.mode === "dark" ? 0.12 : 0.1),
+            boxShadow: `0 0 0 1px ${alpha(syncColor, 0.14)}, 0 0 18px ${alpha(syncColor, glow)}`,
+            cursor: isError ? "pointer" : "default",
+            font: "inherit",
+            px: 1.25,
+            py: 0.5,
+            transition: theme.transitions.create(
+              ["background-color", "border-color", "box-shadow"],
+              {
+                duration: theme.transitions.duration.shorter,
+              }
+            ),
+            ...(isError
+              ? {
+                  "&:hover": {
+                    bgcolor: alpha(syncColor, theme.palette.mode === "dark" ? 0.18 : 0.14),
+                  },
+                }
+              : {}),
+          };
+        }}
       >
+        <AutosaveIcon
+          sx={(theme) => ({
+            fontSize: 16,
+            filter: `drop-shadow(0 0 5px ${alpha(
+              label === "Synced"
+                ? theme.palette.success.main
+                : isError
+                  ? theme.palette.error.main
+                  : isWarning
+                    ? theme.palette.warning.main
+                    : theme.palette.info.main,
+              0.55
+            )})`,
+          })}
+        />
         <Typography variant="caption" fontWeight={700}>
-          Saved
+          {label}
         </Typography>
+        {isError && (
+          <Typography variant="caption" fontWeight={800}>
+            Retry
+          </Typography>
+        )}
       </Box>
     );
   };
 
-  const renderProjectDetails = () => {
+  const renderProjectBasicsForm = () => {
     if (!draft) {
       return null;
     }
 
-    if (projectIsComplete) {
-      return (
-        <SectionCard title="Project Summary" contentPadding={2.5}>
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: {
-                xs: "1fr",
-                sm: "repeat(2, minmax(0, 1fr))",
-              },
-              gap: 2,
-            }}
-          >
-            <Box>
-              <Typography variant="caption" color="text.secondary" fontWeight={700}>
-                Project name
-              </Typography>
-              <Typography>{draft.name}</Typography>
-            </Box>
-            <Box>
-              <Typography variant="caption" color="text.secondary" fontWeight={700}>
-                Start date
-              </Typography>
-              <Typography>{formatProjectDate(draft.startDate)}</Typography>
-            </Box>
-            <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-              <Typography variant="caption" color="text.secondary" fontWeight={700}>
-                Objective
-              </Typography>
-              <Typography whiteSpace="pre-wrap">{draft.objective}</Typography>
-            </Box>
-          </Box>
-        </SectionCard>
-      );
-    }
-
     return (
-      <SectionCard title="Project Basics" contentPadding={2.5}>
-        <Stack spacing={2}>
+      <Stack spacing={2} sx={{ pt: 1 }}>
+        <TextField
+          label="Project name"
+          value={draft.name}
+          onChange={(event) => handleDraftChange("name", event.target.value)}
+          fullWidth
+        />
+        <TextField
+          label="Description or objective"
+          value={draft.objective}
+          onChange={(event) =>
+            handleDraftChange("objective", event.target.value)
+          }
+          fullWidth
+          multiline
+          minRows={3}
+        />
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
           <TextField
-            label="Project name"
-            value={draft.name}
-            onChange={(event) => handleDraftChange("name", event.target.value)}
-            fullWidth
-          />
-          <TextField
-            label="Description or objective"
-            value={draft.objective}
+            label="Start date"
+            type="date"
+            value={draft.startDate}
             onChange={(event) =>
-              handleDraftChange("objective", event.target.value)
+              handleDraftChange("startDate", event.target.value)
             }
             fullWidth
-            multiline
-            minRows={3}
+            InputLabelProps={{ shrink: true }}
           />
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-            <TextField
-              label="Start date"
-              type="date"
-              value={draft.startDate}
-              onChange={(event) =>
-                handleDraftChange("startDate", event.target.value)
-              }
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-            />
-            <TextField
-              label="Status"
-              value={draft.status}
-              onChange={(event) =>
-                handleDraftChange("status", event.target.value as ProjectStatus)
-              }
-              select
-              fullWidth
-            >
-              {Object.entries(PROJECT_STATUS_LABELS).map(([value, label]) => (
-                <MenuItem key={value} value={value}>
-                  {label}
-                </MenuItem>
-              ))}
-            </TextField>
-          </Stack>
+          <TextField
+            label="Status"
+            value={draft.status}
+            onChange={(event) =>
+              handleDraftChange("status", event.target.value as ProjectStatus)
+            }
+            select
+            fullWidth
+          >
+            {Object.entries(PROJECT_STATUS_LABELS).map(([value, label]) => (
+              <MenuItem key={value} value={value}>
+                {label}
+              </MenuItem>
+            ))}
+          </TextField>
         </Stack>
-      </SectionCard>
+      </Stack>
     );
   };
 
-  const renderSources = () => {
-    if (!project) {
+  const renderSourceSummary = () => {
+    if (!project || project.sourceSnapshots.length === 0) {
       return null;
     }
 
+    const sourceText = project.sourceSnapshots
+      .map((source) => {
+        const details = [
+          source.sourceType.replace("_", " "),
+          source.lineage,
+          source.generation,
+        ].filter(Boolean);
+
+        return `${source.strain} by ${source.breeder}${
+          details.length > 0 ? ` (${details.join(" - ")})` : ""
+        }`;
+      })
+      .join("; ");
+
     return (
-      <SectionCard
-        title="Sources"
-        description="Private source snapshots copied when this project was created."
-        contentPadding={2.5}
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "baseline",
+          columnGap: 1,
+          rowGap: 0.25,
+          flexWrap: "wrap",
+          maxWidth: 960,
+        }}
       >
-        <Stack divider={<Divider flexItem />} spacing={0}>
-          {project.sourceSnapshots.map((source, index) => (
-            <Box
-              key={`${source.sourceType}-${source.sourceId ?? index}`}
-              sx={{ py: 1.25 }}
-            >
-              <Typography fontWeight={800}>
-                {source.strain} by {source.breeder}
-              </Typography>
-              <Typography color="text.secondary" variant="body2">
-                {source.sourceType.replace("_", " ")}
-                {source.lineage ? ` - ${source.lineage}` : ""}
-                {source.generation ? ` - ${source.generation}` : ""}
-              </Typography>
-            </Box>
-          ))}
-        </Stack>
-      </SectionCard>
+        <Typography
+          component="span"
+          variant="caption"
+          color="text.secondary"
+          fontWeight={900}
+          sx={{ letterSpacing: 0.08, textTransform: "uppercase" }}
+        >
+          Sources
+        </Typography>
+        <Typography component="span" variant="body2" color="text.secondary">
+          {sourceText}
+        </Typography>
+      </Box>
     );
   };
 
@@ -614,8 +663,6 @@ const ProjectDetailPage: React.FC = () => {
     return (
       <>
         {renderAutosaveStatus()}
-        {renderProjectDetails()}
-        {renderSources()}
 
         {project.type === "pheno_hunt" && (
           <PhenoHuntSetup
@@ -635,17 +682,13 @@ const ProjectDetailPage: React.FC = () => {
         {renderAddenda()}
         {renderCompletionToolsNotice()}
 
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          justifyContent="space-between"
-          alignItems={{ xs: "stretch", sm: "center" }}
-          spacing={2}
-        >
-          <Typography variant="caption" color="text.secondary">
-            Created {new Date(project.createdAt).toLocaleDateString()} - Started{" "}
-            {formatProjectDate(project.startDate)}
-          </Typography>
-          {projectIsComplete && (
+        {projectIsComplete && (
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            justifyContent="flex-end"
+            alignItems={{ xs: "stretch", sm: "center" }}
+            spacing={2}
+          >
             <Button
               variant="outlined"
               onClick={() =>
@@ -655,8 +698,8 @@ const ProjectDetailPage: React.FC = () => {
             >
               View Project Analytics
             </Button>
-          )}
-        </Stack>
+          </Stack>
+        )}
 
         <SectionCard
           title="Danger Zone"
@@ -682,19 +725,76 @@ const ProjectDetailPage: React.FC = () => {
       <Stack spacing={2.5}>
         <PageHeader
           eyebrow={project ? PROJECT_TYPE_LABELS[project.type] : "Private project"}
-          title={project?.name ?? "Project"}
+          eyebrowAccessory={
+            project ? (
+              <StatusChip status={draft?.status ?? project.status} />
+            ) : undefined
+          }
+          title={draft?.name ?? project?.name ?? "Project"}
           description={
-            project
-              ? project.objective
+            draft || project
+              ? (draft?.objective ?? project?.objective)
               : "Loading project details and workflow records."
           }
           backLabel="Back to projects"
           onBack={() => navigateAway(PROJECT_ROUTES.list)}
-          actions={project ? <StatusChip status={project.status} /> : undefined}
-        />
+          actions={
+            project && !projectIsComplete ? (
+              <Button
+                variant="outlined"
+                startIcon={<EditOutlinedIcon />}
+                onClick={() => setEditBasicsOpen(true)}
+              >
+                Edit
+              </Button>
+            ) : undefined
+          }
+        >
+          <Stack spacing={0.75}>
+            {project ? (
+              <Typography variant="body2" color="text.secondary">
+                Created {formatProjectDate(project.createdAt.slice(0, 10))}
+                {draft?.startDate || project.startDate ? (
+                  <>
+                    {" "}
+                    - Started{" "}
+                    {formatProjectDate(draft?.startDate ?? project.startDate)}
+                  </>
+                ) : null}
+              </Typography>
+            ) : null}
+            {renderSourceSummary()}
+          </Stack>
+        </PageHeader>
 
         {renderPageBody()}
       </Stack>
+
+      <ResponsiveDialog
+        open={editBasicsOpen}
+        onClose={() => setEditBasicsOpen(false)}
+        title={
+          <Box
+            component="span"
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1.5,
+              flexWrap: "wrap",
+            }}
+          >
+            <Box component="span">Edit project</Box>
+            {renderAutosavePill()}
+          </Box>
+        }
+        actions={
+          <Button variant="contained" onClick={() => setEditBasicsOpen(false)}>
+            Done
+          </Button>
+        }
+      >
+        {renderProjectBasicsForm()}
+      </ResponsiveDialog>
 
       <ResponsiveDialog
         open={deleteDialogOpen}

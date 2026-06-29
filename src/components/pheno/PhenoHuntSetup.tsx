@@ -6,6 +6,7 @@ import {
   Card,
   CardContent,
   Chip,
+  Collapse,
   InputAdornment,
   MenuItem,
   Stack,
@@ -15,6 +16,7 @@ import {
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import KeyboardArrowRightRoundedIcon from "@mui/icons-material/KeyboardArrowRightRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
+import TuneRoundedIcon from "@mui/icons-material/TuneRounded";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import ProjectPhotoUploader from "../v2/ProjectPhotoUploader";
 import {
@@ -91,6 +93,8 @@ const emptyData: PhenoHuntData = {
 };
 
 const FINAL_LABEL_OPTIONS: FinalLabel[] = ["keeper", "washer", "breeder"];
+const INITIAL_PLANT_DISPLAY_LIMIT = 30;
+const PLANT_DISPLAY_INCREMENT = 30;
 
 const buildGroupDrafts = (groups: PhenoComparisonGroup[]) =>
   groups.reduce<Record<string, GroupDraft>>((drafts, group) => {
@@ -279,6 +283,7 @@ const PhenoHuntSetup: React.FC<PhenoHuntSetupProps> = ({
   const [finalLabelFilter, setFinalLabelFilter] =
     useState<FinalLabelFilter>("all");
   const [plantSearch, setPlantSearch] = useState("");
+  const [mobilePlantFiltersOpen, setMobilePlantFiltersOpen] = useState(false);
   const [editingGroupIds, setEditingGroupIds] = useState<
     Record<string, boolean>
   >({});
@@ -313,6 +318,10 @@ const PhenoHuntSetup: React.FC<PhenoHuntSetupProps> = ({
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    setPlantDisplayLimits({});
+  }, [finalLabelFilter, lifecycleFilter, plantSearch]);
 
   const plantsByGroupId = useMemo(
     () =>
@@ -883,6 +892,22 @@ const PhenoHuntSetup: React.FC<PhenoHuntSetupProps> = ({
           selectedEvaluationIndex + 1
         }`
       : "Add Evaluation";
+  const activePlantFilterCount = [
+    lifecycleFilter !== "all",
+    finalLabelFilter !== "all",
+  ].filter(Boolean).length;
+  const hasPlantFilters =
+    Boolean(plantSearch) ||
+    lifecycleFilter !== "all" ||
+    finalLabelFilter !== "all";
+  const showMobilePlantFilters =
+    mobilePlantFiltersOpen || activePlantFilterCount > 0;
+  const handleClearPlantFilters = () => {
+    setPlantSearch("");
+    setLifecycleFilter("all");
+    setFinalLabelFilter("all");
+    setMobilePlantFiltersOpen(false);
+  };
 
   return (
     <>
@@ -903,77 +928,157 @@ const PhenoHuntSetup: React.FC<PhenoHuntSetupProps> = ({
       >
         <Stack spacing={2}>
           <FilterBar>
-            <TextField
-              label="Search plants"
-              value={plantSearch}
-              onChange={(event) => setPlantSearch(event.target.value)}
-              size="small"
-              fullWidth
-              sx={{ flex: { md: 1.4 } }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchRoundedIcon fontSize="small" />
-                  </InputAdornment>
-                ),
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: {
+                  xs: "minmax(0, 1fr) auto",
+                  md: "minmax(0, 1.4fr) minmax(160px, 1fr) minmax(160px, 1fr) auto",
+                },
+                gap: 1,
+                width: "100%",
               }}
-            />
-            <TextField
-              label="Lifecycle"
-              value={lifecycleFilter}
-              onChange={(event) =>
-                setLifecycleFilter(event.target.value as LifecycleFilter)
-              }
-              size="small"
-              select
-              sx={{ flex: 1 }}
             >
-              <MenuItem value="all">All stages</MenuItem>
-              {Object.entries(PLANT_LIFECYCLE_STATE_LABELS).map(
-                ([value, label]) => (
-                  <MenuItem key={value} value={value}>
-                    {label}
-                  </MenuItem>
-                )
-              )}
-            </TextField>
-            <TextField
-              label="Final label"
-              value={finalLabelFilter}
-              onChange={(event) =>
-                setFinalLabelFilter(event.target.value as FinalLabelFilter)
-              }
-              size="small"
-              select
-              sx={{ flex: 1 }}
-            >
-              <MenuItem value="all">All labels</MenuItem>
-              {FINAL_LABEL_OPTIONS.map((label) => (
-                <MenuItem key={label} value={label}>
-                  {FINAL_LABEL_LABELS[label]}
-                </MenuItem>
-              ))}
-            </TextField>
-            {(plantSearch ||
-              lifecycleFilter !== "all" ||
-              finalLabelFilter !== "all") && (
-              <Button
+              <TextField
+                label="Search plants"
+                value={plantSearch}
+                onChange={(event) => setPlantSearch(event.target.value)}
                 size="small"
-                variant="text"
-                onClick={() => {
-                  setPlantSearch("");
-                  setLifecycleFilter("all");
-                  setFinalLabelFilter("all");
+                fullWidth
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchRoundedIcon fontSize="small" />
+                    </InputAdornment>
+                  ),
                 }}
+              />
+              <Button
+                variant={showMobilePlantFilters ? "contained" : "outlined"}
+                startIcon={<TuneRoundedIcon />}
+                onClick={() =>
+                  setMobilePlantFiltersOpen((currentOpen) => !currentOpen)
+                }
                 sx={{
-                  alignSelf: { xs: "stretch", md: "center" },
+                  display: { xs: "inline-flex", md: "none" },
                   minHeight: 44,
-                  flexShrink: 0,
+                  px: 1.5,
                 }}
               >
-                Clear filters
+                Filters
+                {activePlantFilterCount > 0
+                  ? ` (${activePlantFilterCount})`
+                  : ""}
               </Button>
-            )}
+
+              <Box
+                sx={{
+                  display: { xs: "none", md: "contents" },
+                }}
+              >
+                <TextField
+                  label="Lifecycle"
+                  value={lifecycleFilter}
+                  onChange={(event) =>
+                    setLifecycleFilter(event.target.value as LifecycleFilter)
+                  }
+                  size="small"
+                  select
+                >
+                  <MenuItem value="all">All stages</MenuItem>
+                  {Object.entries(PLANT_LIFECYCLE_STATE_LABELS).map(
+                    ([value, label]) => (
+                      <MenuItem key={value} value={value}>
+                        {label}
+                      </MenuItem>
+                    )
+                  )}
+                </TextField>
+                <TextField
+                  label="Final label"
+                  value={finalLabelFilter}
+                  onChange={(event) =>
+                    setFinalLabelFilter(event.target.value as FinalLabelFilter)
+                  }
+                  size="small"
+                  select
+                >
+                  <MenuItem value="all">All labels</MenuItem>
+                  {FINAL_LABEL_OPTIONS.map((label) => (
+                    <MenuItem key={label} value={label}>
+                      {FINAL_LABEL_LABELS[label]}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Box>
+
+              <Collapse
+                in={showMobilePlantFilters}
+                unmountOnExit={false}
+                sx={{
+                  display: { xs: "block", md: "none" },
+                  gridColumn: "1 / -1",
+                }}
+              >
+                <Stack spacing={1} sx={{ pt: 0.5 }}>
+                  <TextField
+                    label="Lifecycle"
+                    value={lifecycleFilter}
+                    onChange={(event) =>
+                      setLifecycleFilter(event.target.value as LifecycleFilter)
+                    }
+                    size="small"
+                    select
+                    fullWidth
+                  >
+                    <MenuItem value="all">All stages</MenuItem>
+                    {Object.entries(PLANT_LIFECYCLE_STATE_LABELS).map(
+                      ([value, label]) => (
+                        <MenuItem key={value} value={value}>
+                          {label}
+                        </MenuItem>
+                      )
+                    )}
+                  </TextField>
+                  <TextField
+                    label="Final label"
+                    value={finalLabelFilter}
+                    onChange={(event) =>
+                      setFinalLabelFilter(
+                        event.target.value as FinalLabelFilter
+                      )
+                    }
+                    size="small"
+                    select
+                    fullWidth
+                  >
+                    <MenuItem value="all">All labels</MenuItem>
+                    {FINAL_LABEL_OPTIONS.map((label) => (
+                      <MenuItem key={label} value={label}>
+                        {FINAL_LABEL_LABELS[label]}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </Stack>
+              </Collapse>
+
+              {hasPlantFilters && (
+                <Button
+                  size="small"
+                  variant="text"
+                  onClick={handleClearPlantFilters}
+                  sx={{
+                    alignSelf: "center",
+                    gridColumn: { xs: "1 / -1", md: "auto" },
+                    justifySelf: { xs: "stretch", md: "end" },
+                    minHeight: 44,
+                    flexShrink: 0,
+                  }}
+                >
+                  Clear filters
+                </Button>
+              )}
+            </Box>
           </FilterBar>
 
           {error && <Alert severity="error">{error}</Alert>}
@@ -1006,11 +1111,14 @@ const PhenoHuntSetup: React.FC<PhenoHuntSetupProps> = ({
                 const draft = groupDrafts[groupId];
                 const plants = plantsByGroupId[groupId] ?? [];
                 const visiblePlants = plants.filter(plantMatchesFilters);
-                const plantDisplayLimit = plantDisplayLimits[groupId] ?? 30;
+                const plantDisplayLimit =
+                  plantDisplayLimits[groupId] ?? INITIAL_PLANT_DISPLAY_LIMIT;
                 const displayedPlants = visiblePlants.slice(
                   0,
                   plantDisplayLimit
                 );
+                const remainingPlantCount =
+                  visiblePlants.length - displayedPlants.length;
                 const phenotypes = phenotypesByGroupId[groupId] ?? [];
                 const germinatedCount = countPlantsByState(
                   plants,
@@ -1197,8 +1305,10 @@ const PhenoHuntSetup: React.FC<PhenoHuntSetupProps> = ({
                                 variant="caption"
                                 sx={{ textAlign: "right" }}
                               >
-                                {visiblePlants.length} matching -{" "}
-                                {displayedPlants.length} shown
+                                {displayedPlants.length ===
+                                visiblePlants.length
+                                  ? `${visiblePlants.length} matching`
+                                  : `Showing ${displayedPlants.length} of ${visiblePlants.length}`}
                               </Typography>
                             </Stack>
                             {visiblePlants.length > 0 ? (
@@ -1210,7 +1320,7 @@ const PhenoHuntSetup: React.FC<PhenoHuntSetupProps> = ({
                                     sm: "repeat(2, minmax(0, 1fr))",
                                     lg: "repeat(3, minmax(0, 1fr))",
                                   },
-                                  gap: 0.75,
+                                  gap: { xs: 0.5, sm: 0.75 },
                                   minWidth: 0,
                                 }}
                               >
@@ -1229,9 +1339,9 @@ const PhenoHuntSetup: React.FC<PhenoHuntSetupProps> = ({
                                       sx={(theme) => ({
                                         width: "100%",
                                         minWidth: 0,
-                                        minHeight: 48,
-                                        px: 1.25,
-                                        py: 0.75,
+                                        minHeight: { xs: 44, sm: 48 },
+                                        px: { xs: 1, sm: 1.25 },
+                                        py: { xs: 0.5, sm: 0.75 },
                                         border: `1px solid ${theme.palette.divider}`,
                                         borderRadius: 2,
                                         textAlign: "left",
@@ -1246,7 +1356,7 @@ const PhenoHuntSetup: React.FC<PhenoHuntSetupProps> = ({
                                       <Stack
                                         direction="row"
                                         alignItems="center"
-                                        spacing={1}
+                                        spacing={{ xs: 0.75, sm: 1 }}
                                         sx={{ width: "100%", minWidth: 0 }}
                                       >
                                         <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -1331,18 +1441,23 @@ const PhenoHuntSetup: React.FC<PhenoHuntSetupProps> = ({
                                 onClick={() =>
                                   setPlantDisplayLimits((current) => ({
                                     ...current,
-                                    [groupId]: plantDisplayLimit + 30,
+                                    [groupId]:
+                                      plantDisplayLimit +
+                                      PLANT_DISPLAY_INCREMENT,
                                   }))
                                 }
-                                sx={{ alignSelf: "center" }}
+                                sx={{
+                                  alignSelf: "center",
+                                  minHeight: 44,
+                                  width: { xs: "100%", sm: "auto" },
+                                }}
                               >
-                                Show{" "}
+                                Show next{" "}
                                 {Math.min(
-                                  30,
-                                  visiblePlants.length -
-                                    displayedPlants.length
+                                  PLANT_DISPLAY_INCREMENT,
+                                  remainingPlantCount
                                 )}{" "}
-                                more
+                                plants
                               </Button>
                             )}
                           </Stack>
