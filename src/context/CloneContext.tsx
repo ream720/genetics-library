@@ -38,7 +38,7 @@ export const CloneProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [clones, setClones] = useState<Clone[]>([]);
-  const { currentUser } = useAuth();
+  const { currentUser, assertCurrentLegalAcceptance } = useAuth();
 
   const fetchClones = useCallback(async () => {
     try {
@@ -71,6 +71,7 @@ export const CloneProvider: React.FC<{ children: React.ReactNode }> = ({
         console.error("Cannot add clone: User not logged in.");
         return; // Prevent adding clones when not logged in
       }
+      assertCurrentLegalAcceptance();
 
       const cloneData = {
         ...clone,
@@ -102,6 +103,8 @@ export const CloneProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const updateClone = async (id: string, updatedClone: Partial<Clone>) => {
     try {
+      assertCurrentLegalAcceptance();
+
       const cloneDocRef = doc(db, "clones", id);
 
       // Optimistic Update

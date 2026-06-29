@@ -52,7 +52,7 @@ const PrivateRoute = ({ children }: PrivateRouteProps) => {
 };
 
 const AppRoutes = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, assertCurrentLegalAcceptance } = useAuth();
 
   const savePaymentOptions = async (methods: string[]) => {
     if (!currentUser) {
@@ -60,10 +60,12 @@ const AppRoutes = () => {
     }
 
     try {
+      assertCurrentLegalAcceptance();
       const userDocRef = doc(db, "users", currentUser.uid);
       await setDoc(userDocRef, { paymentMethods: methods }, { merge: true });
     } catch (error) {
       console.error("Error saving payment methods:", error);
+      throw error;
     }
   };
 

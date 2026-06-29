@@ -55,12 +55,15 @@ const navItems = [
 ];
 
 const AppShell = ({ children }: { children: ReactNode }) => {
-  const { currentUser, logout } = useAuth();
+  const { currentUser, logout, needsLegalAcceptance, acceptCurrentLegalTerms } =
+    useAuth();
   const { mode, toggleMode } = useColorMode();
   const { confirmNavigation } = useUnsavedChanges();
   const location = useLocation();
   const navigate = useNavigate();
   const [accountAnchor, setAccountAnchor] = useState<null | HTMLElement>(null);
+  const [acceptingLegalTerms, setAcceptingLegalTerms] = useState(false);
+  const [legalAcceptanceError, setLegalAcceptanceError] = useState("");
 
   const activePath = location.pathname.startsWith("/projects")
     ? "/projects"
@@ -89,6 +92,22 @@ const AppShell = ({ children }: { children: ReactNode }) => {
       await performLogout();
     }
   }, [confirmNavigation, performLogout]);
+
+  const handleAcceptLegalTerms = useCallback(async () => {
+    try {
+      setLegalAcceptanceError("");
+      setAcceptingLegalTerms(true);
+      await acceptCurrentLegalTerms("blocking_prompt");
+    } catch (error) {
+      setLegalAcceptanceError(
+        error instanceof Error
+          ? error.message
+          : "Failed to record acceptance. Please try again."
+      );
+    } finally {
+      setAcceptingLegalTerms(false);
+    }
+  }, [acceptCurrentLegalTerms]);
 
   useIdleTimer({ timeout: 900000, onIdle: performLogout });
 
@@ -417,6 +436,87 @@ const AppShell = ({ children }: { children: ReactNode }) => {
           outline: "none",
         }}
       >
+        {needsLegalAcceptance && (
+          <Paper
+            square
+            elevation={0}
+            role="alert"
+            sx={(theme) => ({
+              borderBottom: 1,
+              borderColor: "divider",
+              bgcolor:
+                theme.palette.mode === "dark"
+                  ? theme.palette.warning.dark
+                  : theme.palette.warning.light,
+              color:
+                theme.palette.mode === "dark"
+                  ? theme.palette.warning.contrastText
+                  : theme.palette.text.primary,
+              px: { xs: 2, sm: 3 },
+              py: 2,
+            })}
+          >
+            <Stack
+              direction={{ xs: "column", md: "row" }}
+              spacing={1.5}
+              alignItems={{ xs: "stretch", md: "center" }}
+              justifyContent="space-between"
+            >
+              <Box sx={{ minWidth: 0 }}>
+                <Typography fontWeight={800}>
+                  Terms acceptance required
+                </Typography>
+                <Typography variant="body2">
+                  Accept the current Terms of Service and Privacy Policy before
+                  creating, editing, uploading, or using AI features.
+                </Typography>
+                {legalAcceptanceError && (
+                  <Typography color="error" variant="body2" sx={{ mt: 0.5 }}>
+                    {legalAcceptanceError}
+                  </Typography>
+                )}
+              </Box>
+              <Stack
+                direction="row"
+                spacing={1}
+                useFlexGap
+                flexWrap="wrap"
+                justifyContent={{ xs: "flex-start", md: "flex-end" }}
+              >
+                <Button
+                  component={RouterLink}
+                  to="/terms-of-service"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  color="inherit"
+                  variant="outlined"
+                >
+                  Terms
+                </Button>
+                <Button
+                  component={RouterLink}
+                  to="/privacy-policy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  color="inherit"
+                  variant="outlined"
+                >
+                  Privacy
+                </Button>
+                <Button
+                  onClick={handleAcceptLegalTerms}
+                  disabled={acceptingLegalTerms}
+                  variant="contained"
+                >
+                  {acceptingLegalTerms ? "Accepting..." : "Accept"}
+                </Button>
+                <Button color="inherit" onClick={handleLogout}>
+                  Log out
+                </Button>
+              </Stack>
+            </Stack>
+          </Paper>
+        )}
         {children}
       </Box>
 

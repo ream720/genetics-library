@@ -26,7 +26,8 @@ interface ProcessImageResult {
 }
 
 const ProfileSection: React.FC = () => {
-  const { currentUser, updateUserProfile } = useAuth();
+  const { currentUser, updateUserProfile, assertCurrentLegalAcceptance } =
+    useAuth();
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string>("");
   const [success, setSuccess] = useState<string>("");
@@ -86,6 +87,8 @@ const ProfileSection: React.FC = () => {
     setUploading(true);
 
     try {
+      assertCurrentLegalAcceptance();
+
       if (!ALLOWED_TYPES.includes(file.type as AllowedType)) {
         throw new Error("Please upload a JPEG, PNG, or WebP image");
       }

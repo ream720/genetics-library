@@ -6,6 +6,30 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function currentTermsVersion() {
+      return "2024-12-01";
+    }
+
+    function currentPrivacyVersion() {
+      return "2024-12-01";
+    }
+
+    function hasAcceptedCurrentLegalTerms(userId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(userId))
+        && get(/databases/$(database)/documents/users/$(userId)).data.keys().hasAll(["termsAcceptance"])
+        && get(/databases/$(database)/documents/users/$(userId)).data.termsAcceptance.keys().hasAll([
+          "termsVersion",
+          "privacyVersion"
+        ])
+        && get(/databases/$(database)/documents/users/$(userId)).data.termsAcceptance.termsVersion == currentTermsVersion()
+        && get(/databases/$(database)/documents/users/$(userId)).data.termsAcceptance.privacyVersion == currentPrivacyVersion();
+    }
+
+    function signedInWithCurrentLegalAcceptance() {
+      return signedIn() && hasAcceptedCurrentLegalTerms(request.auth.uid);
+    }
+
     function ownsProject() {
       return signedIn() && resource.data.ownerId == request.auth.uid;
     }
@@ -48,16 +72,48 @@ service cloud.firestore {
         && !exists(/databases/$(database)/documents/projectAddenda/$(resource.data.contextId));
     }
 
+    function requestHasNoLegalAcceptance() {
+      return !request.resource.data.keys().hasAny(["termsAcceptance"]);
+    }
+
+    function legalAcceptanceUnchanged() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(["termsAcceptance"]);
+    }
+
+    function profileSetupFieldsOnly() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+        "email",
+        "username",
+        "userNameLower"
+      ]);
+    }
+
     // ---------- USERS ----------
     match /users/{userId} {
       // Any user can read any user's doc.
       allow read: if true;
 
-      // Any authenticated user can create a user doc on sign up.
-      allow create: if signedIn();
+      // Users create their profile doc before the trusted callable records legal acceptance.
+      allow create: if signedIn()
+        && request.auth.uid == userId
+        && requestHasNoLegalAcceptance();
 
-      // Only the owner of the doc can update or delete.
-      allow update, delete: if signedIn() && request.auth.uid == userId;
+      // Only trusted server code can write termsAcceptance.
+      allow update: if signedIn()
+        && request.auth.uid == userId
+        && legalAcceptanceUnchanged()
+        && (
+          hasAcceptedCurrentLegalTerms(userId)
+          || profileSetupFieldsOnly()
+        );
+
+      allow delete: if signedIn() && request.auth.uid == userId;
+    }
+
+    // ---------- LEGAL ACCEPTANCE AUDIT ----------
+    match /termsAcceptances/{acceptanceId} {
+      allow read: if signedIn() && resource.data.uid == request.auth.uid;
+      allow write: if false;
     }
 
     // ---------- SEEDS ----------
@@ -66,10 +122,13 @@ service cloud.firestore {
       allow read: if true;
 
       // Only the owner can create a new seed.
-      allow create: if signedIn() && request.auth.uid == request.resource.data.userId;
+      allow create: if signedInWithCurrentLegalAcceptance()
+        && request.auth.uid == request.resource.data.userId;
 
       // Only the owner of the seed can update or delete it.
-      allow update, delete: if signedIn() && request.auth.uid == resource.data.userId;
+      allow update: if signedInWithCurrentLegalAcceptance()
+        && request.auth.uid == resource.data.userId;
+      allow delete: if signedIn() && request.auth.uid == resource.data.userId;
     }
 
     // ---------- CLONES ----------
@@ -78,18 +137,24 @@ service cloud.firestore {
       allow read: if true;
 
       // Only the owner can create a new clone.
-      allow create: if signedIn() && request.auth.uid == request.resource.data.userId;
+      allow create: if signedInWithCurrentLegalAcceptance()
+        && request.auth.uid == request.resource.data.userId;
 
       // Only the owner of the clone can update or delete it.
-      allow update, delete: if signedIn() && request.auth.uid == resource.data.userId;
+      allow update: if signedInWithCurrentLegalAcceptance()
+        && request.auth.uid == resource.data.userId;
+      allow delete: if signedIn() && request.auth.uid == resource.data.userId;
     }
 
     // ---------- LEGACY CULTIVAR INFO ----------
     // Retained temporarily so existing data remains untouched while the UI is retired.
     match /cultivarInfo/{infoId} {
       allow read: if true;
-      allow create: if signedIn() && request.auth.uid == request.resource.data.userId;
-      allow update, delete: if signedIn() && request.auth.uid == resource.data.userId;
+      allow create: if signedInWithCurrentLegalAcceptance()
+        && request.auth.uid == request.resource.data.userId;
+      allow update: if signedInWithCurrentLegalAcceptance()
+        && request.auth.uid == resource.data.userId;
+      allow delete: if signedIn() && request.auth.uid == resource.data.userId;
     }
 
     // ---------- BREEDER INFO ----------
@@ -107,10 +172,12 @@ service cloud.firestore {
       allow read: if ownsProject();
 
       // Project creation must bind the document to the authenticated user.
-      allow create: if ownsIncomingProject();
+      allow create: if signedInWithCurrentLegalAcceptance()
+        && ownsIncomingProject();
 
       // Owners can edit projects, but cannot transfer ownership.
-      allow update: if ownsProject()
+      allow update: if signedInWithCurrentLegalAcceptance()
+        && ownsProject()
         && request.resource.data.ownerId == resource.data.ownerId
         && resource.data.status != "complete";
 
@@ -121,14 +188,16 @@ service cloud.firestore {
     // ---------- V2 PROJECT CHILD RECORDS ----------
     match /projectAddenda/{addendumId} {
       allow read: if ownsExistingV2Record();
-      allow create: if ownsIncomingV2Record()
+      allow create: if signedInWithCurrentLegalAcceptance()
+        && ownsIncomingV2Record()
         && projectIsComplete(request.resource.data.projectId);
       allow update, delete: if false;
     }
 
     match /projectPhotos/{photoId} {
       allow read: if ownsExistingV2Record();
-      allow create: if ownsIncomingV2Record()
+      allow create: if signedInWithCurrentLegalAcceptance()
+        && ownsIncomingV2Record()
         && ownsProjectById(request.resource.data.projectId)
         && (
           projectIsWritable(request.resource.data.projectId)
@@ -137,7 +206,8 @@ service cloud.firestore {
             && request.resource.data.contextType == "addendum"
           )
         );
-      allow update: if ownsExistingV2Record()
+      allow update: if signedInWithCurrentLegalAcceptance()
+        && ownsExistingV2Record()
         && keepsV2OwnershipAndProject()
         && (
           projectIsWritable(resource.data.projectId)
@@ -152,9 +222,11 @@ service cloud.firestore {
 
     match /phenoGroups/{groupId} {
       allow read: if ownsExistingV2Record();
-      allow create: if ownsIncomingV2Record()
+      allow create: if signedInWithCurrentLegalAcceptance()
+        && ownsIncomingV2Record()
         && projectIsWritable(request.resource.data.projectId);
-      allow update: if ownsExistingV2Record()
+      allow update: if signedInWithCurrentLegalAcceptance()
+        && ownsExistingV2Record()
         && keepsV2OwnershipAndProject()
         && projectIsWritable(resource.data.projectId);
       allow delete: if ownsExistingV2Record()
@@ -163,9 +235,11 @@ service cloud.firestore {
 
     match /phenotypes/{phenotypeId} {
       allow read: if ownsExistingV2Record();
-      allow create: if ownsIncomingV2Record()
+      allow create: if signedInWithCurrentLegalAcceptance()
+        && ownsIncomingV2Record()
         && projectIsWritable(request.resource.data.projectId);
-      allow update: if ownsExistingV2Record()
+      allow update: if signedInWithCurrentLegalAcceptance()
+        && ownsExistingV2Record()
         && keepsV2OwnershipAndProject()
         && projectIsWritable(resource.data.projectId);
       allow delete: if ownsExistingV2Record()
@@ -174,9 +248,11 @@ service cloud.firestore {
 
     match /physicalPlants/{plantId} {
       allow read: if ownsExistingV2Record();
-      allow create: if ownsIncomingV2Record()
+      allow create: if signedInWithCurrentLegalAcceptance()
+        && ownsIncomingV2Record()
         && projectIsWritable(request.resource.data.projectId);
-      allow update: if ownsExistingV2Record()
+      allow update: if signedInWithCurrentLegalAcceptance()
+        && ownsExistingV2Record()
         && keepsV2OwnershipAndProject()
         && projectIsWritable(resource.data.projectId);
       allow delete: if ownsExistingV2Record()
@@ -185,9 +261,11 @@ service cloud.firestore {
 
     match /plantStageEvents/{eventId} {
       allow read: if ownsExistingV2Record();
-      allow create: if ownsIncomingV2Record()
+      allow create: if signedInWithCurrentLegalAcceptance()
+        && ownsIncomingV2Record()
         && projectIsWritable(request.resource.data.projectId);
-      allow update: if ownsExistingV2Record()
+      allow update: if signedInWithCurrentLegalAcceptance()
+        && ownsExistingV2Record()
         && keepsV2OwnershipAndProject()
         && projectIsWritable(resource.data.projectId);
       allow delete: if ownsExistingV2Record()
@@ -196,9 +274,11 @@ service cloud.firestore {
 
     match /plantEvaluations/{evaluationId} {
       allow read: if ownsExistingV2Record();
-      allow create: if ownsIncomingV2Record()
+      allow create: if signedInWithCurrentLegalAcceptance()
+        && ownsIncomingV2Record()
         && projectIsWritable(request.resource.data.projectId);
-      allow update: if ownsExistingV2Record()
+      allow update: if signedInWithCurrentLegalAcceptance()
+        && ownsExistingV2Record()
         && keepsV2OwnershipAndProject()
         && projectIsWritable(resource.data.projectId);
       allow delete: if ownsExistingV2Record()
@@ -207,9 +287,11 @@ service cloud.firestore {
 
     match /washSessions/{sessionId} {
       allow read: if ownsExistingV2Record();
-      allow create: if ownsIncomingV2Record()
+      allow create: if signedInWithCurrentLegalAcceptance()
+        && ownsIncomingV2Record()
         && projectIsWritable(request.resource.data.projectId);
-      allow update: if ownsExistingV2Record()
+      allow update: if signedInWithCurrentLegalAcceptance()
+        && ownsExistingV2Record()
         && keepsV2OwnershipAndProject()
         && projectIsWritable(resource.data.projectId);
       allow delete: if ownsExistingV2Record()
@@ -218,9 +300,11 @@ service cloud.firestore {
 
     match /washRuns/{runId} {
       allow read: if ownsExistingV2Record();
-      allow create: if ownsIncomingV2Record()
+      allow create: if signedInWithCurrentLegalAcceptance()
+        && ownsIncomingV2Record()
         && projectIsWritable(request.resource.data.projectId);
-      allow update: if ownsExistingV2Record()
+      allow update: if signedInWithCurrentLegalAcceptance()
+        && ownsExistingV2Record()
         && keepsV2OwnershipAndProject()
         && projectIsWritable(resource.data.projectId);
       allow delete: if ownsExistingV2Record()
@@ -229,9 +313,11 @@ service cloud.firestore {
 
     match /washCycles/{cycleId} {
       allow read: if ownsExistingV2Record();
-      allow create: if ownsIncomingV2Record()
+      allow create: if signedInWithCurrentLegalAcceptance()
+        && ownsIncomingV2Record()
         && projectIsWritable(request.resource.data.projectId);
-      allow update: if ownsExistingV2Record()
+      allow update: if signedInWithCurrentLegalAcceptance()
+        && ownsExistingV2Record()
         && keepsV2OwnershipAndProject()
         && projectIsWritable(resource.data.projectId);
       allow delete: if ownsExistingV2Record()
@@ -240,9 +326,11 @@ service cloud.firestore {
 
     match /micronFractions/{fractionId} {
       allow read: if ownsExistingV2Record();
-      allow create: if ownsIncomingV2Record()
+      allow create: if signedInWithCurrentLegalAcceptance()
+        && ownsIncomingV2Record()
         && projectIsWritable(request.resource.data.projectId);
-      allow update: if ownsExistingV2Record()
+      allow update: if signedInWithCurrentLegalAcceptance()
+        && ownsExistingV2Record()
         && keepsV2OwnershipAndProject()
         && projectIsWritable(resource.data.projectId);
       allow delete: if ownsExistingV2Record()
@@ -251,9 +339,11 @@ service cloud.firestore {
 
     match /pressRecords/{pressRecordId} {
       allow read: if ownsExistingV2Record();
-      allow create: if ownsIncomingV2Record()
+      allow create: if signedInWithCurrentLegalAcceptance()
+        && ownsIncomingV2Record()
         && projectIsWritable(request.resource.data.projectId);
-      allow update: if ownsExistingV2Record()
+      allow update: if signedInWithCurrentLegalAcceptance()
+        && ownsExistingV2Record()
         && keepsV2OwnershipAndProject()
         && projectIsWritable(resource.data.projectId);
       allow delete: if ownsExistingV2Record()

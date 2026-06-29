@@ -19,7 +19,7 @@ function ContactInfo() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
-  const { currentUser } = useAuth();
+  const { currentUser, assertCurrentLegalAcceptance } = useAuth();
 
   const navigate = useNavigate();
 
@@ -86,6 +86,8 @@ function ContactInfo() {
     if (!currentUser) {
       throw new Error("Cannot save contact info without an authenticated user.");
     }
+
+    assertCurrentLegalAcceptance();
 
     const userDocRef = doc(db, "users", currentUser.uid);
     await setDoc(userDocRef, { contactInfo: info }, { merge: true });

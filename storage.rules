@@ -6,6 +6,27 @@ service firebase.storage {
       return request.auth != null;
     }
 
+    function currentTermsVersion() {
+      return "2024-12-01";
+    }
+
+    function currentPrivacyVersion() {
+      return "2024-12-01";
+    }
+
+    function hasAcceptedCurrentLegalTerms(userId) {
+      return signedIn()
+        && request.auth.uid == userId
+        && firestore.exists(/databases/(default)/documents/users/$(userId))
+        && firestore.get(/databases/(default)/documents/users/$(userId)).data.keys().hasAll(["termsAcceptance"])
+        && firestore.get(/databases/(default)/documents/users/$(userId)).data.termsAcceptance.keys().hasAll([
+          "termsVersion",
+          "privacyVersion"
+        ])
+        && firestore.get(/databases/(default)/documents/users/$(userId)).data.termsAcceptance.termsVersion == currentTermsVersion()
+        && firestore.get(/databases/(default)/documents/users/$(userId)).data.termsAcceptance.privacyVersion == currentPrivacyVersion();
+    }
+
     function ownsProject(ownerId, projectId) {
       return signedIn()
         && request.auth.uid == ownerId
@@ -31,6 +52,7 @@ service firebase.storage {
     match /projectMedia/{ownerId}/{projectId}/{contextType}/{contextId}/{fileName} {
       allow read: if signedIn() && request.auth.uid == ownerId;
       allow create: if ownsProject(ownerId, projectId)
+        && hasAcceptedCurrentLegalTerms(ownerId)
         && validImageUpload()
         && request.resource.metadata.ownerId == ownerId
         && request.resource.metadata.projectId == projectId
@@ -42,6 +64,7 @@ service firebase.storage {
         );
       allow update: if signedIn()
         && request.auth.uid == ownerId
+        && hasAcceptedCurrentLegalTerms(ownerId)
         && validImageUpload()
         && request.resource.metadata.ownerId == ownerId
         && request.resource.metadata.projectId == projectId
@@ -67,7 +90,10 @@ service firebase.storage {
 
     match /avatars/{userId} {
       allow read: if true;
-      allow write: if signedIn() && request.auth.uid == userId;
+      allow create, update: if signedIn()
+        && request.auth.uid == userId
+        && hasAcceptedCurrentLegalTerms(userId);
+      allow delete: if signedIn() && request.auth.uid == userId;
     }
 
     match /breederLogos/{allPaths=**} {
