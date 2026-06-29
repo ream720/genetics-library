@@ -10,6 +10,7 @@ import {
   Alert,
   Avatar,
   Box,
+  Button,
   Chip,
   CircularProgress,
   Snackbar,
@@ -26,7 +27,7 @@ import {
   query,
   where,
 } from "firebase/firestore";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import { db } from "../../firebaseConfig";
 import CashAppBadge from "../assets/cashapp-badge.svg";
@@ -64,6 +65,9 @@ const collectionGridSx = {
   gap: 1.5,
 };
 
+const PROFILE_COLLECTION_INITIAL_LIMIT = 12;
+const PROFILE_COLLECTION_INCREMENT = 12;
+
 function Profile() {
   const { currentUser } = useAuth();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -75,6 +79,12 @@ function Profile() {
   const profileUserId = userId ?? currentUser?.uid;
   const [seedSearchQuery, setSeedSearchQuery] = useState("");
   const [cloneSearchQuery, setCloneSearchQuery] = useState("");
+  const [seedDisplayLimit, setSeedDisplayLimit] = useState(
+    PROFILE_COLLECTION_INITIAL_LIMIT
+  );
+  const [cloneDisplayLimit, setCloneDisplayLimit] = useState(
+    PROFILE_COLLECTION_INITIAL_LIMIT
+  );
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const [shareSnackbarOpen, setShareSnackbarOpen] = useState(false);
   const [shareSnackbarMessage, setShareSnackbarMessage] = useState("");
@@ -95,7 +105,7 @@ function Profile() {
         window.setTimeout(() => setHighlightedId(null), 2000);
       }
     }
-  }, [loading, itemType, itemId]);
+  }, [cloneDisplayLimit, itemId, itemType, loading, seedDisplayLimit]);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -157,16 +167,77 @@ function Profile() {
     fetchUserData();
   }, [profileUserId]);
 
-  const filteredSeeds = profileSeeds.filter(
-    (seed) =>
-      seed.strain.toLowerCase().includes(seedSearchQuery.toLowerCase()) ||
-      seed.breeder.toLowerCase().includes(seedSearchQuery.toLowerCase())
+  useEffect(() => {
+    setSeedDisplayLimit(PROFILE_COLLECTION_INITIAL_LIMIT);
+  }, [seedSearchQuery]);
+
+  useEffect(() => {
+    setCloneDisplayLimit(PROFILE_COLLECTION_INITIAL_LIMIT);
+  }, [cloneSearchQuery]);
+
+  const filteredSeeds = useMemo(
+    () =>
+      profileSeeds.filter(
+        (seed) =>
+          seed.strain
+            .toLowerCase()
+            .includes(seedSearchQuery.toLowerCase()) ||
+          seed.breeder.toLowerCase().includes(seedSearchQuery.toLowerCase())
+      ),
+    [profileSeeds, seedSearchQuery]
   );
 
-  const filteredClones = profileClones.filter(
-    (clone) =>
-      clone.strain.toLowerCase().includes(cloneSearchQuery.toLowerCase()) ||
-      clone.breeder.toLowerCase().includes(cloneSearchQuery.toLowerCase())
+  const filteredClones = useMemo(
+    () =>
+      profileClones.filter(
+        (clone) =>
+          clone.strain
+            .toLowerCase()
+            .includes(cloneSearchQuery.toLowerCase()) ||
+          clone.breeder.toLowerCase().includes(cloneSearchQuery.toLowerCase())
+      ),
+    [cloneSearchQuery, profileClones]
+  );
+
+  useEffect(() => {
+    if (itemType !== "seed" || !itemId) {
+      return;
+    }
+
+    const linkedSeedIndex = filteredSeeds.findIndex((seed) => seed.id === itemId);
+    if (linkedSeedIndex >= 0) {
+      setSeedDisplayLimit((currentLimit) =>
+        linkedSeedIndex >= currentLimit ? linkedSeedIndex + 1 : currentLimit
+      );
+    }
+  }, [filteredSeeds, itemId, itemType]);
+
+  useEffect(() => {
+    if (itemType !== "clone" || !itemId) {
+      return;
+    }
+
+    const linkedCloneIndex = filteredClones.findIndex(
+      (clone) => clone.id === itemId
+    );
+    if (linkedCloneIndex >= 0) {
+      setCloneDisplayLimit((currentLimit) =>
+        linkedCloneIndex >= currentLimit ? linkedCloneIndex + 1 : currentLimit
+      );
+    }
+  }, [filteredClones, itemId, itemType]);
+
+  const displayedSeeds = filteredSeeds.slice(0, seedDisplayLimit);
+  const displayedClones = filteredClones.slice(0, cloneDisplayLimit);
+  const hasMoreSeeds = displayedSeeds.length < filteredSeeds.length;
+  const hasMoreClones = displayedClones.length < filteredClones.length;
+  const profileSummary = `${profileSeeds.length} seed ${
+    profileSeeds.length === 1 ? "entry" : "entries"
+  } and ${profileClones.length} clone ${
+    profileClones.length === 1 ? "entry" : "entries"
+  }`;
+  const hasProfileDetails = Boolean(
+    userProfile?.paymentMethods?.length || userProfile?.contactInfo
   );
 
   const handleShare = (itemType: "seed" | "clone", itemId: string) => {
@@ -224,11 +295,7 @@ function Profile() {
           <PageHeader
             eyebrow={userId ? "Public profile" : "Your profile"}
             title={userProfile?.username ?? "Profile"}
-            description={`${profileSeeds.length} seed ${
-              profileSeeds.length === 1 ? "entry" : "entries"
-            } and ${profileClones.length} clone ${
-              profileClones.length === 1 ? "entry" : "entries"
-            }. Projects stay private.`}
+            description={profileSummary}
             actions={
               <Avatar
                 src={userProfile?.photoURL || ""}
@@ -238,87 +305,78 @@ function Profile() {
             }
           />
 
-          <SectionCard title="Profile Info" contentPadding={2.5}>
-            <Stack spacing={2}>
-              <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                <Chip
-                  label={`@${userProfile?.username ?? "user"}`}
-                  color="primary"
-                  variant="outlined"
-                />
+          {hasProfileDetails && (
+            <SectionCard contentPadding={2.5}>
+              <Stack spacing={2}>
                 {userProfile?.paymentMethods?.length ? (
-                  <Chip
-                    label={`${userProfile.paymentMethods.length} payment ${
-                      userProfile.paymentMethods.length === 1
-                        ? "method"
-                        : "methods"
-                    }`}
-                  />
+                  <Box>
+                    <Typography variant="caption" fontWeight={800}>
+                      Accepted payment methods
+                    </Typography>
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      flexWrap="wrap"
+                      useFlexGap
+                      sx={{ mt: 1 }}
+                    >
+                      {userProfile.paymentMethods.map((method) => {
+                        const paymentMethod = paymentMethods.find(
+                          (item) => item.name === method
+                        );
+
+                        return (
+                          <Tooltip title={method} key={method}>
+                            <Box
+                              sx={(theme) => ({
+                                width: 44,
+                                height: 44,
+                                display: "grid",
+                                placeItems: "center",
+                                bgcolor: theme.palette.surface.subtle,
+                                border: 1,
+                                borderColor: "divider",
+                                borderRadius: 2,
+                                color: "text.secondary",
+                              })}
+                            >
+                              {paymentMethod?.logo ? (
+                                <img
+                                  src={paymentMethod.logo}
+                                  alt={method}
+                                  style={{
+                                    width: "100%",
+                                    height: "100%",
+                                    objectFit: "contain",
+                                  }}
+                                />
+                              ) : (
+                                paymentMethod?.icon
+                              )}
+                            </Box>
+                          </Tooltip>
+                        );
+                      })}
+                    </Stack>
+                  </Box>
                 ) : null}
+
+                {userProfile?.contactInfo && (
+                  <Box>
+                    <Typography variant="caption" fontWeight={800}>
+                      Contact
+                    </Typography>
+                    <Typography
+                      color="text.secondary"
+                      sx={{ mt: 0.5, whiteSpace: "pre-wrap" }}
+                    >
+                      {userProfile.contactInfo}
+                    </Typography>
+                  </Box>
+                )}
               </Stack>
-
-              {userProfile?.paymentMethods?.length ? (
-                <Box>
-                  <Typography variant="caption" fontWeight={800}>
-                    Accepted payment methods
-                  </Typography>
-                  <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mt: 1 }}>
-                    {userProfile.paymentMethods.map((method) => {
-                      const paymentMethod = paymentMethods.find(
-                        (item) => item.name === method
-                      );
-
-                      return (
-                        <Tooltip title={method} key={method}>
-                          <Box
-                            sx={(theme) => ({
-                              width: 44,
-                              height: 44,
-                              display: "grid",
-                              placeItems: "center",
-                              bgcolor: theme.palette.surface.subtle,
-                              border: 1,
-                              borderColor: "divider",
-                              borderRadius: 2,
-                              color: "text.secondary",
-                            })}
-                          >
-                            {paymentMethod?.logo ? (
-                              <img
-                                src={paymentMethod.logo}
-                                alt={method}
-                                style={{
-                                  width: "100%",
-                                  height: "100%",
-                                  objectFit: "contain",
-                                }}
-                              />
-                            ) : (
-                              paymentMethod?.icon
-                            )}
-                          </Box>
-                        </Tooltip>
-                      );
-                    })}
-                  </Stack>
-                </Box>
-              ) : null}
-
-              {userProfile?.contactInfo && (
-                <Box>
-                  <Typography variant="caption" fontWeight={800}>
-                    Contact
-                  </Typography>
-                  <Typography
-                    color="text.secondary"
-                    sx={{ mt: 0.5, whiteSpace: "pre-wrap" }}
-                  >
-                    {userProfile.contactInfo}
-                  </Typography>
-                </Box>
-              )}
-            </Stack>
-          </SectionCard>
+            </SectionCard>
+          )}
 
           <Accordion defaultExpanded disableGutters>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
@@ -329,7 +387,11 @@ function Profile() {
               >
                 <Typography variant="h6">Seeds Collection</Typography>
                 <Chip
-                  label={`${filteredSeeds.length} shown`}
+                  label={
+                    hasMoreSeeds
+                      ? `${displayedSeeds.length} of ${filteredSeeds.length}`
+                      : `${filteredSeeds.length} shown`
+                  }
                   size="small"
                   variant="outlined"
                 />
@@ -356,18 +418,38 @@ function Profile() {
                     description="Try searching by another breeder or strain."
                   />
                 ) : (
-                  <Box sx={collectionGridSx}>
-                    {filteredSeeds.map((seed) => (
-                      <Box key={seed.id} id={`seed-${seed.id}`}>
-                        <GeneticsCard
-                          type="seed"
-                          item={seed}
-                          highlighted={highlightedId === `seed-${seed.id}`}
-                          onShare={handleShare}
-                        />
-                      </Box>
-                    ))}
-                  </Box>
+                  <>
+                    <Box sx={collectionGridSx}>
+                      {displayedSeeds.map((seed) => (
+                        <Box key={seed.id} id={`seed-${seed.id}`}>
+                          <GeneticsCard
+                            type="seed"
+                            item={seed}
+                            highlighted={highlightedId === `seed-${seed.id}`}
+                            onShare={handleShare}
+                          />
+                        </Box>
+                      ))}
+                    </Box>
+                    {hasMoreSeeds ? (
+                      <Button
+                        variant="outlined"
+                        onClick={() =>
+                          setSeedDisplayLimit((currentLimit) =>
+                            currentLimit + PROFILE_COLLECTION_INCREMENT
+                          )
+                        }
+                        sx={{ alignSelf: { xs: "stretch", sm: "center" } }}
+                      >
+                        Show next{" "}
+                        {Math.min(
+                          PROFILE_COLLECTION_INCREMENT,
+                          filteredSeeds.length - displayedSeeds.length
+                        )}{" "}
+                        seeds
+                      </Button>
+                    ) : null}
+                  </>
                 )}
               </Stack>
             </AccordionDetails>
@@ -382,7 +464,11 @@ function Profile() {
               >
                 <Typography variant="h6">Clones Collection</Typography>
                 <Chip
-                  label={`${filteredClones.length} shown`}
+                  label={
+                    hasMoreClones
+                      ? `${displayedClones.length} of ${filteredClones.length}`
+                      : `${filteredClones.length} shown`
+                  }
                   size="small"
                   variant="outlined"
                 />
@@ -409,18 +495,38 @@ function Profile() {
                     description="Try searching by another breeder or strain."
                   />
                 ) : (
-                  <Box sx={collectionGridSx}>
-                    {filteredClones.map((clone) => (
-                      <Box key={clone.id} id={`clone-${clone.id}`}>
-                        <GeneticsCard
-                          type="clone"
-                          item={clone}
-                          highlighted={highlightedId === `clone-${clone.id}`}
-                          onShare={handleShare}
-                        />
-                      </Box>
-                    ))}
-                  </Box>
+                  <>
+                    <Box sx={collectionGridSx}>
+                      {displayedClones.map((clone) => (
+                        <Box key={clone.id} id={`clone-${clone.id}`}>
+                          <GeneticsCard
+                            type="clone"
+                            item={clone}
+                            highlighted={highlightedId === `clone-${clone.id}`}
+                            onShare={handleShare}
+                          />
+                        </Box>
+                      ))}
+                    </Box>
+                    {hasMoreClones ? (
+                      <Button
+                        variant="outlined"
+                        onClick={() =>
+                          setCloneDisplayLimit((currentLimit) =>
+                            currentLimit + PROFILE_COLLECTION_INCREMENT
+                          )
+                        }
+                        sx={{ alignSelf: { xs: "stretch", sm: "center" } }}
+                      >
+                        Show next{" "}
+                        {Math.min(
+                          PROFILE_COLLECTION_INCREMENT,
+                          filteredClones.length - displayedClones.length
+                        )}{" "}
+                        clones
+                      </Button>
+                    ) : null}
+                  </>
                 )}
               </Stack>
             </AccordionDetails>

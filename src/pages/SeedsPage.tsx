@@ -17,7 +17,11 @@ import {
   Autocomplete,
   Tabs,
   Tab,
+  Typography,
+  useMediaQuery,
+  InputAdornment,
 } from "@mui/material";
+import { Theme } from "@mui/material/styles";
 import {
   DataGrid,
   GridColDef,
@@ -27,7 +31,13 @@ import {
 } from "@mui/x-data-grid";
 import { useSeedContext } from "../context/SeedContext";
 import { Seed } from "../types";
-import { Edit, Delete, AddCircleOutline } from "@mui/icons-material";
+import {
+  Edit,
+  Delete,
+  AddCircleOutline,
+  Female,
+  SearchRounded,
+} from "@mui/icons-material";
 
 import { FaMagic } from "react-icons/fa";
 import EditIcon from "@mui/icons-material/Edit";
@@ -40,20 +50,39 @@ import { PageContainer, PageHeader, SectionCard } from "../components/ui";
 // Interface for the tab values
 interface TabPanelProps {
   children?: React.ReactNode;
+  idPrefix?: string;
   index: number;
   value: number;
 }
 
+const SEED_PAGE_TAB_MANAGE = 0;
+const SEED_PAGE_TAB_ADD = 1;
+const MOBILE_RECORD_INITIAL_LIMIT = 12;
+const MOBILE_RECORD_INCREMENT = 12;
+
+const mobileRecordCardSx = {
+  boxSizing: "border-box",
+  border: 1,
+  borderColor: "divider",
+  borderRadius: 3,
+  bgcolor: "surface.subtle",
+  maxWidth: "100%",
+  minWidth: 0,
+  overflow: "hidden",
+  p: 1.5,
+  width: "100%",
+};
+
 // Custom TabPanel component for switching between modes
 function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
+  const { children, value, index, idPrefix = "seed-input", ...other } = props;
 
   return (
     <div
       role="tabpanel"
       hidden={value !== index}
-      id={`seed-input-tabpanel-${index}`}
-      aria-labelledby={`seed-input-tab-${index}`}
+      id={`${idPrefix}-tabpanel-${index}`}
+      aria-labelledby={`${idPrefix}-tab-${index}`}
       {...other}
       style={{ width: "100%" }}
     >
@@ -64,6 +93,11 @@ function TabPanel(props: TabPanelProps) {
 
 const SeedsPage: React.FC = () => {
   const { seeds, addSeed, deleteSeed, updateSeed, setSeeds } = useSeedContext();
+  const isDesktopGrid = useMediaQuery((theme: Theme) =>
+    theme.breakpoints.up("md")
+  );
+
+  const [seedPageTab, setSeedPageTab] = React.useState(SEED_PAGE_TAB_MANAGE);
 
   // Add state for tab selection (0 = AI Assistant, 1 = Manual Entry)
   const [inputMode, setInputMode] = React.useState(0);
@@ -81,6 +115,10 @@ const SeedsPage: React.FC = () => {
   const [selectedSeed, setSelectedSeed] = React.useState<Seed | null>(null);
   const [isMultiple, setIsMultiple] = React.useState(false);
   const [quantity, setQuantity] = React.useState(1);
+  const [mobileSeedLimit, setMobileSeedLimit] = React.useState(
+    MOBILE_RECORD_INITIAL_LIMIT
+  );
+  const [manageSeedSearch, setManageSeedSearch] = React.useState("");
 
   // Validation states
   const [breederError, setBreederError] = React.useState(false);
@@ -98,6 +136,13 @@ const SeedsPage: React.FC = () => {
   // Handler for tab changes
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setInputMode(newValue);
+  };
+
+  const handleSeedPageTabChange = (
+    _event: React.SyntheticEvent,
+    newValue: number
+  ) => {
+    setSeedPageTab(newValue);
   };
 
   // Return unique breeder names from the seeds array
@@ -444,6 +489,36 @@ const SeedsPage: React.FC = () => {
     },
   ];
 
+  const filteredManageSeeds = React.useMemo(() => {
+    const normalizedQuery = manageSeedSearch.trim().toLowerCase();
+
+    if (!normalizedQuery) {
+      return seeds;
+    }
+
+    return seeds.filter((seed) =>
+      [
+        seed.strain,
+        seed.breeder,
+        seed.generation,
+        seed.lineage,
+        seed.feminized ? "feminized" : "regular",
+        seed.open ? "open pack" : "sealed pack",
+        seed.available ? "available" : "unavailable",
+      ]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(normalizedQuery))
+    );
+  }, [manageSeedSearch, seeds]);
+
+  React.useEffect(() => {
+    setMobileSeedLimit(MOBILE_RECORD_INITIAL_LIMIT);
+  }, [manageSeedSearch]);
+
+  const displayedMobileSeeds = filteredManageSeeds.slice(0, mobileSeedLimit);
+  const hasMoreMobileSeeds =
+    displayedMobileSeeds.length < filteredManageSeeds.length;
+
   return (
     <PageContainer maxWidth="xl">
       <Stack spacing={3}>
@@ -453,6 +528,44 @@ const SeedsPage: React.FC = () => {
           description={`${seeds.length} seed ${seeds.length === 1 ? "entry" : "entries"} in your private collection. Add records manually, with AI assistance, or by CSV.`}
         />
 
+        <Box
+          sx={(theme) => ({
+            border: 1,
+            borderColor: "divider",
+            borderRadius: 999,
+            bgcolor: theme.palette.surface.subtle,
+            overflow: "hidden",
+            p: 0.5,
+          })}
+        >
+          <Tabs
+            value={seedPageTab}
+            onChange={handleSeedPageTabChange}
+            variant="fullWidth"
+            textColor="primary"
+            indicatorColor="primary"
+            aria-label="seed page sections"
+          >
+            <Tab
+              id="seed-page-tab-0"
+              aria-controls="seed-page-tabpanel-0"
+              label="Manage"
+              sx={{ minHeight: 44, fontWeight: 800 }}
+            />
+            <Tab
+              id="seed-page-tab-1"
+              aria-controls="seed-page-tabpanel-1"
+              label="Add"
+              sx={{ minHeight: 44, fontWeight: 800 }}
+            />
+          </Tabs>
+        </Box>
+
+        <TabPanel
+          value={seedPageTab}
+          index={SEED_PAGE_TAB_ADD}
+          idPrefix="seed-page"
+        >
         <SectionCard
           title="Add Seeds"
           description="Use the assistant for fast cataloging, or enter seed details manually."
@@ -630,43 +743,229 @@ const SeedsPage: React.FC = () => {
             </Stack>
           </TabPanel>
         </SectionCard>
+        </TabPanel>
 
+        <TabPanel
+          value={seedPageTab}
+          index={SEED_PAGE_TAB_MANAGE}
+          idPrefix="seed-page"
+        >
         <SectionCard
           title="Seed Records"
           description="Edit availability, inventory, and seed pack details."
-          action={<Chip label={`${seeds.length} total`} size="small" />}
+          action={
+            <Chip
+              label={
+                manageSeedSearch.trim()
+                  ? `${filteredManageSeeds.length} of ${seeds.length}`
+                  : `${seeds.length} total`
+              }
+              size="small"
+            />
+          }
           contentPadding={2.5}
         >
-          <Box sx={{ height: 600, width: "100%", overflowX: "auto" }}>
-            <DataGrid
-              rows={seeds.map((seed) => ({
-                ...seed,
-                id: seed.id,
-              }))}
-              columns={columns}
-              processRowUpdate={processRowUpdate}
-              onProcessRowUpdateError={(error) =>
-                console.error("Error during row update:", error)
-              }
-              rowModesModel={rowModesModel}
-              onRowModesModelChange={(newModel) => setRowModesModel(newModel)}
-              pagination
-              initialState={{
-                pagination: {
-                  rowCount: seeds.length,
-                  paginationModel: {
-                    pageSize: 10,
-                  },
-                },
-              }}
-              pageSizeOptions={[10, 20, 50]}
-              disableRowSelectionOnClick
-              onCellEditStart={(_params, event) => {
-                event.defaultMuiPrevented = true;
-              }}
-            />
+          <TextField
+            label="Search seed records"
+            placeholder="Search by strain, breeder, lineage..."
+            value={manageSeedSearch}
+            onChange={(event) => setManageSeedSearch(event.target.value)}
+            fullWidth
+            sx={{ mb: 2 }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchRounded fontSize="small" />
+                </InputAdornment>
+              ),
+            }}
+          />
+
+          <Box
+            sx={{
+              display: { xs: "grid", md: "none" },
+              gap: 1.25,
+              maxWidth: "100%",
+              minWidth: 0,
+              overflow: "hidden",
+            }}
+          >
+            {displayedMobileSeeds.length === 0 ? (
+              <Box
+                sx={(theme) => ({
+                  border: 1,
+                  borderColor: "divider",
+                  borderRadius: 3,
+                  bgcolor: theme.palette.surface.subtle,
+                  p: 2,
+                })}
+              >
+                <Typography fontWeight={800}>No seed records found</Typography>
+                <Typography color="text.secondary" variant="body2">
+                  Try a different strain, breeder, or lineage search.
+                </Typography>
+              </Box>
+            ) : (
+              displayedMobileSeeds.map((seed) => (
+                <Box key={seed.id} sx={mobileRecordCardSx}>
+                  <Stack spacing={1.25}>
+                    <Box
+                      sx={{
+                        alignItems: "flex-start",
+                        columnGap: 1,
+                        display: "grid",
+                        gridTemplateColumns: "minmax(0, 1fr) auto",
+                        minWidth: 0,
+                      }}
+                    >
+                      <Box sx={{ minWidth: 0, overflow: "hidden" }}>
+                        <Stack
+                          direction="row"
+                          spacing={0.75}
+                          alignItems="center"
+                          sx={{ minWidth: 0 }}
+                        >
+                          {seed.feminized ? (
+                            <Tooltip title="Feminized">
+                              <Female
+                                color="action"
+                                fontSize="small"
+                                titleAccess="Feminized seed"
+                              />
+                            </Tooltip>
+                          ) : null}
+                          <Typography
+                            variant="subtitle2"
+                            fontWeight={900}
+                            noWrap
+                            sx={{ minWidth: 0 }}
+                          >
+                            {seed.strain}
+                          </Typography>
+                        </Stack>
+                        <Typography color="text.secondary" variant="body2" noWrap>
+                          {seed.breeder}
+                        </Typography>
+                      </Box>
+
+                      <Stack direction="row" spacing={0.25}>
+                        <Tooltip title="Edit seed">
+                          <IconButton
+                            aria-label={`Edit ${seed.strain}`}
+                            onClick={() => handleEditClick(seed)}
+                            size="small"
+                            sx={{ minHeight: 44, minWidth: 44 }}
+                          >
+                            <Edit fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Delete seed">
+                          <IconButton
+                            aria-label={`Delete ${seed.strain}`}
+                            color="error"
+                            onClick={() => handleDeleteClick(seed)}
+                            size="small"
+                            sx={{ minHeight: 44, minWidth: 44 }}
+                          >
+                            <Delete fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </Stack>
+                    </Box>
+
+                    <Stack direction="row" flexWrap="wrap" gap={0.75}>
+                      <Chip
+                        label={`${seed.numSeeds} ${
+                          seed.numSeeds === 1 ? "seed" : "seeds"
+                        }`}
+                        size="small"
+                        variant="outlined"
+                      />
+                      {seed.isMultiple && seed.quantity > 1 ? (
+                        <Chip label={`${seed.quantity} packs`} size="small" />
+                      ) : null}
+                      {seed.open ? (
+                        <Chip label="Open pack" size="small" />
+                      ) : null}
+                      {seed.available ? (
+                        <Chip label="Available" color="success" size="small" />
+                      ) : null}
+                      {seed.generation ? (
+                        <Chip
+                          label={`Generation: ${seed.generation}`}
+                          size="small"
+                          variant="outlined"
+                        />
+                      ) : null}
+                    </Stack>
+
+                    {seed.lineage ? (
+                      <Typography
+                        color="text.secondary"
+                        variant="body2"
+                        sx={{ overflowWrap: "anywhere" }}
+                      >
+                        {seed.lineage}
+                      </Typography>
+                    ) : null}
+                  </Stack>
+                </Box>
+              ))
+            )}
+
+            {hasMoreMobileSeeds ? (
+              <Button
+                variant="outlined"
+                onClick={() =>
+                  setMobileSeedLimit(
+                    (currentLimit) => currentLimit + MOBILE_RECORD_INCREMENT
+                  )
+                }
+              >
+                Show next{" "}
+                {Math.min(
+                  MOBILE_RECORD_INCREMENT,
+                  filteredManageSeeds.length - displayedMobileSeeds.length
+                )}{" "}
+                seeds
+              </Button>
+            ) : null}
           </Box>
+
+          {isDesktopGrid ? (
+            <Box sx={{ height: 600, width: "100%", overflowX: "auto" }}>
+              <DataGrid
+                rows={filteredManageSeeds.map((seed) => ({
+                  ...seed,
+                  id: seed.id,
+                }))}
+                columns={columns}
+                processRowUpdate={processRowUpdate}
+                onProcessRowUpdateError={(error) =>
+                  console.error("Error during row update:", error)
+                }
+                rowModesModel={rowModesModel}
+                onRowModesModelChange={(newModel) =>
+                  setRowModesModel(newModel)
+                }
+                pagination
+                initialState={{
+                  pagination: {
+                    paginationModel: {
+                      pageSize: 10,
+                    },
+                  },
+                }}
+                pageSizeOptions={[10, 20, 50]}
+                disableRowSelectionOnClick
+                onCellEditStart={(_params, event) => {
+                  event.defaultMuiPrevented = true;
+                }}
+              />
+            </Box>
+          ) : null}
         </SectionCard>
+        </TabPanel>
 
       {/* Delete Confirmation Dialog */}
       <Dialog

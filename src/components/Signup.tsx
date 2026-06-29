@@ -68,12 +68,6 @@ function Signup() {
       eyebrow="Create account"
       title="Start building your genetics library."
       description="Catalog seeds and clones now, then use Projects to track hunts, washes, photos, and results over time."
-      supportTitle="Built for growers and makers"
-      supportItems={[
-        "Create seed and clone records from your own collection.",
-        "Use private Projects for Pheno Hunt and Wash/Process workflows.",
-        "Keep public collection sharing separate from private project data.",
-      ]}
     >
       <Stack spacing={2.5}>
         <Stack spacing={0.75}>

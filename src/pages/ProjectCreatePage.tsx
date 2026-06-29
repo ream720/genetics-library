@@ -18,7 +18,7 @@ import {
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useCloneContext } from "../context/CloneContext";
@@ -39,6 +39,9 @@ import {
 import { createProject } from "../services/projects";
 import { PageContainer, PageHeader, SectionCard } from "../components/ui";
 
+const SOURCE_PICKER_INITIAL_LIMIT = 8;
+const SOURCE_PICKER_INCREMENT = 12;
+
 const ProjectCreatePage: React.FC = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
@@ -53,6 +56,12 @@ const ProjectCreatePage: React.FC = () => {
   const [selectedCloneIds, setSelectedCloneIds] = useState<string[]>([]);
   const [seedSearchQuery, setSeedSearchQuery] = useState("");
   const [cloneSearchQuery, setCloneSearchQuery] = useState("");
+  const [seedDisplayLimit, setSeedDisplayLimit] = useState(
+    SOURCE_PICKER_INITIAL_LIMIT
+  );
+  const [cloneDisplayLimit, setCloneDisplayLimit] = useState(
+    SOURCE_PICKER_INITIAL_LIMIT
+  );
   const [adHocExpanded, setAdHocExpanded] = useState(false);
   const [adHocBreeder, setAdHocBreeder] = useState("");
   const [adHocStrain, setAdHocStrain] = useState("");
@@ -143,6 +152,36 @@ const ProjectCreatePage: React.FC = () => {
         .includes(queryText);
     });
   }, [cloneSearchQuery, clones, selectedCloneIds]);
+  const displayedSeeds = useMemo(
+    () =>
+      [...filteredSeeds]
+        .sort((a, b) => {
+          const aSelected = selectedSeedIds.includes(a.id);
+          const bSelected = selectedSeedIds.includes(b.id);
+          return Number(bSelected) - Number(aSelected);
+        })
+        .slice(0, seedDisplayLimit),
+    [filteredSeeds, seedDisplayLimit, selectedSeedIds]
+  );
+  const displayedClones = useMemo(
+    () =>
+      [...filteredClones]
+        .sort((a, b) => {
+          const aSelected = Boolean(a.id && selectedCloneIds.includes(a.id));
+          const bSelected = Boolean(b.id && selectedCloneIds.includes(b.id));
+          return Number(bSelected) - Number(aSelected);
+        })
+        .slice(0, cloneDisplayLimit),
+    [cloneDisplayLimit, filteredClones, selectedCloneIds]
+  );
+
+  useEffect(() => {
+    setSeedDisplayLimit(SOURCE_PICKER_INITIAL_LIMIT);
+  }, [seedSearchQuery]);
+
+  useEffect(() => {
+    setCloneDisplayLimit(SOURCE_PICKER_INITIAL_LIMIT);
+  }, [cloneSearchQuery]);
 
   const toggleSeed = (seedId: string) => {
     setSelectedSeedIds((currentIds) =>
@@ -340,18 +379,24 @@ const ProjectCreatePage: React.FC = () => {
             )}
 
             <Stack direction={{ xs: "column", md: "row" }} spacing={2.5}>
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Stack
-                direction="row"
-                justifyContent="space-between"
-                alignItems="center"
-                spacing={1}
-                sx={{ mb: 1 }}
-              >
-                <Typography fontWeight={800}>Seeds</Typography>
-                <Typography color="text.secondary" variant="caption">
-                  {selectedSeeds.length} selected
-                </Typography>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Stack spacing={0.25} sx={{ mb: 1 }}>
+                <Stack
+                  direction="row"
+                  justifyContent="space-between"
+                  alignItems="center"
+                  spacing={1}
+                >
+                  <Typography fontWeight={800}>Seeds</Typography>
+                  <Typography color="text.secondary" variant="caption">
+                    {selectedSeeds.length} selected
+                  </Typography>
+                </Stack>
+                {seeds.length > 0 && (
+                  <Typography color="text.secondary" variant="caption">
+                    Showing {displayedSeeds.length} of {filteredSeeds.length}
+                  </Typography>
+                )}
               </Stack>
               <TextField
                 label="Search seeds"
@@ -380,23 +425,12 @@ const ProjectCreatePage: React.FC = () => {
                 <Stack
                   spacing={0.75}
                   sx={(theme) => ({
-                    maxHeight: 300,
-                    overflowY: "auto",
-                    overscrollBehavior: "contain",
                     p: 0.75,
                     borderRadius: 3,
                     bgcolor: theme.palette.surface.sunken,
-                    scrollbarWidth: "thin",
-                    scrollbarColor: `${theme.palette.primary.main} transparent`,
-                    "&::-webkit-scrollbar": { width: 8 },
-                    "&::-webkit-scrollbar-track": { background: "transparent" },
-                    "&::-webkit-scrollbar-thumb": {
-                      backgroundColor: theme.palette.primary.main,
-                      borderRadius: 999,
-                    },
                   })}
                 >
-                  {filteredSeeds.map((seed) => {
+                  {displayedSeeds.map((seed) => {
                     const selected = selectedSeedIds.includes(seed.id);
 
                     return (
@@ -442,20 +476,49 @@ const ProjectCreatePage: React.FC = () => {
                   })}
                 </Stack>
               )}
-            </Box>
+                {displayedSeeds.length < filteredSeeds.length && (
+                  <Button
+                    variant="text"
+                    onClick={() =>
+                      setSeedDisplayLimit(
+                        (currentLimit) =>
+                          currentLimit + SOURCE_PICKER_INCREMENT
+                      )
+                    }
+                    sx={{
+                      mt: 1,
+                      minHeight: 44,
+                      width: { xs: "100%", sm: "auto" },
+                    }}
+                  >
+                    Show next{" "}
+                    {Math.min(
+                      SOURCE_PICKER_INCREMENT,
+                      filteredSeeds.length - displayedSeeds.length
+                    )}{" "}
+                    seeds
+                  </Button>
+                )}
+              </Box>
 
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Stack
-                direction="row"
-                justifyContent="space-between"
-                alignItems="center"
-                spacing={1}
-                sx={{ mb: 1 }}
-              >
-                <Typography fontWeight={800}>Clones</Typography>
-                <Typography color="text.secondary" variant="caption">
-                  {selectedClones.length} selected
-                </Typography>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Stack spacing={0.25} sx={{ mb: 1 }}>
+                <Stack
+                  direction="row"
+                  justifyContent="space-between"
+                  alignItems="center"
+                  spacing={1}
+                >
+                  <Typography fontWeight={800}>Clones</Typography>
+                  <Typography color="text.secondary" variant="caption">
+                    {selectedClones.length} selected
+                  </Typography>
+                </Stack>
+                {clones.length > 0 && (
+                  <Typography color="text.secondary" variant="caption">
+                    Showing {displayedClones.length} of {filteredClones.length}
+                  </Typography>
+                )}
               </Stack>
               <TextField
                 label="Search clones"
@@ -484,23 +547,12 @@ const ProjectCreatePage: React.FC = () => {
                 <Stack
                   spacing={0.75}
                   sx={(theme) => ({
-                    maxHeight: 300,
-                    overflowY: "auto",
-                    overscrollBehavior: "contain",
                     p: 0.75,
                     borderRadius: 3,
                     bgcolor: theme.palette.surface.sunken,
-                    scrollbarWidth: "thin",
-                    scrollbarColor: `${theme.palette.primary.main} transparent`,
-                    "&::-webkit-scrollbar": { width: 8 },
-                    "&::-webkit-scrollbar-track": { background: "transparent" },
-                    "&::-webkit-scrollbar-thumb": {
-                      backgroundColor: theme.palette.primary.main,
-                      borderRadius: 999,
-                    },
                   })}
                 >
-                  {filteredClones.map((clone) => {
+                  {displayedClones.map((clone) => {
                     const selected = Boolean(
                       clone.id && selectedCloneIds.includes(clone.id)
                     );
@@ -548,7 +600,30 @@ const ProjectCreatePage: React.FC = () => {
                   })}
                 </Stack>
               )}
-            </Box>
+                {displayedClones.length < filteredClones.length && (
+                  <Button
+                    variant="text"
+                    onClick={() =>
+                      setCloneDisplayLimit(
+                        (currentLimit) =>
+                          currentLimit + SOURCE_PICKER_INCREMENT
+                      )
+                    }
+                    sx={{
+                      mt: 1,
+                      minHeight: 44,
+                      width: { xs: "100%", sm: "auto" },
+                    }}
+                  >
+                    Show next{" "}
+                    {Math.min(
+                      SOURCE_PICKER_INCREMENT,
+                      filteredClones.length - displayedClones.length
+                    )}{" "}
+                    clones
+                  </Button>
+                )}
+              </Box>
             </Stack>
           </Stack>
         </SectionCard>
@@ -627,7 +702,10 @@ const ProjectCreatePage: React.FC = () => {
         <Box
           sx={(theme) => ({
             position: { xs: "sticky", sm: "static" },
-            bottom: { xs: 0, sm: "auto" },
+            bottom: {
+              xs: "calc(68px + env(safe-area-inset-bottom))",
+              sm: "auto",
+            },
             zIndex: 2,
             mx: { xs: -2, sm: 0 },
             px: { xs: 2, sm: 0 },

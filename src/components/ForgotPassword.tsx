@@ -82,12 +82,6 @@ function ForgotPassword() {
       eyebrow="Account recovery"
       title="Reset your password."
       description="Enter the email attached to your Genetics Library account and we will send a password reset link."
-      supportTitle="Before you reset"
-      supportItems={[
-        "Use the same email you used when signing up.",
-        "The reset link is sent by Firebase Authentication.",
-        "Return to login after you update your password.",
-      ]}
     >
       <Stack spacing={2.5}>
         <Stack spacing={0.75}>
