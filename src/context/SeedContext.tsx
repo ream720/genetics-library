@@ -38,7 +38,7 @@ export const SeedProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [seeds, setSeeds] = useState<Seed[]>([]);
-  const { currentUser } = useAuth();
+  const { currentUser, assertCurrentLegalAcceptance } = useAuth();
 
   const fetchSeeds = useCallback(async () => {
     try {
@@ -71,6 +71,7 @@ export const SeedProvider: React.FC<{ children: React.ReactNode }> = ({
         console.error("Cannot add seed: User not logged in.");
         return; // Prevent adding seeds when not logged in
       }
+      assertCurrentLegalAcceptance();
 
       const seedData = {
         ...seed,
@@ -102,6 +103,8 @@ export const SeedProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const updateSeed = async (id: string, updatedSeed: Partial<Seed>) => {
     try {
+      assertCurrentLegalAcceptance();
+
       // Optimistic Update: Update local state immediately
       setSeeds((prevSeeds) => {
         const updatedSeeds = prevSeeds.map((s) =>

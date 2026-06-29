@@ -6,6 +6,11 @@ import { createSeedAssistantFlows } from "./flows/seedAssistant.js";
 import { SEED_ASSISTANT_MODEL_NAME } from "./lib/genkit.js";
 import { adminDb } from "./lib/admin.js";
 import {
+  assertCurrentLegalAcceptance,
+  validateLegalAcceptedFrom,
+  writeCurrentLegalAcceptance,
+} from "./legal.js";
+import {
   deleteOwnedProjectData,
   validateProjectId,
 } from "./projects.js";
@@ -26,6 +31,29 @@ import {
 // Define email password as a secret parameter
 const emailPassword = defineSecret("EMAIL_PASSWORD");
 const googleAiKey = defineSecret("GOOGLE_AI_API_KEY");
+
+export const acceptCurrentLegalTerms = onCall(
+  {
+    enforceAppCheck: false,
+    maxInstances: 10,
+  },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError(
+        "unauthenticated",
+        "Sign in to accept the Terms of Service."
+      );
+    }
+
+    const acceptedFrom = validateLegalAcceptedFrom(request.data);
+    return writeCurrentLegalAcceptance({
+      db: adminDb,
+      uid: request.auth.uid,
+      acceptedFrom,
+      email: request.auth.token.email,
+    });
+  }
+);
 
 export const deleteProjectData = onCall(
   {
@@ -122,6 +150,8 @@ export const analyzeSeed = onCall(
     }
 
     const uid = request.auth.uid;
+    await assertCurrentLegalAcceptance(adminDb, uid);
+
     const startTimeMs = Date.now();
     let validatedData: ValidatedAnalyzeSeedData;
 

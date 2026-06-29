@@ -17,6 +17,10 @@ import { app } from "../../firebaseConfig";
 import { removeUndefinedFields } from "../lib/v2/firestore";
 import { V2_COLLECTIONS } from "../lib/v2/projectPaths";
 import {
+  assertCurrentUserCanWrite,
+  assertUserCanWrite,
+} from "./legalAcceptance";
+import {
   ProjectAddendum,
   ProjectBase,
   ProjectStatus,
@@ -94,6 +98,8 @@ export const getProject = async (
 export const createProject = async (
   input: CreateProjectInput
 ): Promise<ProjectBase> => {
+  await assertUserCanWrite(input.ownerId);
+
   const timestamp = nowIsoString();
   const project: Omit<ProjectBase, "id"> = {
     ...input,
@@ -114,6 +120,8 @@ export const updateProject = async (
   projectId: string,
   updates: UpdateProjectInput
 ) => {
+  await assertCurrentUserCanWrite();
+
   const timestamp = nowIsoString();
   await updateDoc(
     projectDocRef(projectId),
@@ -148,6 +156,8 @@ export const createProjectAddendum = async ({
   text,
   photoIds,
 }: CreateProjectAddendumInput): Promise<ProjectAddendum> => {
+  await assertUserCanWrite(ownerId);
+
   const cleanText = text.trim();
   if (!cleanText) {
     throw new Error("Addendum text is required.");

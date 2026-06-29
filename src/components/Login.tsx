@@ -19,6 +19,7 @@ import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import GoogleIcon from "@mui/icons-material/Google";
 import AuthPanel from "./auth/AuthPanel";
+import LegalAgreementCheckbox from "./auth/LegalAgreementCheckbox";
 
 interface LocationState {
   from?: {
@@ -37,6 +38,7 @@ function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [profileError, setProfileError] = useState("");
+  const [acceptedProfileTerms, setAcceptedProfileTerms] = useState(false);
 
   const location = useLocation() as { state?: LocationState };
   const navigate = useNavigate();
@@ -86,11 +88,19 @@ function Login() {
       return;
     }
 
+    if (!acceptedProfileTerms) {
+      setProfileError(
+        "Accept the Terms of Service and Privacy Policy to complete setup."
+      );
+      return;
+    }
+
     try {
       setProfileError("");
       setLoading(true);
       await completeGoogleSignup(usernameRef.current.value);
       setShowProfileDialog(false);
+      setAcceptedProfileTerms(false);
     } catch (error) {
       if (error instanceof Error) {
         setProfileError(error.message);
@@ -201,6 +211,11 @@ function Login() {
               inputRef={usernameRef}
               required
               autoComplete="username"
+            />
+            <LegalAgreementCheckbox
+              checked={acceptedProfileTerms}
+              disabled={loading}
+              onChange={setAcceptedProfileTerms}
             />
           </Stack>
         </DialogContent>

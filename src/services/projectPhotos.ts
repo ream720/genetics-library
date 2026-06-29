@@ -26,6 +26,10 @@ import {
   ProjectPhotoContentType,
   ProjectPhotoContextType,
 } from "../types/v2";
+import {
+  assertCurrentUserCanWrite,
+  assertUserCanWrite,
+} from "./legalAcceptance";
 
 const db = getFirestore(app);
 const storage = getStorage(app);
@@ -167,6 +171,8 @@ export const uploadProjectPhoto = async ({
     throw new Error("Photo context is required.");
   }
 
+  await assertUserCanWrite(ownerId);
+
   const processedImage = await processProjectImage(file);
   const photoRef = doc(collection(db, V2_COLLECTIONS.projectPhotos));
   const storagePath = projectMediaPath({
@@ -250,6 +256,8 @@ export const updateProjectPhotoCaption = async (
   photoId: string,
   caption: string
 ) => {
+  await assertCurrentUserCanWrite();
+
   await updateDoc(doc(db, V2_COLLECTIONS.projectPhotos, photoId), {
     caption: caption.trim(),
   });
@@ -262,6 +270,8 @@ export const reassignProjectPhotos = async (
   if (!contextId || photoIds.length === 0) {
     return;
   }
+
+  await assertCurrentUserCanWrite();
 
   const uniquePhotoIds = Array.from(new Set(photoIds));
   const photos = (

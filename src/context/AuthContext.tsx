@@ -32,9 +32,18 @@ import {
   logAnalyticsEvent,
 } from "../../firebaseConfig";
 import { UsernameAlreadyInUseError } from "../errors/UsernameAlreadyInUserError";
+import { acceptCurrentLegalTermsFunc } from "../lib/firebase";
+import {
+  LegalAcceptedFrom,
+  UserTermsAcceptance,
+  assertLegalAcceptanceForWrite,
+  hasCurrentLegalAcceptance as hasAcceptedCurrentLegalTerms,
+  readUserTermsAcceptance,
+} from "../lib/legal";
 
 interface ExtendedUser extends User {
   username?: string;
+  termsAcceptance?: UserTermsAcceptance;
 }
 
 interface AuthContextProps {
@@ -51,6 +60,12 @@ interface AuthContextProps {
   resetPassword: (email: string) => Promise<void>;
   completeGoogleSignup: (username: string) => Promise<void>;
   updateUserProfile: (photoURL: string) => Promise<void>; // Add this line
+  hasCurrentLegalAcceptance: boolean;
+  needsLegalAcceptance: boolean;
+  acceptCurrentLegalTerms: (
+    acceptedFrom?: LegalAcceptedFrom
+  ) => Promise<UserTermsAcceptance>;
+  assertCurrentLegalAcceptance: () => void;
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
@@ -66,6 +81,12 @@ export function useAuth() {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<ExtendedUser | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const hasCurrentLegalAcceptance = hasAcceptedCurrentLegalTerms(
+    currentUser?.termsAcceptance
+  );
+  const needsLegalAcceptance = Boolean(
+    currentUser?.username && !hasCurrentLegalAcceptance
+  );
 
   // Check if username exists
   const checkUsernameExists = async (username: string): Promise<boolean> => {
@@ -76,6 +97,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
     const querySnapshot = await getDocs(q);
     return !querySnapshot.empty;
+  };
+
+  const acceptCurrentLegalTerms = async (
+    acceptedFrom: LegalAcceptedFrom = "blocking_prompt"
+  ) => {
+    const result = await acceptCurrentLegalTermsFunc({ acceptedFrom });
+    const termsAcceptance = result.data;
+
+    setCurrentUser((prev) =>
+      prev ? ({ ...prev, termsAcceptance } as ExtendedUser) : prev
+    );
+
+    return termsAcceptance;
+  };
+
+  const assertCurrentLegalAcceptance = () => {
+    assertLegalAcceptanceForWrite(hasCurrentLegalAcceptance);
   };
 
   // Sign up function
@@ -101,6 +139,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       userNameLower: username.toLowerCase(),
     });
 
+    const termsAcceptance = await acceptCurrentLegalTerms("signup");
+    setCurrentUser({
+      ...user,
+      username,
+      termsAcceptance,
+    } as ExtendedUser);
+
     return userCredential;
   };
 
@@ -124,8 +169,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       { merge: true }
     );
 
+    const termsAcceptance = await acceptCurrentLegalTerms("signup");
+
     setCurrentUser((prev) =>
-      prev ? ({ ...prev, username } as ExtendedUser) : null
+      prev ? ({ ...prev, username, termsAcceptance } as ExtendedUser) : null
     );
   };
 
@@ -163,9 +210,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userDoc = await getDoc(userDocRef);
 
         if (userDoc.exists()) {
+          const userData = userDoc.data();
           setCurrentUser({
             ...user,
-            username: userDoc.data().username,
+            username: userData.username,
+            termsAcceptance: readUserTermsAcceptance(
+              userData.termsAcceptance
+            ),
           } as ExtendedUser);
         } else {
           setCurrentUser(user as ExtendedUser);
@@ -185,6 +236,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!auth.currentUser) {
       throw new Error("No user signed in");
     }
+
+    assertCurrentLegalAcceptance();
 
     // Use the imported updateProfile function
     await updateProfile(auth.currentUser, { photoURL });
@@ -210,6 +263,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     resetPassword,
     completeGoogleSignup,
     updateUserProfile,
+    hasCurrentLegalAcceptance,
+    needsLegalAcceptance,
+    acceptCurrentLegalTerms,
+    assertCurrentLegalAcceptance,
   };
 
   return (

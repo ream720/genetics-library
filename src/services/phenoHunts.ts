@@ -14,6 +14,10 @@ import {
 import { app } from "../../firebaseConfig";
 import { removeUndefinedFields } from "../lib/v2/firestore";
 import { V2_COLLECTIONS } from "../lib/v2/projectPaths";
+import {
+  assertCurrentUserCanWrite,
+  assertUserCanWrite,
+} from "./legalAcceptance";
 import { Clone } from "../types";
 import {
   FinalLabel,
@@ -250,6 +254,8 @@ export const getPhenoHuntData = async (
 export const initializePhenoGroupsFromProject = async (
   project: ProjectBase
 ): Promise<PhenoComparisonGroup[]> => {
+  await assertUserCanWrite(project.ownerId);
+
   if (!project.id) {
     throw new Error("Project ID is required to initialize pheno groups.");
   }
@@ -329,6 +335,8 @@ export const updatePhenoGroup = async (
   groupId: string,
   updates: UpdatePhenoGroupInput
 ) => {
+  await assertCurrentUserCanWrite();
+
   await updateDoc(
     doc(db, V2_COLLECTIONS.phenoGroups, groupId),
     removeUndefinedFields({
@@ -376,6 +384,8 @@ export const setPhenoGroupPlantedCount = async ({
   ownerId,
   plantedCount,
 }: SetPlantedCountInput) => {
+  await assertUserCanWrite(ownerId);
+
   if (!group.id) {
     throw new Error("Group ID is required.");
   }
@@ -504,6 +514,8 @@ export const savePlantEvaluation = async ({
   notes,
   photoIds,
 }: SavePlantEvaluationInput) => {
+  await assertUserCanWrite(plant.ownerId);
+
   if (!plant.id) {
     throw new Error("Plant ID is required.");
   }
@@ -565,6 +577,8 @@ export const updatePhenotypeFinalLabels = async ({
   finalLabels,
   keeperRemovalCloneAction,
 }: UpdatePhenotypeFinalLabelsInput) => {
+  await assertUserCanWrite(project.ownerId);
+
   if (!project.id) {
     throw new Error("Project ID is required.");
   }
@@ -650,6 +664,8 @@ export const updatePhysicalPlant = async ({
   stageNotes,
   photoIds,
 }: UpdatePhysicalPlantInput) => {
+  await assertUserCanWrite(plant.ownerId);
+
   if (!plant.id) {
     throw new Error("Plant ID is required.");
   }

@@ -28,6 +28,8 @@ import {
 const PROJECT_ID = "demo-genetics-library-v2";
 const OWNER_ID = "owner-user";
 const OTHER_USER_ID = "other-user";
+const CURRENT_TERMS_VERSION = "2024-12-01";
+const CURRENT_PRIVACY_VERSION = "2024-12-01";
 const ROOT_DIR = path.resolve(import.meta.dirname, "..");
 const firestoreRules = fs.readFileSync(
   path.join(ROOT_DIR, "firestore.rules"),
@@ -108,6 +110,18 @@ const storageMetadata = ({
   },
 });
 
+const acceptedUserData = (uid) => ({
+  email: `${uid}@example.test`,
+  username: uid,
+  userNameLower: uid.toLowerCase(),
+  termsAcceptance: {
+    termsVersion: CURRENT_TERMS_VERSION,
+    privacyVersion: CURRENT_PRIVACY_VERSION,
+    acceptedAt: "2026-06-29T00:00:00.000Z",
+    acceptedFrom: "signup",
+  },
+});
+
 const seedFirestore = async (entries) => {
   await testEnv.withSecurityRulesDisabled(async (context) => {
     await Promise.all(
@@ -116,6 +130,12 @@ const seedFirestore = async (entries) => {
       )
     );
   });
+};
+
+const seedAcceptedUsers = async (userIds = [OWNER_ID, OTHER_USER_ID]) => {
+  await seedFirestore(
+    userIds.map((uid) => [`users/${uid}`, acceptedUserData(uid)])
+  );
 };
 
 before(async () => {
@@ -140,7 +160,87 @@ after(async () => {
   await testEnv.cleanup();
 });
 
+test("legal acceptance is server-owned and profile setup remains available", async () => {
+  const newUserId = "new-user";
+  const newUserDb = testEnv.authenticatedContext(newUserId).firestore();
+  const userRef = doc(newUserDb, "users", newUserId);
+
+  await assertFails(setDoc(userRef, acceptedUserData(newUserId)));
+  await assertSucceeds(
+    setDoc(userRef, {
+      email: "new-user@example.test",
+      username: "new-user",
+      userNameLower: "new-user",
+    })
+  );
+  await assertSucceeds(
+    updateDoc(userRef, {
+      username: "new-name",
+      userNameLower: "new-name",
+    })
+  );
+  await assertFails(
+    updateDoc(userRef, {
+      termsAcceptance: acceptedUserData(newUserId).termsAcceptance,
+    })
+  );
+  await assertFails(updateDoc(userRef, { contactInfo: "Find me here." }));
+  await assertFails(
+    setDoc(doc(newUserDb, "termsAcceptances/new-user_2024-12-01_2024-12-01"), {
+      uid: newUserId,
+      ...acceptedUserData(newUserId).termsAcceptance,
+    })
+  );
+});
+
+test("accepted users can update account contact and payment fields", async () => {
+  await seedAcceptedUsers([OWNER_ID]);
+
+  const ownerDb = testEnv.authenticatedContext(OWNER_ID).firestore();
+  const userRef = doc(ownerDb, "users", OWNER_ID);
+
+  await assertSucceeds(updateDoc(userRef, { contactInfo: "Email preferred." }));
+  await assertSucceeds(updateDoc(userRef, { paymentMethods: ["Cash"] }));
+});
+
+test("protected app writes require current legal acceptance while deletes remain available", async () => {
+  const ownerDb = testEnv.authenticatedContext(OWNER_ID).firestore();
+
+  await assertFails(
+    setDoc(doc(ownerDb, "seeds/seed-1"), {
+      userId: OWNER_ID,
+      breeder: "Archive",
+      strain: "Rainbow Belts",
+    })
+  );
+  await seedFirestore([
+    [
+      "seeds/delete-seed",
+      {
+        userId: OWNER_ID,
+        breeder: "Archive",
+        strain: "Delete Me",
+      },
+    ],
+  ]);
+  await assertSucceeds(deleteDoc(doc(ownerDb, "seeds/delete-seed")));
+
+  await seedAcceptedUsers([OWNER_ID]);
+  await assertSucceeds(
+    setDoc(doc(ownerDb, "seeds/seed-1"), {
+      userId: OWNER_ID,
+      breeder: "Archive",
+      strain: "Rainbow Belts",
+    })
+  );
+  await assertSucceeds(updateDoc(doc(ownerDb, "seeds/seed-1"), { notes: "OK" }));
+  await assertSucceeds(
+    setDoc(doc(ownerDb, "projects/accepted-project"), projectData("planning"))
+  );
+});
+
 test("project access is private and direct project deletion is denied", async () => {
+  await seedAcceptedUsers();
   await seedFirestore([["projects/active-project", projectData("in_progress")]]);
 
   const ownerDb = testEnv.authenticatedContext(OWNER_ID).firestore();
@@ -178,6 +278,8 @@ test("project access is private and direct project deletion is denied", async ()
 });
 
 test("users can create only projects owned by their authenticated identity", async () => {
+  await seedAcceptedUsers();
+
   const ownerDb = testEnv.authenticatedContext(OWNER_ID).firestore();
   const anonymousDb = testEnv.unauthenticatedContext().firestore();
 
@@ -199,6 +301,7 @@ test("users can create only projects owned by their authenticated identity", asy
 });
 
 test("active child records are owner-writable and private", async () => {
+  await seedAcceptedUsers();
   await seedFirestore([["projects/active-project", projectData("in_progress")]]);
 
   const ownerDb = testEnv.authenticatedContext(OWNER_ID).firestore();
@@ -223,6 +326,7 @@ test("active child records are owner-writable and private", async () => {
 });
 
 test("completed projects and their result records are immutable", async () => {
+  await seedAcceptedUsers();
   await seedFirestore([
     ["projects/complete-project", projectData("complete")],
     ["physicalPlants/plant-1", childData("complete-project")],
@@ -246,6 +350,7 @@ test("completed projects and their result records are immutable", async () => {
 });
 
 test("addenda are complete-project-only and append-only", async () => {
+  await seedAcceptedUsers();
   await seedFirestore([
     ["projects/active-project", projectData("in_progress")],
     ["projects/complete-project", projectData("complete")],
@@ -276,6 +381,7 @@ test("addenda are complete-project-only and append-only", async () => {
 });
 
 test("completed-project photo metadata permits drafts then locks saved addenda", async () => {
+  await seedAcceptedUsers();
   await seedFirestore([["projects/complete-project", projectData("complete")]]);
 
   const ownerDb = testEnv.authenticatedContext(OWNER_ID).firestore();
@@ -310,6 +416,7 @@ test("completed-project photo metadata permits drafts then locks saved addenda",
 });
 
 test("active project media is private and owner-writable", async () => {
+  await seedAcceptedUsers();
   await seedFirestore([["projects/active-project", projectData("in_progress")]]);
 
   const ownerStorage = testEnv.authenticatedContext(OWNER_ID).storage();
@@ -341,7 +448,42 @@ test("active project media is private and owner-writable", async () => {
   await assertSucceeds(deleteObject(ownerRef));
 });
 
+test("storage uploads require current legal acceptance and deletes stay available", async () => {
+  await seedFirestore([["projects/active-project", projectData("in_progress")]]);
+
+  const ownerContext = testEnv.authenticatedContext(OWNER_ID);
+  const ownerStorage = ownerContext.storage();
+  const ownerDb = ownerContext.firestore();
+  const projectPath =
+    "projectMedia/owner-user/active-project/plant/plant-1/blocked.jpg";
+  const projectRef = ref(ownerStorage, projectPath);
+  const avatarRef = ref(ownerStorage, "avatars/owner-user");
+  const metadata = storageMetadata({
+    projectId: "active-project",
+    contextType: "plant",
+    contextId: "plant-1",
+  });
+
+  await assertFails(uploadString(projectRef, "photo", "raw", metadata));
+  await assertFails(
+    uploadString(avatarRef, "avatar", "raw", { contentType: "image/png" })
+  );
+
+  await seedAcceptedUsers([OWNER_ID]);
+  await assertSucceeds(uploadString(projectRef, "photo", "raw", metadata));
+  await assertSucceeds(
+    uploadString(avatarRef, "avatar", "raw", { contentType: "image/png" })
+  );
+
+  await testEnv.withSecurityRulesDisabled((context) =>
+    deleteDoc(doc(context.firestore(), "users", OWNER_ID))
+  );
+  await assertSucceeds(deleteObject(projectRef));
+  await assertSucceeds(deleteObject(avatarRef));
+});
+
 test("completed core media is locked while addendum drafts remain usable", async () => {
+  await seedAcceptedUsers();
   await seedFirestore([["projects/active-project", projectData("in_progress")]]);
 
   const ownerContext = testEnv.authenticatedContext(OWNER_ID);

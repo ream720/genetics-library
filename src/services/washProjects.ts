@@ -20,6 +20,7 @@ import {
 } from "../lib/v2/calculations";
 import { removeUndefinedFields } from "../lib/v2/firestore";
 import { V2_COLLECTIONS } from "../lib/v2/projectPaths";
+import { assertUserCanWrite } from "./legalAcceptance";
 import {
   DryHashWeightSource,
   MaterialType,
@@ -248,6 +249,8 @@ export const saveWashSession = async ({
   notes,
   photoIds,
 }: SaveWashSessionInput): Promise<string> => {
+  await assertUserCanWrite(project.ownerId);
+
   if (!project.id) {
     throw new Error("Project ID is required.");
   }
@@ -397,6 +400,8 @@ export const saveWashRun = async ({
   micronFractions,
   pressRecord,
 }: SaveWashRunInput): Promise<string> => {
+  await assertUserCanWrite(project.ownerId);
+
   if (!project.id) {
     throw new Error("Project ID is required.");
   }

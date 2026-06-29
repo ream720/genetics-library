@@ -1,9 +1,10 @@
-import { type FormEvent, useRef, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import {
   Alert,
   Button,
+  CircularProgress,
   IconButton,
   InputAdornment,
   Link as MuiLink,
@@ -16,22 +17,38 @@ import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { UsernameAlreadyInUseError } from "../errors/UsernameAlreadyInUserError";
 import { FirebaseError } from "firebase/app";
 import AuthPanel from "./auth/AuthPanel";
+import LegalAgreementCheckbox from "./auth/LegalAgreementCheckbox";
 
 function Signup() {
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
   const usernameRef = useRef<HTMLInputElement>(null);
-  const { signup } = useAuth();
+  const { signup, currentUser, hasCurrentLegalAcceptance } = useAuth();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [acceptedLegalTerms, setAcceptedLegalTerms] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (loading && currentUser?.username && hasCurrentLegalAcceptance) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [currentUser?.username, hasCurrentLegalAcceptance, loading, navigate]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
 
     try {
       setError("");
+
+      if (!acceptedLegalTerms) {
+        setError(
+          "Accept the Terms of Service and Privacy Policy to create an account."
+        );
+        return;
+      }
+
       setLoading(true);
       if (emailRef.current && passwordRef.current && usernameRef.current) {
         await signup(
@@ -39,8 +56,6 @@ function Signup() {
           passwordRef.current.value,
           usernameRef.current.value
         );
-
-        navigate("/dashboard");
       }
     } catch (err: unknown) {
       if (err instanceof UsernameAlreadyInUseError) {
@@ -58,7 +73,6 @@ function Signup() {
       } else {
         setError("An unknown error occurred.");
       }
-    } finally {
       setLoading(false);
     }
   }
@@ -80,6 +94,14 @@ function Signup() {
         </Stack>
 
         {error && <Alert severity="error">{error}</Alert>}
+        {loading && (
+          <Alert
+            severity="info"
+            icon={<CircularProgress color="inherit" size={18} />}
+          >
+            Creating your account and preparing your dashboard...
+          </Alert>
+        )}
 
         <Stack component="form" spacing={2} onSubmit={handleSubmit} noValidate>
           <TextField
@@ -89,6 +111,7 @@ function Signup() {
             required
             fullWidth
             autoComplete="username"
+            disabled={loading}
           />
           <TextField
             label="Email"
@@ -97,6 +120,7 @@ function Signup() {
             required
             fullWidth
             autoComplete="email"
+            disabled={loading}
           />
           <TextField
             label="Password"
@@ -106,6 +130,7 @@ function Signup() {
             fullWidth
             autoComplete="new-password"
             helperText="Use at least 6 characters."
+            disabled={loading}
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
@@ -119,6 +144,11 @@ function Signup() {
                 </InputAdornment>
               ),
             }}
+          />
+          <LegalAgreementCheckbox
+            checked={acceptedLegalTerms}
+            disabled={loading}
+            onChange={setAcceptedLegalTerms}
           />
           <Button disabled={loading} type="submit" variant="contained" fullWidth>
             {loading ? "Creating account..." : "Create account"}
