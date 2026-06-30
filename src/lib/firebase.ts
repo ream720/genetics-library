@@ -1,8 +1,9 @@
 // src/lib/firebase.ts
+import { onAuthStateChanged, type User } from "firebase/auth";
 import { getFunctions, httpsCallable } from "firebase/functions";
-import { app } from "../../firebaseConfig";
+import { app, auth } from "../../firebaseConfig";
 import type { LegalAcceptedFrom, UserTermsAcceptance } from "./legal";
-import { assertCurrentUserCanWrite } from "../services/legalAcceptance";
+import { assertUserCanWrite } from "../services/legalAcceptance";
 import type { SeedAssistantResponse } from "../schemas/seedSchemas";
 
 export const AI_ASSISTANT_MAX_MESSAGE_CHARS = 2000;
@@ -22,6 +23,50 @@ interface AcceptCurrentLegalTermsRequest {
 }
 
 const functions = getFunctions(app);
+
+const requireCallableAuthUser = () => {
+  if (auth.currentUser) {
+    return Promise.resolve(auth.currentUser);
+  }
+
+  return new Promise<User>((resolve, reject) => {
+    let settled = false;
+    let unsubscribe = () => {};
+
+    const finish = (callback: () => void) => {
+      if (settled) {
+        return;
+      }
+
+      settled = true;
+      unsubscribe();
+      window.clearTimeout(timeoutId);
+      callback();
+    };
+
+    const timeoutId = window.setTimeout(() => {
+      finish(() => reject(new Error("Sign in before using the AI assistant.")));
+    }, 5000);
+
+    unsubscribe = onAuthStateChanged(
+      auth,
+      (user) => {
+        finish(() => {
+          if (user) {
+            resolve(user);
+          } else {
+            reject(new Error("Sign in before using the AI assistant."));
+          }
+        });
+      },
+      () => {
+        finish(() =>
+          reject(new Error("Unable to verify your sign-in. Please try again."))
+        );
+      }
+    );
+  });
+};
 
 export function getCallableErrorMessage(err: unknown, fallback: string) {
   if (err instanceof Error && err.message) {
@@ -43,6 +88,8 @@ export const acceptCurrentLegalTermsFunc = httpsCallable<
 >(functions, "acceptCurrentLegalTerms");
 
 export const analyzeSeedFunc = async (request: AnalyzeSeedRequest) => {
-  await assertCurrentUserCanWrite();
+  const user = await requireCallableAuthUser();
+  await user.getIdToken();
+  await assertUserCanWrite(user.uid);
   return analyzeSeedCallable(request);
 };
