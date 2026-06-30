@@ -18,6 +18,7 @@ import {
   useMediaQuery,
   useTheme,
   IconButton,
+  alpha,
 } from "@mui/material";
 import {
   Send as SendIcon,
@@ -88,6 +89,7 @@ export default function ConversationalSeedAssistant() {
   const [compressingImage, setCompressingImage] = useState(false);
   const [previewSeed, setPreviewSeed] = useState<Seed>(emptySeed);
   const [showSeedPreview, setShowSeedPreview] = useState(false);
+  const [addingPreviewSeed, setAddingPreviewSeed] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState<{
@@ -408,6 +410,12 @@ export default function ConversationalSeedAssistant() {
   };
 
   const handleAddToCatalog = async (seedData: SeedAssistantResponse) => {
+    if (addingPreviewSeed) {
+      return;
+    }
+
+    setAddingPreviewSeed(true);
+
     try {
       // Create a complete Seed object that satisfies the Seed type
       const newSeed: Seed = {
@@ -443,6 +451,8 @@ export default function ConversationalSeedAssistant() {
         message: "Failed to add seed to catalog",
         severity: "error",
       });
+    } finally {
+      setAddingPreviewSeed(false);
     }
   };
 
@@ -769,33 +779,94 @@ export default function ConversationalSeedAssistant() {
                 </CardContent>
                 <CardActions
                   sx={{
-                    justifyContent: "space-between",
-                    py: 0.5,
-                    px: { xs: 2, sm: 3 },
+                    justifyContent: { xs: "center", sm: "flex-end" },
+                    alignItems: { xs: "stretch", sm: "center" },
+                    pt: { xs: 1, sm: 1.25 },
+                    pb: { xs: 2, sm: 2 },
+                    px: { xs: 2.5, sm: 3 },
                     mt: "auto",
                   }}
                 >
-                  <Typography color="text.secondary" variant="caption">
-                    Will be added today
-                  </Typography>
-
-                  {/* Add button integrated into card for better UX */}
-                  <Tooltip title="Add to Collection">
-                    <IconButton
-                      color="primary"
-                      onClick={() => {
-                        const lastSeedData = [...messages]
-                          .reverse()
-                          .find((msg) => msg.seedData)?.seedData;
-
-                        if (lastSeedData) {
-                          handleAddToCatalog(lastSeedData);
-                        }
+                  <Tooltip title="Add seed to your collection">
+                    <Box
+                      component="span"
+                      sx={{
+                        alignSelf: { xs: "stretch", sm: "center" },
+                        display: "inline-flex",
+                        pb: { xs: 0.25, sm: 0 },
+                        width: { xs: "100%", sm: "auto" },
                       }}
-                      size="small"
                     >
-                      <AddCircleOutline />
-                    </IconButton>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        size="small"
+                        startIcon={
+                          addingPreviewSeed ? (
+                            <CircularProgress color="inherit" size={16} />
+                          ) : (
+                            <AddCircleOutline />
+                          )
+                        }
+                        disabled={addingPreviewSeed}
+                        aria-label={`Add ${
+                          previewSeed.strain || "seed"
+                        } to collection`}
+                        onClick={() => {
+                          const lastSeedData = [...messages]
+                            .reverse()
+                            .find((msg) => msg.seedData)?.seedData;
+
+                          if (lastSeedData) {
+                            handleAddToCatalog(lastSeedData);
+                          }
+                        }}
+                        sx={(theme) => ({
+                          borderRadius: 999,
+                          flexShrink: 0,
+                          fontWeight: 800,
+                          minHeight: { xs: 42, sm: 38 },
+                          minWidth: { xs: "100%", sm: 128 },
+                          px: 1.75,
+                          width: { xs: "100%", sm: "auto" },
+                          animation: addingPreviewSeed
+                            ? "none"
+                            : "seedAddPulse 1.8s ease-in-out infinite",
+                          boxShadow: `0 0 0 0 ${alpha(
+                            theme.palette.primary.main,
+                            0.45
+                          )}`,
+                          "@keyframes seedAddPulse": {
+                            "0%": {
+                              boxShadow: `0 0 0 0 ${alpha(
+                                theme.palette.primary.main,
+                                0.45
+                              )}`,
+                              transform: "scale(1)",
+                            },
+                            "55%": {
+                              boxShadow: `0 0 0 10px ${alpha(
+                                theme.palette.primary.main,
+                                0
+                              )}`,
+                              transform: "scale(1.03)",
+                            },
+                            "100%": {
+                              boxShadow: `0 0 0 0 ${alpha(
+                                theme.palette.primary.main,
+                                0
+                              )}`,
+                              transform: "scale(1)",
+                            },
+                          },
+                          "@media (prefers-reduced-motion: reduce)": {
+                            animation: "none",
+                          },
+                        })}
+                      >
+                        {addingPreviewSeed ? "Adding..." : "Add seed"}
+                      </Button>
+                    </Box>
                   </Tooltip>
                 </CardActions>
               </Card>
