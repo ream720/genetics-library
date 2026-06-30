@@ -24,6 +24,9 @@ import {
   Tab,
   useMediaQuery,
   InputAdornment,
+  Menu,
+  ListItemIcon,
+  ListItemText,
 } from "@mui/material";
 import { Theme } from "@mui/material/styles";
 import { DataGrid, GridColDef, GridEditBooleanCell } from "@mui/x-data-grid";
@@ -37,6 +40,7 @@ import {
   Female,
   Male,
   SearchRounded,
+  MoreVert,
 } from "@mui/icons-material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
@@ -60,7 +64,7 @@ const mobileRecordCardSx = {
   boxSizing: "border-box",
   border: 1,
   borderColor: "divider",
-  borderRadius: 3,
+  borderRadius: { xs: 2, sm: 3 },
   bgcolor: "surface.subtle",
   maxWidth: "100%",
   minWidth: 0,
@@ -119,6 +123,10 @@ const ClonesPage: React.FC = () => {
   // Confirmation dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [cloneToDelete, setCloneToDelete] = React.useState<Clone | null>(null);
+  const [actionsMenuAnchor, setActionsMenuAnchor] =
+    React.useState<HTMLElement | null>(null);
+  const [actionsMenuClone, setActionsMenuClone] =
+    React.useState<Clone | null>(null);
 
   const handleCSVUpload = async (clones: Partial<Clone>[]) => {
     try {
@@ -141,6 +149,20 @@ const ClonesPage: React.FC = () => {
     newValue: number
   ) => {
     setClonePageTab(newValue);
+  };
+
+  const handleOpenActionsMenu = (
+    event: React.MouseEvent<HTMLElement>,
+    clone: Clone
+  ) => {
+    event.stopPropagation();
+    setActionsMenuAnchor(event.currentTarget);
+    setActionsMenuClone(clone);
+  };
+
+  const handleCloseActionsMenu = () => {
+    setActionsMenuAnchor(null);
+    setActionsMenuClone(null);
   };
 
   // Handle adding a new clone
@@ -179,6 +201,22 @@ const ClonesPage: React.FC = () => {
   const handleEditClick = (clone: Clone) => {
     setSelectedClone(clone);
     setEditModalOpen(true);
+  };
+
+  const handleActionsEdit = () => {
+    if (actionsMenuClone) {
+      handleEditClick(actionsMenuClone);
+    }
+
+    handleCloseActionsMenu();
+  };
+
+  const handleActionsDelete = () => {
+    if (actionsMenuClone) {
+      handleDeleteClick(actionsMenuClone);
+    }
+
+    handleCloseActionsMenu();
   };
 
   // Handle delete confirmation
@@ -349,27 +387,21 @@ const ClonesPage: React.FC = () => {
       headerName: "Actions",
       headerAlign: "center",
       align: "center",
-      width: 100,
+      sortable: false,
+      filterable: false,
+      disableColumnMenu: true,
+      width: 72,
       flex: 0,
       renderCell: (params) => (
-        <>
-          <Tooltip title="Edit">
-            <IconButton
-              onClick={() => handleEditClick(params.row)}
-              aria-label="edit"
-            >
-              <Edit />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Delete">
-            <IconButton
-              onClick={() => handleDeleteClick(params.row)}
-              aria-label="delete"
-            >
-              <Delete color="error" />
-            </IconButton>
-          </Tooltip>
-        </>
+        <Tooltip title="Open clone actions">
+          <IconButton
+            aria-label={`Open actions for ${params.row.strain}`}
+            onClick={(event) => handleOpenActionsMenu(event, params.row)}
+            size="small"
+          >
+            <MoreVert />
+          </IconButton>
+        </Tooltip>
       ),
     },
   ];
@@ -625,7 +657,7 @@ const ClonesPage: React.FC = () => {
                 sx={(theme) => ({
                   border: 1,
                   borderColor: "divider",
-                  borderRadius: 3,
+                  borderRadius: { xs: 2, sm: 3 },
                   bgcolor: theme.palette.surface.subtle,
                   p: 2,
                 })}
@@ -808,6 +840,32 @@ const ClonesPage: React.FC = () => {
           ) : null}
         </SectionCard>
         </TabPanel>
+
+      <Menu
+        anchorEl={actionsMenuAnchor}
+        open={Boolean(actionsMenuAnchor)}
+        onClose={handleCloseActionsMenu}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "right" }}
+        MenuListProps={{
+          "aria-label": actionsMenuClone
+            ? `Actions for ${actionsMenuClone.strain}`
+            : "Clone actions",
+        }}
+      >
+        <MenuItem onClick={handleActionsEdit} disabled={!actionsMenuClone}>
+          <ListItemIcon>
+            <Edit fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Edit</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={handleActionsDelete} disabled={!actionsMenuClone}>
+          <ListItemIcon>
+            <Delete color="error" fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Delete</ListItemText>
+        </MenuItem>
+      </Menu>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onClose={handleCloseDeleteDialog}>

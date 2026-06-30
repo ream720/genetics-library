@@ -65,8 +65,8 @@ const GeneticsCard = ({
       className={highlighted ? "highlight-animate" : undefined}
       variant="outlined"
       sx={{
-        height: "100%",
-        minHeight: 262,
+        height: { xs: "auto", sm: "100%" },
+        minHeight: { xs: "auto", sm: 262 },
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
@@ -151,13 +151,22 @@ const GeneticsCard = ({
         }
       />
 
-      <CardContent sx={{ py: 1, flex: 1, "&:last-child": { pb: 1 } }}>
+      <CardContent
+        sx={{
+          py: 1,
+          flex: { xs: "0 0 auto", sm: 1 },
+          "&:last-child": { pb: 1 },
+        }}
+      >
         <Stack spacing={1}>
           <Stack
             direction="row"
             flexWrap="wrap"
             gap={0.75}
-            sx={{ minHeight: 33, alignContent: "flex-start" }}
+            sx={{
+              minHeight: { xs: "auto", sm: 33 },
+              alignContent: "flex-start",
+            }}
           >
             {isSeed ? (
               <>
@@ -183,13 +192,14 @@ const GeneticsCard = ({
             )}
           </Stack>
 
-          <Stack spacing={0.5} sx={{ minHeight: 56 }}>
+          <Stack spacing={0.5} sx={{ minHeight: { xs: "auto", sm: 56 } }}>
             <Typography
               color="text.secondary"
               variant="body2"
               aria-hidden={!hasGeneration}
               sx={{
-                minHeight: "1.45em",
+                display: { xs: hasGeneration ? "block" : "none", sm: "block" },
+                minHeight: { xs: "auto", sm: "1.45em" },
               }}
             >
               {hasGeneration ? `Generation: ${item.generation}` : "\u00a0"}
@@ -199,11 +209,14 @@ const GeneticsCard = ({
               variant="body2"
               aria-hidden={!hasLineage}
               sx={{
-                display: "-webkit-box",
                 WebkitLineClamp: 2,
                 WebkitBoxOrient: "vertical",
                 overflow: "hidden",
-                minHeight: "2.9em",
+                display: {
+                  xs: hasLineage ? "-webkit-box" : "none",
+                  sm: "-webkit-box",
+                },
+                minHeight: { xs: "auto", sm: "2.9em" },
               }}
             >
               {hasLineage ? item.lineage : "\u00a0"}

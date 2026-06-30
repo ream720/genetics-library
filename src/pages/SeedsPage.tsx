@@ -20,6 +20,10 @@ import {
   Typography,
   useMediaQuery,
   InputAdornment,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
 } from "@mui/material";
 import { Theme } from "@mui/material/styles";
 import {
@@ -37,6 +41,7 @@ import {
   AddCircleOutline,
   Female,
   SearchRounded,
+  MoreVert,
 } from "@mui/icons-material";
 
 import { FaMagic } from "react-icons/fa";
@@ -64,7 +69,7 @@ const mobileRecordCardSx = {
   boxSizing: "border-box",
   border: 1,
   borderColor: "divider",
-  borderRadius: 3,
+  borderRadius: { xs: 2, sm: 3 },
   bgcolor: "surface.subtle",
   maxWidth: "100%",
   minWidth: 0,
@@ -132,6 +137,11 @@ const SeedsPage: React.FC = () => {
   // Confirmation dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [seedToDelete, setSeedToDelete] = React.useState<Seed | null>(null);
+  const [actionsMenuAnchor, setActionsMenuAnchor] =
+    React.useState<HTMLElement | null>(null);
+  const [actionsMenuSeed, setActionsMenuSeed] = React.useState<Seed | null>(
+    null
+  );
 
   // Handler for tab changes
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
@@ -143,6 +153,20 @@ const SeedsPage: React.FC = () => {
     newValue: number
   ) => {
     setSeedPageTab(newValue);
+  };
+
+  const handleOpenActionsMenu = (
+    event: React.MouseEvent<HTMLElement>,
+    seed: Seed
+  ) => {
+    event.stopPropagation();
+    setActionsMenuAnchor(event.currentTarget);
+    setActionsMenuSeed(seed);
+  };
+
+  const handleCloseActionsMenu = () => {
+    setActionsMenuAnchor(null);
+    setActionsMenuSeed(null);
   };
 
   // Return unique breeder names from the seeds array
@@ -301,6 +325,22 @@ const SeedsPage: React.FC = () => {
   const handleEditClick = (seed: Seed) => {
     setSelectedSeed(seed);
     setEditModalOpen(true);
+  };
+
+  const handleActionsEdit = () => {
+    if (actionsMenuSeed) {
+      handleEditClick(actionsMenuSeed);
+    }
+
+    handleCloseActionsMenu();
+  };
+
+  const handleActionsDelete = () => {
+    if (actionsMenuSeed) {
+      handleDeleteClick(actionsMenuSeed);
+    }
+
+    handleCloseActionsMenu();
   };
 
   const handleSaveEdit = async (updatedSeed: Seed) => {
@@ -464,27 +504,21 @@ const SeedsPage: React.FC = () => {
       headerName: "Actions",
       headerAlign: "center",
       align: "center",
-      width: 100,
+      sortable: false,
+      filterable: false,
+      disableColumnMenu: true,
+      width: 72,
       flex: 0,
       renderCell: (params) => (
-        <>
-          <Tooltip title="Edit">
-            <IconButton
-              onClick={() => handleEditClick(params.row)}
-              aria-label="edit"
-            >
-              <Edit />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Delete">
-            <IconButton
-              onClick={() => handleDeleteClick(params.row)}
-              aria-label="delete"
-            >
-              <Delete color="error" />
-            </IconButton>
-          </Tooltip>
-        </>
+        <Tooltip title="Open seed actions">
+          <IconButton
+            aria-label={`Open actions for ${params.row.strain}`}
+            onClick={(event) => handleOpenActionsMenu(event, params.row)}
+            size="small"
+          >
+            <MoreVert />
+          </IconButton>
+        </Tooltip>
       ),
     },
   ];
@@ -795,7 +829,7 @@ const SeedsPage: React.FC = () => {
                 sx={(theme) => ({
                   border: 1,
                   borderColor: "divider",
-                  borderRadius: 3,
+                  borderRadius: { xs: 2, sm: 3 },
                   bgcolor: theme.palette.surface.subtle,
                   p: 2,
                 })}
@@ -966,6 +1000,32 @@ const SeedsPage: React.FC = () => {
           ) : null}
         </SectionCard>
         </TabPanel>
+
+      <Menu
+        anchorEl={actionsMenuAnchor}
+        open={Boolean(actionsMenuAnchor)}
+        onClose={handleCloseActionsMenu}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "right" }}
+        MenuListProps={{
+          "aria-label": actionsMenuSeed
+            ? `Actions for ${actionsMenuSeed.strain}`
+            : "Seed actions",
+        }}
+      >
+        <MenuItem onClick={handleActionsEdit} disabled={!actionsMenuSeed}>
+          <ListItemIcon>
+            <Edit fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Edit</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={handleActionsDelete} disabled={!actionsMenuSeed}>
+          <ListItemIcon>
+            <Delete color="error" fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Delete</ListItemText>
+        </MenuItem>
+      </Menu>
 
       {/* Delete Confirmation Dialog */}
       <Dialog
