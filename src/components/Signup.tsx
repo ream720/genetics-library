@@ -31,10 +31,10 @@ function Signup() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (loading && currentUser?.username && hasCurrentLegalAcceptance) {
+    if (currentUser?.username && hasCurrentLegalAcceptance) {
       navigate("/dashboard", { replace: true });
     }
-  }, [currentUser?.username, hasCurrentLegalAcceptance, loading, navigate]);
+  }, [currentUser?.username, hasCurrentLegalAcceptance, navigate]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();

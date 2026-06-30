@@ -38,6 +38,14 @@ import { useUnsavedChanges } from "../../context/UnsavedChangesContext";
 import useIdleTimer from "../../hooks/useIdleTimer";
 
 const SIDEBAR_WIDTH = 232;
+const PUBLIC_LEGAL_ACCEPTANCE_PATHS = new Set([
+  "/",
+  "/login",
+  "/signup",
+  "/forgot-password",
+  "/terms-of-service",
+  "/privacy-policy",
+]);
 
 const navItems = [
   {
@@ -69,6 +77,8 @@ const AppShell = ({ children }: { children: ReactNode }) => {
     ? "/projects"
     : navItems.find((item) => location.pathname.startsWith(item.value))
         ?.value ?? false;
+  const showLegalAcceptanceBanner =
+    needsLegalAcceptance && !PUBLIC_LEGAL_ACCEPTANCE_PATHS.has(location.pathname);
 
   const navigateSafely = (path: string) => {
     if (confirmNavigation()) {
@@ -436,7 +446,7 @@ const AppShell = ({ children }: { children: ReactNode }) => {
           outline: "none",
         }}
       >
-        {needsLegalAcceptance && (
+        {showLegalAcceptanceBanner && (
           <Paper
             square
             elevation={0}
