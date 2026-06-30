@@ -136,7 +136,7 @@ async function updateAttemptEvent(
 
 export const analyzeSeed = onCall(
   {
-    enforceAppCheck: true,
+    enforceAppCheck: false,
     maxInstances: 3,
     concurrency: 5,
     secrets: [googleAiKey],
